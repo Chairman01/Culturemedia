@@ -1,9 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ParticlesBackground } from "@/components/ui/particles";
 import { TypingText } from "@/components/ui/typing-text";
+import { ContactModal } from "@/components/ui/contact-modal";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -25,6 +27,8 @@ import {
 import Image from "next/image";
 
 export default function Home() {
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
@@ -52,16 +56,12 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen relative">
-      <ParticlesBackground />
+    <div className="flex flex-col min-h-screen relative bg-white">
+      <ParticlesBackground particleColors={['#000000', '#333333', '#666666']} lineColor="0, 0, 0" />
+      <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
 
       {/* Hero Section */}
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-20">
-        {/* Background Gradients */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-blue-500/10 blur-[100px]" />
-          <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-purple-500/10 blur-[100px]" />
-        </div>
 
         <div className="container mx-auto relative z-10 px-4 md:px-6">
           <motion.div
@@ -130,12 +130,10 @@ export default function Home() {
             </motion.p>
 
             <motion.div variants={fadeInUp} className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link href="#contact">
-                <Button size="lg" className="group">
-                  Start a Partnership
-                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </Button>
-              </Link>
+              <Button size="lg" className="group" onClick={() => setIsContactModalOpen(true)}>
+                Start a Partnership
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Button>
               <Link href="#services">
                 <Button variant="outline" size="lg" className="border-gray-200 text-gray-700 hover:bg-gray-50">
                   Explore Services
@@ -230,6 +228,83 @@ export default function Home() {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      {/* Partners Section */}
+      <section className="relative py-24 bg-white">
+        <div className="container mx-auto px-4 md:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-6xl mx-auto"
+          >
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Left - Text Content */}
+              <div>
+                <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                  Trusted by <span className="text-blue-600">local businesses</span> across Alberta
+                </h2>
+                <p className="text-muted-foreground text-lg mb-6">
+                  From restaurants to retailers, we help Alberta businesses connect with their community through authentic storytelling and strategic content placement.
+                </p>
+                <ul className="space-y-3 mb-8">
+                  {[
+                    "Authentic content that resonates locally",
+                    "Instagram, YouTube, Newsletter & Web",
+                    "Real engagement from real Albertans"
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-center gap-3">
+                      <div className="h-5 w-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <span className="text-foreground">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button onClick={() => setIsContactModalOpen(true)} className="group">
+                  Partner With Us!
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Button>
+              </div>
+
+              {/* Right - Partner Logos Grid */}
+              <div>
+                <div className="grid grid-cols-3 gap-4">
+                  {[
+                    { name: "Moveology", color: "bg-gradient-to-br from-gray-900 to-gray-700" },
+                    { name: "Tutti Frutti", color: "bg-gradient-to-br from-orange-500 to-red-500" },
+                    { name: "Neon YYC", color: "bg-gradient-to-br from-pink-500 to-purple-600" },
+                    { name: "Pho City", color: "bg-gradient-to-br from-blue-500 to-cyan-500" },
+                    { name: "YC Legal", color: "bg-gradient-to-br from-blue-600 to-blue-800" },
+                    { name: "Start Calgary", color: "bg-gradient-to-br from-red-600 to-pink-600" },
+                    { name: "ATCO", color: "bg-gradient-to-br from-purple-600 to-blue-600" },
+                    { name: "PeKKo", color: "bg-gradient-to-br from-green-700 to-green-900" },
+                    { name: "Tire Doctors", color: "bg-gradient-to-br from-red-600 to-red-800" }
+                  ].map((partner, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ scale: 1.05, y: -4 }}
+                      className="group cursor-pointer"
+                    >
+                      <div className={`${partner.color} aspect-square rounded-xl flex items-center justify-center p-6 shadow-lg hover:shadow-xl transition-all`}>
+                        <span className="text-white font-bold text-center text-sm leading-tight">
+                          {partner.name}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
