@@ -27,10 +27,10 @@ export function Navbar() {
                     <Link href="#about" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
                         About
                     </Link>
-                    <Link href="#" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                    <Link href="#platforms" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
                         Platforms
                     </Link>
-                    <Link href="#" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+                    <Link href="#contact" className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
                         Partner With Us
                     </Link>
                 </nav>
