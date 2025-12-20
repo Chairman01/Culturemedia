@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "./button";
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -11,28 +9,6 @@ interface ContactModalProps {
 }
 
 export function ContactModal({ isOpen, onClose }: ContactModalProps) {
-    const [formData, setFormData] = useState({
-        firstName: "",
-        lastName: "",
-        email: "",
-        company: "",
-        message: ""
-    });
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Handle form submission here
-        console.log("Form submitted:", formData);
-        // You can add email service integration here
-        onClose();
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setFormData(prev => ({
-            ...prev,
-            [e.target.name]: e.target.value
-        }));
-    };
 
     return (
         <AnimatePresence>
@@ -114,7 +90,12 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
 
                                     <h3 className="text-2xl font-bold mb-2">Send us a message</h3>
 
-                                    <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+                                    <form action="https://formsubmit.co/culturemedia101@gmail.com" method="POST" className="space-y-4 mt-6">
+                                        {/* FormSubmit Configuration */}
+                                        <input type="hidden" name="_subject" value="New Partnership Inquiry from Culture Media Website" />
+                                        <input type="hidden" name="_captcha" value="false" />
+                                        <input type="hidden" name="_template" value="table" />
+
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
@@ -123,9 +104,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                                                 <input
                                                     type="text"
                                                     id="firstName"
-                                                    name="firstName"
-                                                    value={formData.firstName}
-                                                    onChange={handleChange}
+                                                    name="First_Name"
                                                     placeholder="John"
                                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
                                                     required
@@ -138,9 +117,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                                                 <input
                                                     type="text"
                                                     id="lastName"
-                                                    name="lastName"
-                                                    value={formData.lastName}
-                                                    onChange={handleChange}
+                                                    name="Last_Name"
                                                     placeholder="Doe"
                                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
                                                     required
@@ -155,9 +132,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                                             <input
                                                 type="email"
                                                 id="email"
-                                                name="email"
-                                                value={formData.email}
-                                                onChange={handleChange}
+                                                name="Email"
                                                 placeholder="john@company.com"
                                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
                                                 required
@@ -171,9 +146,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                                             <input
                                                 type="text"
                                                 id="company"
-                                                name="company"
-                                                value={formData.company}
-                                                onChange={handleChange}
+                                                name="Company"
                                                 placeholder="Your company name"
                                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
                                             />
@@ -185,9 +158,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                                             </label>
                                             <textarea
                                                 id="message"
-                                                name="message"
-                                                value={formData.message}
-                                                onChange={handleChange}
+                                                name="Message"
                                                 placeholder="Tell us about your brand and what you're looking for..."
                                                 rows={4}
                                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none resize-none"
@@ -195,10 +166,10 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                                             />
                                         </div>
 
-                                        <Button type="submit" size="lg" className="w-full">
+                                        <button type="submit" className="w-full bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
                                             Send Message
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Button>
+                                            <ArrowRight className="h-4 w-4" />
+                                        </button>
                                     </form>
                                 </div>
                             </div>

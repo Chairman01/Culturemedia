@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { ParticlesBackground } from "@/components/ui/particles";
 import { TypingText } from "@/components/ui/typing-text";
 import { ContactModal } from "@/components/ui/contact-modal";
+import { PhoneModal } from "@/components/ui/phone-modal";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import {
@@ -28,6 +29,7 @@ import Image from "next/image";
 
 export default function Home() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
 
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
@@ -59,6 +61,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen relative bg-white">
       <ParticlesBackground particleColors={['#000000', '#333333', '#666666']} lineColor="0, 0, 0" />
       <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
+      <PhoneModal isOpen={isPhoneModalOpen} onClose={() => setIsPhoneModalOpen(false)} />
 
       {/* Hero Section */}
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-20">
@@ -165,7 +168,7 @@ export default function Home() {
       </section>
 
       {/* Value Proposition Section - Antigravity Inspired */}
-      <section className="relative py-32 overflow-hidden bg-white">
+      <section id="platforms" className="relative py-32 overflow-hidden bg-white">
         <div className="container mx-auto px-4 md:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -275,15 +278,15 @@ export default function Home() {
               <div>
                 <div className="grid grid-cols-3 gap-4">
                   {[
-                    { name: "Moveology", color: "bg-gradient-to-br from-gray-900 to-gray-700" },
-                    { name: "Tutti Frutti", color: "bg-gradient-to-br from-orange-500 to-red-500" },
-                    { name: "Neon YYC", color: "bg-gradient-to-br from-pink-500 to-purple-600" },
-                    { name: "Pho City", color: "bg-gradient-to-br from-blue-500 to-cyan-500" },
-                    { name: "YC Legal", color: "bg-gradient-to-br from-blue-600 to-blue-800" },
-                    { name: "Start Calgary", color: "bg-gradient-to-br from-red-600 to-pink-600" },
-                    { name: "ATCO", color: "bg-gradient-to-br from-purple-600 to-blue-600" },
-                    { name: "PeKKo", color: "bg-gradient-to-br from-green-700 to-green-900" },
-                    { name: "Tire Doctors", color: "bg-gradient-to-br from-red-600 to-red-800" }
+                    { name: "Moveology", logo: "/Logos/moveology.png" },
+                    { name: "Tutti Frutti", logo: "/Logos/tutti-frutti.png" },
+                    { name: "Neon YYC", logo: "/Logos/neon-yyc.png" },
+                    { name: "Pho City", logo: "/Logos/pho-city-yyc.png" },
+                    { name: "YC Legal", logo: "/Logos/tc-legal.png" },
+                    { name: "Start Calgary", logo: "/Logos/sport-calgary.png" },
+                    { name: "GameCon Canada", logo: "/Logos/gamecon-canada.png" },
+                    { name: "PeKKo", logo: "/Logos/pekko-chicken.png" },
+                    { name: "Tire Doctors", logo: "/Logos/tiredoctors.png" }
                   ].map((partner, index) => (
                     <motion.div
                       key={index}
@@ -294,10 +297,14 @@ export default function Home() {
                       whileHover={{ scale: 1.05, y: -4 }}
                       className="group cursor-pointer"
                     >
-                      <div className={`${partner.color} aspect-square rounded-xl flex items-center justify-center p-6 shadow-lg hover:shadow-xl transition-all`}>
-                        <span className="text-white font-bold text-center text-sm leading-tight">
-                          {partner.name}
-                        </span>
+                      <div className="bg-white border border-gray-200 aspect-square rounded-xl flex items-center justify-center p-6 shadow-md hover:shadow-xl transition-all">
+                        <Image
+                          src={partner.logo}
+                          alt={partner.name}
+                          width={120}
+                          height={120}
+                          className="object-contain w-full h-full"
+                        />
                       </div>
                     </motion.div>
                   ))}
@@ -596,16 +603,21 @@ export default function Home() {
               </ul>
 
               <div className="flex flex-col sm:flex-row gap-4 relative z-10">
-                <Link href="mailto:culturemedia101@gmail.com" className="flex-1">
-                  <Button variant="outline" size="lg" className="w-full border-gray-700 text-white hover:bg-white hover:text-black transition-colors">
-                    Get in Touch
-                  </Button>
-                </Link>
-                <Link href="tel:2262361828" className="flex-1">
-                  <Button size="lg" className="w-full bg-white text-black hover:bg-gray-200 transition-colors">
-                    Call Us
-                  </Button>
-                </Link>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="flex-1 border-gray-700 text-white hover:bg-white hover:text-black transition-colors"
+                  onClick={() => setIsContactModalOpen(true)}
+                >
+                  Get in Touch
+                </Button>
+                <Button
+                  size="lg"
+                  className="flex-1 bg-white text-black hover:bg-gray-200 transition-colors"
+                  onClick={() => setIsPhoneModalOpen(true)}
+                >
+                  Call Us
+                </Button>
               </div>
             </motion.div>
           </div>
