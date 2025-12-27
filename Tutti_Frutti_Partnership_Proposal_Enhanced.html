@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Culture Media × Tutti Frutti Alberta - Partnership Proposal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Particle Background */
+        #particles-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-center;
+            text-align: center;
+            padding: 120px 40px 80px;
+        }
+
+        .logo-float {
+            margin-bottom: 40px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .logo {
+            height: 120px;
+            width: auto;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(128, 128, 128, 0.08);
+            border: 1px solid rgba(128, 128, 128, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 8px 20px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 32px;
+            letter-spacing: 0.3px;
+            animation: fadeInUp 0.6s ease-out 0.2s backwards;
+        }
+
+        h1 {
+            font-size: 64px;
+            font-weight: 900;
+            margin-bottom: 24px;
+            letter-spacing: -1.5px;
+            line-height: 1.1;
+            animation: fadeInUp 0.6s ease-out 0.4s backwards;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            color: #666;
+            font-weight: 400;
+            animation: fadeInUp 0.6s ease-out 0.6s backwards;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 40px;
+            margin-top: 80px;
+            padding-top: 60px;
+            border-top: 1px solid #e5e5e5;
+            animation: fadeInUp 0.6s ease-out 0.8s backwards;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 48px;
+            font-weight: 900;
+            display: block;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #000 0%, #666 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Section Styles */
+        section {
+            padding: 100px 40px;
+            position: relative;
+        }
+
+        .section-alt {
+            background: rgba(250, 250, 250, 0.5);
+        }
+
+        .section-header {
+            max-width: 800px;
+            margin-bottom: 60px;
+        }
+
+        .section-tag {
+            display: inline-block;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        h2 {
+            font-size: 48px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+            line-height: 1.2;
+        }
+
+        h3 {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .section-description {
+            font-size: 18px;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        /* Card Styles */
+        .card {
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            padding: 36px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeInScale 0.6s ease-out backwards;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+            border-color: rgba(0, 0, 0, 0.12);
+        }
+
+        /* Video Grid */
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 60px 0;
+        }
+
+        .video-card {
+            text-align: center;
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+
+        .video-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .video-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .video-card iframe {
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .video-card:hover iframe {
+            transform: scale(1.02);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+        }
+
+        .video-caption {
+            margin-top: 16px;
+            font-size: 15px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* Services Grid */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin: 60px 0;
+        }
+
+        .service-card {
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 40px 32px;
+            border-radius: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            animation: fadeInUp 0.5s ease-out backwards;
+        }
+
+        .service-card:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .service-card:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .service-card:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .service-card:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .service-card:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+
+        .service-card:nth-child(6) {
+            animation-delay: 0.3s;
+        }
+
+        .service-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1);
+            border-color: rgba(0, 0, 0, 0.15);
+        }
+
+        .service-icon {
+            font-size: 56px;
+            margin-bottom: 20px;
+            display: block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .service-card h3 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .service-card p {
+            font-size: 15px;
+            color: #666;
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .service-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #000;
+            background: rgba(0, 0, 0, 0.04);
+            padding: 8px 16px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        /* Strategy Cards */
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 32px;
+            margin: 60px 0;
+        }
+
+        .strategy-card {
+            background: white;
+            border: 2px solid rgba(0, 0, 0, 0.08);
+            border-radius: 20px;
+            padding: 48px;
+            transition: all 0.3s ease;
+        }
+
+        .strategy-card:hover {
+            border-color: rgba(0, 0, 0, 0.2);
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.08);
+        }
+
+        .strategy-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .strategy-number {
+            font-size: 32px;
+            font-weight: 900;
+            background: rgba(0, 0, 0, 0.05);
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pros-cons-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 24px;
+        }
+
+        .pros,
+        .cons {
+            background: rgba(0, 0, 0, 0.02);
+            padding: 24px;
+            border-radius: 12px;
+        }
+
+        .pros h4,
+        .cons h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .pros h4 {
+            color: #059669;
+        }
+
+        .cons h4 {
+            color: #dc2626;
+        }
+
+        .pros ul,
+        .cons ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .pros li,
+        .cons li {
+            padding: 8px 0;
+            padding-left: 28px;
+            position: relative;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .pros li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #059669;
+            font-weight: 700;
+        }
+
+        .cons li::before {
+            content: '✗';
+            position: absolute;
+            left: 0;
+            color: #dc2626;
+            font-weight: 700;
+        }
+
+        /* Advantages/Disadvantages Lists */
+        .advantage-list,
+        .disadvantage-list {
+            list-style: none;
+            padding: 0;
+            margin: 32px 0;
+        }
+
+        .advantage-list li,
+        .disadvantage-list li {
+            padding: 16px 24px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            position: relative;
+            padding-left: 56px;
+            font-size: 17px;
+            line-height: 1.7;
+        }
+
+        .advantage-list li {
+            background: rgba(5, 150, 105, 0.05);
+            border-left: 4px solid #059669;
+        }
+
+        .advantage-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #059669;
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .disadvantage-list li {
+            background: rgba(220, 38, 38, 0.05);
+            border-left: 4px solid #dc2626;
+        }
+
+        .disadvantage-list li::before {
+            content: '!';
+            position: absolute;
+            left: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #dc2626;
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        /* Pricing Section */
+        .pricing-container {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 80px 60px;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(30, 58, 138, 0.3);
+            animation: fadeInScale 0.6s ease-out backwards;
+        }
+
+        .pricing-container h3 {
+            font-size: 32px;
+            margin-bottom: 32px;
+            font-weight: 800;
+        }
+
+        .price-tag {
+            font-size: 92px;
+            font-weight: 900;
+            display: block;
+            margin: 24px 0;
+            letter-spacing: -3px;
+        }
+
+        .price-period {
+            font-size: 24px;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        .pricing-note {
+            font-size: 17px;
+            opacity: 0.9;
+            margin-top: 32px;
+        }
+
+        .value-table {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 48px;
+            margin-top: 48px;
+        }
+
+        .value-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 18px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+            font-size: 17px;
+        }
+
+        .value-row:last-child {
+            border-bottom: none;
+            font-size: 26px;
+            font-weight: 900;
+            padding-top: 28px;
+            margin-top: 16px;
+            border-top: 2px solid rgba(255, 255, 255, 0.25);
+        }
+
+        /* Why Grid */
+        .why-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin: 60px 0;
+        }
+
+        .why-card {
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 36px;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.5s ease-out backwards;
+        }
+
+        .why-card:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .why-card:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .why-card:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .why-card:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .why-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
+        }
+
+        .why-card h4 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .why-card p {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.7;
+        }
+
+        /* Contact Section */
+        .contact-section {
+            background: #000;
+            color: white;
+            padding: 100px 60px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-section h2 {
+            color: white;
+            margin-bottom: 24px;
+        }
+
+        .contact-description {
+            font-size: 20px;
+            opacity: 0.85;
+            margin-bottom: 48px;
+        }
+
+        .contact-grid {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            flex-wrap: wrap;
+        }
+
+        .contact-item {
+            font-size: 17px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .contact-item a {
+            color: #60a5fa;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .contact-item a:hover {
+            color: #93c5fd;
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(250, 250, 250, 0.8) 0%, rgba(255, 255, 255, 0.9) 100%);
+            border-left: 4px solid #000;
+            padding: 32px;
+            border-radius: 12px;
+            margin: 48px 0;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+
+        .highlight-box p {
+            font-size: 17px;
+            line-height: 1.8;
+            color: #333;
+            margin: 0;
+        }
+
+        /* Animations */
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-12px);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 40px;
+            }
+
+            h2 {
+                font-size: 32px;
+            }
+
+            .stats-grid,
+            .services-grid,
+            .video-grid,
+            .why-grid,
+            .pros-cons-grid {
+                grid-template-columns: 1fr;
+            }
+
+            section {
+                padding: 60px 24px;
+            }
+
+            .hero {
+                padding: 80px 24px 60px;
+            }
+
+            .pricing-container {
+                padding: 48px 32px;
+            }
+
+            .price-tag {
+                font-size: 64px;
+            }
+
+            .strategy-card {
+                padding: 32px 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="logo-float">
+                <img src="uploaded_image_1_1766795306726.png" alt="Tutti Frutti" class="logo">
+            </div>
+            <div class="badge">Partnership Proposal • December 2025</div>
+            <h1>Culture Media × Tutti Frutti Alberta</h1>
+            <p class="subtitle">Your strategic partner for digital growth across Alberta</p>
+
+            <div class="stats-grid">
+                <div class="stat">
+                    <span class="stat-number">$2,500</span>
+                    <span class="stat-label">Monthly Investment</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">$4,500+</span>
+                    <span class="stat-label">Total Value</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">55K+</span>
+                    <span class="stat-label">Monthly Sessions</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">290K+</span>
+                    <span class="stat-label">Community Reach</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Tutti Frutti -->
+    <section class="section-alt">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Understanding Your Business</span>
+                <h2>About Tutti Frutti Alberta</h2>
+                <p class="section-description">Tutti Frutti is Alberta's premium self-serve frozen yogurt destination,
+                    offering an interactive dessert experience where customers craft their perfect treat. With multiple
+                    locations across Edmonton and St. Albert, you've built a loyal community around fresh, high-quality
+                    frozen yogurt, extensive topping bars, and a fun, family-friendly atmosphere.</p>
+            </div>
+
+            <h3 style="margin-bottom: 24px;">Your Key Strengths & Standout Features</h3>
+            <ul class="advantage-list">
+                <li><strong>Self-Serve Model:</strong> Empowers customers to create personalized desserts, making each
+                    visit unique and engaging</li>
+                <li><strong>Premium Product Quality:</strong> Fresh, high-quality frozen yogurt with rotating flavors
+                    keeps customers coming back</li>
+                <li><strong>Extensive Topping Bar:</strong> Vast selection of fresh fruits, candies, sauces, and nuts
+                    differentiates you from competitors</li>
+                <li><strong>Family-Friendly Atmosphere:</strong> Perfect for kids, families, and groups - creating
+                    memorable experiences</li>
+                <li><strong>Multiple Locations:</strong> Strong presence across Edmonton and St. Albert builds brand
+                    recognition</li>
+                <li><strong>Visual Appeal:</strong> Colorful, Instagram-worthy products naturally encourage social media
+                    sharing</li>
+                <li><strong>Seasonal Adaptability:</strong> Ability to rotate flavors and toppings keeps menu fresh and
+                    exciting</li>
+            </ul>
+
+            <h3 style="margin: 48px 0 24px;">Honest Challenges & Opportunities for Growth</h3>
+            <ul class="disadvantage-list">
+                <li><strong>Seasonal Business:</strong> Winter months naturally see reduced foot traffic for frozen
+                    treats - needs strategic counter-marketing</li>
+                <li><strong>Social Media Presence:</strong> Current digital footprint doesn't match the quality of your
+                    in-store experience</li>
+                <li><strong>Local Competition:</strong> Ice cream shops, dessert cafes, and QSR chains compete for the
+                    same customers</li>
+                <li><strong>Brand Awareness Gaps:</strong> Not all Albertans know about your locations or unique
+                    self-serve model</li>
+                <li><strong>Content Consistency:</strong> Irregular posting and engagement makes it hard to build
+                    momentum online</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Recent Success -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Proven Results</span>
+                <h2>We've Already Delivered Success Together</h2>
+                <p class="section-description">Our recent partnerships with <strong>Tutti Frutti West</strong> and
+                    <strong>Tutti Frutti St. Albert</strong> demonstrate what we can achieve at scale.
+                </p>
+            </div>
+
+            <div class="highlight-box">
+                <p><strong>Campaign Results:</strong> Hundreds of entries within 48 hours, strong engagement across
+                    Instagram and culturealberta.com, increased brand visibility for both locations, new follower
+                    growth, and positive community response.</p>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-card">
+                    <iframe src="https://www.instagram.com/p/DPux_eej2we/embed" width="400" height="600" frameborder="0"
+                        scrolling="no" allowtransparency="true"></iframe>
+                    <p class="video-caption">📹 Campaign Video</p>
+                </div>
+                <div class="video-card">
+                    <iframe src="https://www.instagram.com/p/DRBjikjEVwY/embed" width="400" height="600" frameborder="0"
+                        scrolling="no" allowtransparency="true"></iframe>
+                    <p class="video-caption">📹 Content Creation</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Strategy Options -->
+    <section class="section-alt">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Flexible Approaches</span>
+                <h2>Strategic Options Tailored to Your Goals</h2>
+                <p class="section-description">Choose the strategy that aligns with your business objectives, or combine
+                    multiple approaches for maximum impact.</p>
+            </div>
+
+            <div class="strategy-grid">
+                <!-- Strategy 1 -->
+                <div class="strategy-card">
+                    <div class="strategy-header">
+                        <div class="strategy-number">01</div>
+                        <div>
+                            <h3>Brand Awareness Blitz</h3>
+                            <p style="color: #666; margin: 0;">Maximum visibility across all platforms</p>
+                        </div>
+                    </div>
+                    <p style="font-size: 17px; line-height: 1.8; margin-bottom: 24px;">
+                        Focus on getting Tutti Frutti in front of as many Albertans as possible. Heavy content creation
+                        featuring all locations, menu items, and experiences. Weekly features on Culture Alberta's
+                        website, newsletter spotlights, Instagram stories, and reels. Goal: Make Tutti Frutti
+                        top-of-mind for frozen yogurt.
+                    </p>
+                    <p style="font-size: 15px; color: #666; margin-bottom: 24px;">
+                        <strong>Ideal for:</strong> Building recognition in new markets, launching new locations, or
+                        countering seasonality.
+                    </p>
+                    <div class="pros-cons-grid">
+                        <div class="pros">
+                            <h4>Pros</h4>
+                            <ul>
+                                <li>Rapid brand recognition growth</li>
+                                <li>Reaches broad Alberta audience</li>
+                                <li>Creates content library for future use</li>
+                                <li>Drives traffic to all locations</li>
+                            </ul>
+                        </div>
+                        <div class="cons">
+                            <h4>Cons</h4>
+                            <ul>
+                                <li>Less targeted than niche approach</li>
+                                <li>Requires more content volume</li>
+                                <li>Results take 2-3 months to compound</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strategy 2 -->
+                <div class="strategy-card">
+                    <div class="strategy-header">
+                        <div class="strategy-number">02</div>
+                        <div>
+                            <h3>Community Engagement Focus</h3>
+                            <p style="color: #666; margin: 0;">Deep connection with local audiences</p>
+                        </div>
+                    </div>
+                    <p style="font-size: 17px; line-height: 1.8; margin-bottom: 24px;">
+                        Build loyal, engaged communities around each location through hyper-local content,
+                        user-generated content campaigns, customer features, and location-specific Instagram Stories.
+                        Host monthly giveaways, showcase customer creations, and create "Flavor of the Month" campaigns.
+                        Goal: Turn customers into brand advocates.
+                    </p>
+                    <p style="font-size: 15px; color: #666; margin-bottom: 24px;">
+                        <strong>Ideal for:</strong> Building repeat business, increasing customer lifetime value,
+                        creating word-of-mouth growth.
+                    </p>
+                    <div class="pros-cons-grid">
+                        <div class="pros">
+                            <h4>Pros</h4>
+                            <ul>
+                                <li>Higher customer loyalty</li>
+                                <li>Organic word-of-mouth growth</li>
+                                <li>Authentic, relatable content</li>
+                                <li>Strong ROI on repeat visits</li>
+                            </ul>
+                        </div>
+                        <div class="cons">
+                            <h4>Cons</h4>
+                            <ul>
+                                <li>Slower initial reach growth</li>
+                                <li>Requires ongoing engagement</li>
+                                <li>Location-specific effort needed</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strategy 3 -->
+                <div class="strategy-card">
+                    <div class="strategy-header">
+                        <div class="strategy-number">03</div>
+                        <div>
+                            <h3>Content-First Storytelling</h3>
+                            <p style="color: #666; margin: 0;">Premium visual content & storytelling</p>
+                        </div>
+                    </div>
+                    <p style="font-size: 17px; line-height: 1.8; margin-bottom: 24px;">
+                        Create magazine-quality content that positions Tutti Frutti as a lifestyle brand. Professional
+                        photoshoots for each seasonal menu change, behind-the-scenes videos, founder/staff stories, and
+                        editorial-style features on Culture Alberta. Emphasis on aspirational, share-worthy content that
+                        makes Tutti Frutti feel premium.
+                    </p>
+                    <p style="font-size: 15px; color: #666; margin-bottom: 24px;">
+                        <strong>Ideal for:</strong> Elevating brand perception, attracting new demographics, standing
+                        out from competitors.
+                    </p>
+                    <div class="pros-cons-grid">
+                        <div class="pros">
+                            <h4>Pros</h4>
+                            <ul>
+                                <li>Premium brand positioning</li>
+                                <li>Highly shareable content</li>
+                                <li>Attracts media attention</li>
+                                <li>Long-term content value</li>
+                            </ul>
+                        </div>
+                        <div class="cons">
+                            <h4>Cons</h4>
+                            <ul>
+                                <li>More intensive production</li>
+                                <li>Higher expectations to maintain</li>
+                                <li>Less frequent posting cadence</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strategy 4 -->
+                <div class="strategy-card">
+                    <div class="strategy-header">
+                        <div class="strategy-number">04</div>
+                        <div>
+                            <h3>Integrated Full-Spectrum (Recommended)</h3>
+                            <p style="color: #666; margin: 0;">Balanced approach combining all strategies</p>
+                        </div>
+                    </div>
+                    <p style="font-size: 17px; line-height: 1.8; margin-bottom: 24px;">
+                        Our recommended approach: Blend awareness-building, community engagement, and premium
+                        storytelling into a cohesive strategy. Allocate content across all channels, balance
+                        high-production shoots with authentic community moments, and create campaigns that drive both
+                        reach and loyalty. This gives you the best of all worlds.
+                    </p>
+                    <p style="font-size: 15px; color: #666; margin-bottom: 24px;">
+                        <strong>Ideal for:</strong> Maximum impact, sustainable long-term growth, building a resilient
+                        brand presence.
+                    </p>
+                    <div class="pros-cons-grid">
+                        <div class="pros">
+                            <h4>Pros</h4>
+                            <ul>
+                                <li>Comprehensive brand growth</li>
+                                <li>Diversified marketing risk</li>
+                                <li>Appeals to multiple audiences</li>
+                                <li>Sustainable momentum</li>
+                                <li>Adaptable to business needs</li>
+                            </ul>
+                        </div>
+                        <div class="cons">
+                            <h4>Cons</h4>
+                            <ul>
+                                <li>Requires full commitment</li>
+                                <li>More complex coordination</li>
+                                <li>Takes time to see full results</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What You Get -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Complete Package</span>
+                <h2>What You Get Every Month</h2>
+                <p class="section-description">Regardless of which strategy you choose, here's what's included in your
+                    partnership</p>
+            </div>
+
+            <div class="services-grid">
+                <div class="service-card">
+                    <span class="service-icon">🌐</span>
+                    <h3>Platform Access</h3>
+                    <p>FREE access to culturealberta.com — Featured in guides, roundups, newsletters reaching 5,000+
+                        Alberta foodies.</p>
+                    <div class="service-value">Value: $1,200/mo</div>
+                </div>
+
+                <div class="service-card">
+                    <span class="service-icon">📱</span>
+                    <h3>Social Media</h3>
+                    <p>Dedicated management of ALL Tutti Frutti Alberta pages — content scheduling, engagement, and
+                        growth strategy.</p>
+                    <div class="service-value">Value: $1,500/mo</div>
+                </div>
+
+                <div class="service-card">
+                    <span class="service-icon">✨</span>
+                    <h3>Content Creation</h3>
+                    <p>4+ high-quality posts per month — shared on our platforms and provided for your own use.</p>
+                    <div class="service-value">Value: $800/mo</div>
+                </div>
+
+                <div class="service-card">
+                    <span class="service-icon">📸</span>
+                    <h3>Photo & Video</h3>
+                    <p>Professional food photography and engaging reels to showcase your brand and drive customer
+                        interest.</p>
+                    <div class="service-value">Value: $600/mo</div>
+                </div>
+
+                <div class="service-card">
+                    <span class="service-icon">🎉</span>
+                    <h3>Event Coverage</h3>
+                    <p>On-site coverage for menu launches and special events with real-time social amplification.</p>
+                    <div class="service-value">Value: $400/mo</div>
+                </div>
+
+                <div class="service-card">
+                    <span class="service-icon">📊</span>
+                    <h3>Strategy & Planning</h3>
+                    <p>Monthly strategy calls to align on goals, track performance, and optimize campaigns.</p>
+                    <div class="service-value">Included</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section-alt">
+        <div class="container">
+            <div class="pricing-container">
+                <h3>Investment</h3>
+                <span class="price-tag">$2,500</span>
+                <p class="price-period">per month</p>
+                <p class="pricing-note">Flexible terms • Month-to-month partnership</p>
+
+                <div class="value-table">
+                    <div class="value-row">
+                        <span>Platform Access</span>
+                        <span>$1,200/mo</span>
+                    </div>
+                    <div class="value-row">
+                        <span>Social Media Management</span>
+                        <span>$1,500/mo</span>
+                    </div>
+                    <div class="value-row">
+                        <span>Content Creation</span>
+                        <span>$800/mo</span>
+                    </div>
+                    <div class="value-row">
+                        <span>Photography & Video</span>
+                        <span>$600/mo</span>
+                    </div>
+                    <div class="value-row">
+                        <span>Event Coverage & Strategy</span>
+                        <span>$400/mo</span>
+                    </div>
+                    <div class="value-row">
+                        <span>TOTAL VALUE</span>
+                        <span>$4,500+/mo</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Partner -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Why Us</span>
+                <h2>Why Partner With Culture Media?</h2>
+            </div>
+
+            <div class="why-grid">
+                <div class="why-card">
+                    <h4>✓ Proven Track Record</h4>
+                    <p>We've already delivered results for Tutti Frutti West and St. Albert. We know your brand, your
+                        audience, and what works.</p>
+                </div>
+
+                <div class="why-card">
+                    <h4>✓ Platform + Service</h4>
+                    <p>You're not just paying for management — you're getting featured placement on Alberta's top
+                        lifestyle platform included.</p>
+                </div>
+
+                <div class="why-card">
+                    <h4>✓ Local Expertise</h4>
+                    <p>We know Alberta. We know what resonates with Albertans and drives foot traffic to local
+                        businesses.</p>
+                </div>
+
+                <div class="why-card">
+                    <h4>✓ Flexible Partnership</h4>
+                    <p>We work within your budget and adapt our approach to meet your specific goals and timeline.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="contact-section">
+        <div class="container">
+            <h2>Let's Connect</h2>
+            <p class="contact-description">Ready to grow Tutti Frutti's presence across Alberta? We'd love to discuss
+                how we can support your goals.</p>
+
+            <div class="contact-grid">
+                <div class="contact-item">
+                    📧 <a href="mailto:culturemedia101@gmail.com">culturemedia101@gmail.com</a>
+                </div>
+                <div class="contact-item">
+                    🌐 <a href="https://culturealberta.com">culturealberta.com</a>
+                </div>
+                <div class="contact-item">
+                    📱 <a href="https://instagram.com/culturealberta._">@culturealberta._</a>
+                </div>
+            </div>
+
+            <p style="margin-top: 64px; font-size: 18px; opacity: 0.9;">Thank you for considering this partnership.</p>
+        </div>
+    </section>
+
+    <script>
+        // Particles Background
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        const particleCount = 50;
+        const colors = ['0, 0, 0', '102, 102, 102', '153, 153, 153'];
+
+        canvas.width = window.innerWidth;
+        canvas.height = document.body.scrollHeight;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+
+            draw() {
+                ctx.fillStyle = `rgba(${this.color}, 0.5)`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function init() {
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < 120) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(${colors[0]}, ${0.15 * (1 - distance / 120)})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+
+        init();
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = document.body.scrollHeight;
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Auto-Save CM Favicons</title>
+</head>
+
+<body>
+    <h1>Generating and Saving CM Favicons...</h1>
+    <p id="status">Generating files...</p>
+
+    <script>
+        function drawCMFavicon(size) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Draw grey circle
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = size * 0.48;
+
+            ctx.fillStyle = '#808080';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw white CM letters side by side
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const fontSize = size * 0.32;
+            ctx.font = `900 ${fontSize}px Inter, Arial, sans-serif`;
+
+            const letterSpacing = size * 0.15;
+            ctx.fillText('C', centerX - letterSpacing, centerY);
+            ctx.fillText('M', centerX + letterSpacing, centerY);
+
+            return canvas;
+        }
+
+        function downloadFile(canvas, filename) {
+            return new Promise((resolve) => {
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    setTimeout(resolve, 500);
+                });
+            });
+        }
+
+        async function generateAll() {
+            const status = document.getElementById('status');
+
+            status.textContent = 'Generating icon.png (512x512)...';
+            await downloadFile(drawCMFavicon(512), 'icon.png');
+
+            status.textContent = 'Generating apple-icon.png (180x180)...';
+            await downloadFile(drawCMFavicon(180), 'apple-icon.png');
+
+            status.textContent = 'Generating favicon.ico (32x32)...';
+            await downloadFile(drawCMFavicon(32), 'favicon.ico');
+
+            status.textContent = '✅ All files generated! Check your Downloads folder and move them to public/';
+        }
+
+        // Auto-start generation
+        generateAll();
+    </script>
+</body>
+
+</html>

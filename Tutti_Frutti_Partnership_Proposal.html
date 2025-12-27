@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Culture Alberta × Tutti Frutti - Partnership Proposal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: #fafafa;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E53 100%);
+            color: white;
+            padding: 60px 50px;
+            text-align: center;
+        }
+
+        .logo-container {
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            height: 100px;
+            width: auto;
+            background: white;
+            padding: 15px;
+            border-radius: 50%;
+        }
+
+        h1 {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 20px;
+            opacity: 0.95;
+            font-weight: 400;
+        }
+
+        .date {
+            font-size: 14px;
+            opacity: 0.85;
+            margin-top: 8px;
+        }
+
+        /* Content Sections */
+        .section {
+            padding: 60px 50px;
+        }
+
+        .section-alt {
+            background: #f8f9fa;
+        }
+
+        .section-header {
+            margin-bottom: 40px;
+        }
+
+        .section-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+
+        h2 {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: #1a1a1a;
+        }
+
+        .section-description {
+            font-size: 18px;
+            color: #666;
+            line-height: 1.7;
+            max-width: 800px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .stat-card {
+            background: white;
+            border: 2px solid #f0f0f0;
+            padding: 32px 24px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 40px;
+            font-weight: 900;
+            color: #FF6B6B;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%);
+            border-left: 5px solid #FF6B6B;
+            padding: 32px;
+            border-radius: 8px;
+            margin: 32px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .highlight-box p {
+            font-size: 17px;
+            line-height: 1.8;
+            color: #444;
+            margin: 0;
+        }
+
+        /* Instagram Embeds */
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 50px 0;
+            justify-items: center;
+        }
+
+        .video-container {
+            text-align: center;
+        }
+
+        .video-container iframe {
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            max-width: 100%;
+        }
+
+        .video-caption {
+            margin-top: 16px;
+            font-size: 15px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* Service Cards */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin: 50px 0;
+        }
+
+        .service-card {
+            background: white;
+            border: 2px solid #f0f0f0;
+            padding: 36px 28px;
+            border-radius: 16px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .service-card:hover {
+            border-color: #FF6B6B;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(255, 107, 107, 0.15);
+        }
+
+        .service-icon {
+            font-size: 52px;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .service-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .service-card p {
+            font-size: 15px;
+            color: #666;
+            line-height: 1.7;
+            margin-bottom: 16px;
+        }
+
+        .service-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #FF6B6B;
+        }
+
+        /* Checklist */
+        .checklist {
+            list-style: none;
+            margin: 32px 0;
+        }
+
+        .checklist li {
+            padding: 18px 0;
+            font-size: 17px;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .checklist li:last-child {
+            border-bottom: none;
+        }
+
+        .checklist li::before {
+            content: '✓';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+            color: white;
+            border-radius: 50%;
+            font-weight: 800;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* Pricing Section */
+        .pricing-container {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 60px;
+            border-radius: 20px;
+            text-align: center;
+            margin: 50px 0;
+            box-shadow: 0 12px 48px rgba(30, 58, 138, 0.3);
+        }
+
+        .pricing-container h3 {
+            color: white;
+            font-size: 28px;
+            margin-bottom: 24px;
+        }
+
+        .price-tag {
+            font-size: 72px;
+            font-weight: 900;
+            display: block;
+            margin: 20px 0;
+        }
+
+        .price-period {
+            font-size: 22px;
+            opacity: 0.95;
+        }
+
+        .pricing-note {
+            font-size: 17px;
+            opacity: 0.9;
+            margin-top: 24px;
+        }
+
+        /* Value Table */
+        .value-table {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 40px;
+            margin: 40px 0 0 0;
+        }
+
+        .value-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 17px;
+        }
+
+        .value-row:last-child {
+            border-bottom: none;
+            font-size: 22px;
+            font-weight: 800;
+            padding-top: 24px;
+            margin-top: 12px;
+            border-top: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Why Section */
+        .why-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .why-card {
+            background: white;
+            border: 2px solid #f0f0f0;
+            padding: 32px;
+            border-radius: 12px;
+        }
+
+        .why-card h4 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1a1a1a;
+        }
+
+        .why-card p {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* Contact Section */
+        .contact-section {
+            background: #1a1a1a;
+            color: white;
+            padding: 60px 50px;
+            text-align: center;
+        }
+
+        .contact-section h2 {
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .contact-description {
+            font-size: 18px;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+
+        .contact-grid {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-top: 32px;
+        }
+
+        .contact-item {
+            font-size: 17px;
+        }
+
+        .contact-item a {
+            color: #FF8E53;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .contact-item a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+
+            .stats-grid,
+            .services-grid,
+            .video-grid,
+            .why-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section {
+                padding: 40px 30px;
+            }
+
+            .header {
+                padding: 40px 30px;
+            }
+
+            h1 {
+                font-size: 32px;
+            }
+
+            h2 {
+                font-size: 28px;
+            }
+
+            .pricing-container {
+                padding: 40px 30px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo-container">
+                <img src="uploaded_image_1_1766795306726.png" alt="Tutti Frutti" class="logo">
+            </div>
+            <h1>Partnership Proposal</h1>
+            <p class="subtitle">Culture Alberta × Tutti Frutti Alberta</p>
+            <p class="date">December 2025</p>
+        </div>
+        <!-- About -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-tag">About Us</span>
+                <h2>Alberta's Digital Media Partner</h2>
+                <p class="section-description">Culture Alberta is a digital media agency dedicated to showcasing the
+                    best of Alberta's food, entertainment, and lifestyle scene. Based in Edmonton, we connect local
+                    businesses with engaged audiences across the province through authentic storytelling and strategic
+                    campaigns.</p>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-number">55,000+</span>
+                    <span class="stat-label">Monthly Sessions</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">5,000+</span>
+                    <span class="stat-label">Newsletter Subscribers</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-number">Growing</span>
+                    <span class="stat-label">Social Following</span>
+                </div>
+            </div>
+        </div>
+        <!-- Success Story -->
+        <div class="section section-alt">
+            <div class="section-header">
+                <span class="section-tag">Proven Results</span>
+                <h2>Recent Success: Tutti Frutti Campaign</h2>
+                <p class="section-description">We recently partnered with <strong>Tutti Frutti West</strong> and
+                    <strong>Tutti Frutti St. Albert</strong> on a giveaway campaign celebrating their new menu launch.
+                </p>
+            </div>
+            <div class="highlight-box">
+                <p><strong>Campaign Results:</strong> Hundreds of entries within 48 hours, strong engagement across
+                    Instagram and culturealberta.com, increased brand visibility for both locations, new follower
+                    growth, and positive community response. This successful partnership laid the foundation for a
+                    broader relationship.</p>
+            </div>
+            <div class="video-grid">
+                <div class="video-container">
+                    <iframe src="https://www.instagram.com/p/DPux_eej2we/embed" width="400" height="600" frameborder="0"
+                        scrolling="no" allowtransparency="true"></iframe>
+                    <p class="video-caption">📹 Campaign Video</p>
+                </div>
+                <div class="video-container">
+                    <iframe src="https://www.instagram.com/p/DRBjikjEVwY/embed" width="400" height="600" frameborder="0"
+                        scrolling="no" allowtransparency="true"></iframe>
+                    <p class="video-caption">📹 Content Creation</p>
+                </div>
+            </div>
+            <p style="text-align: center; font-size: 15px; color: #888; font-style: italic;">Real videos created for
+                Tutti Frutti West and St. Albert campaigns</p>
+        </div>
+        <!-- What You Get -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-tag">Complete Package</span>
+                <h2>What You Get Every Month</h2>
+                <p class="section-description">A comprehensive partnership that handles everything from content creation
+                    to strategic growth</p>
+            </div>
+            <div class="services-grid">
+                <div class="service-card">
+                    <span class="service-icon">🌐</span>
+                    <h3>Platform Access</h3>
+                    <p>FREE access to culturealberta.com — Featured in guides, roundups, newsletters reaching 5,000+
+                        Alberta foodies. SEO benefits included.</p>
+                    <div class="service-value">Value: $1,200/month</div>
+                </div>
+                <div class="service-card">
+                    <span class="service-icon">📱</span>
+                    <h3>Social Media Management</h3>
+                    <p>Dedicated management of ALL Tutti Frutti Alberta pages — content scheduling, community
+                        engagement, and growth strategy.</p>
+                    <div class="service-value">Value: $1,500/month</div>
+                </div>
+                <div class="service-card">
+                    <span class="service-icon">✨</span>
+                    <h3>Content Creation</h3>
+                    <p>4+ high-quality posts per month — shared on our platforms and provided for your own use.</p>
+                    <div class="service-value">Value: $800/month</div>
+                </div>
+                <div class="service-card">
+                    <span class="service-icon">📸</span>
+                    <h3>Photography & Video</h3>
+                    <p>Professional food photography and engaging reels to showcase your brand and drive customer
+                        interest.</p>
+                    <div class="service-value">Value: $600/month</div>
+                </div>
+                <div class="service-card">
+                    <span class="service-icon">🎉</span>
+                    <h3>Event Coverage</h3>
+                    <p>On-site coverage for menu launches, special events, and seasonal promotions with real-time
+                        amplification.</p>
+                    <div class="service-value">Value: $400/month</div>
+                </div>
+                <div class="service-card">
+                    <span class="service-icon">📊</span>
+                    <h3>Strategy & Planning</h3>
+                    <p>Monthly strategy calls to align on goals, track performance, and optimize based on analytics.</p>
+                    <div class="service-value">Included</div>
+                </div>
+            </div>
+        </div>
+        <!-- Pricing -->
+        <div class="section section-alt">
+            <div class="pricing-container">
+                <h3>Investment</h3>
+                <span class="price-tag">$2,500</span>
+                <p class="price-period">per month</p>
+                <p class="pricing-note">Flexible terms available • Month-to-month partnership</p>
+                <div class="value-table">
+                    <div class="value-row">
+                        <span>Platform Access (culturealberta.com)</span>
+                        <span>$1,200/mo</span>
+                    </div>
+                    <div class="value-row">
+                        <span>Social Media Management</span>
+                        <span>$1,500/mo</span>
+                    </div>
+                    <div class="value-row">
+                        <span>Content Creation (4+ posts)</span>
+                        <span>$800/mo</span>
+                    </div>
+                    <div class="value-row">
+                        <span>Photography & Videography</span>
+                        <span>$600/mo</span>
+                    </div>
+                    <div class="value-row">
+                        <span>Event Coverage & Strategy</span>
+                        <span>$400/mo</span>
+                    </div>
+                    <div class="value-row">
+                        <span>TOTAL VALUE</span>
+                        <span>$4,500+/mo</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Why Partner -->
+        <div class="section">
+            <div class="section-header">
+                <span class="section-tag">Why Us</span>
+                <h2>Why Partner With Culture Alberta?</h2>
+            </div>
+            <div class="why-grid">
+                <div class="why-card">
+                    <h4>✓ Proven Track Record</h4>
+                    <p>We've already delivered results for Tutti Frutti West and St. Albert. We know your brand, your
+                        audience, and what works.</p>
+                </div>
+                <div class="why-card">
+                    <h4>✓ Platform + Service</h4>
+                    <p>You're not just paying for management — you're getting featured placement on Alberta's top
+                        lifestyle platform included.</p>
+                </div>
+                <div class="why-card">
+                    <h4>✓ Local Expertise</h4>
+                    <p>We know Alberta. We know what resonates with Edmontonians and Calgarians. We drive foot traffic
+                        to local businesses.</p>
+                </div>
+                <div class="why-card">
+                    <h4>✓ Flexible Partnership</h4>
+                    <p>We work within your budget and adapt our approach to meet your specific goals and timeline.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Contact -->
+        <div class="contact-section">
+            <h2>Let's Connect</h2>
+            <p class="contact-description">Ready to grow Tutti Frutti's presence across Alberta? We'd love to discuss
+                how we can support your goals.</p>
+            <div class="contact-grid">
+                <div class="contact-item">
+                    📧 <a href="mailto:culturemedia101@gmail.com">culturemedia101@gmail.com</a>
+                </div>
+                <div class="contact-item">
+                    🌐 <a href="https://culturealberta.com">culturealberta.com</a>
+                </div>
+                <div class="contact-item">
+                    📱 <a href="https://instagram.com/culturealberta._">@culturealberta._</a>
+                </div>
+            </div>
+            <p style="margin-top: 48px; font-size: 18px; opacity: 0.95;">Thank you for considering this partnership.</p>
+        </div>
+    </div>
+</body>
+
+</html>

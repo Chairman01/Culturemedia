@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Culture Media CM Favicon Generator</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        canvas {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: block;
+        }
+
+        button {
+            background: #000;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 10px 10px 0;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        .preview {
+            display: flex;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .preview-item {
+            text-align: center;
+        }
+
+        .preview-item img {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fff;
+        }
+
+        .preview-item p {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .success {
+            background: #10b981;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Culture Media CM Favicon Generator</h1>
+        <p>Generate your CM favicon - grey circle with white "CM" letters</p>
+
+        <div class="preview">
+            <div class="preview-item">
+                <canvas id="canvas512" width="512" height="512"></canvas>
+                <p>512x512 (icon.png)</p>
+            </div>
+            <div class="preview-item">
+                <canvas id="canvas180" width="180" height="180"></canvas>
+                <p>180x180 (apple-icon.png)</p>
+            </div>
+            <div class="preview-item">
+                <canvas id="canvas32" width="32" height="32"></canvas>
+                <p>32x32 (favicon preview)</p>
+            </div>
+        </div>
+
+        <button onclick="downloadIcon(512, 'icon')">Download icon.png (512x512)</button>
+        <button onclick="downloadIcon(180, 'apple-icon')">Download apple-icon.png (180x180)</button>
+        <button onclick="downloadIcon(32, 'favicon', true)">Download favicon.ico (32x32)</button>
+
+        <div class="success" id="success">
+            ✓ Downloaded! Place the files in your <code>public</code> folder
+        </div>
+
+        <hr style="margin: 40px 0; border: none; border-top: 1px solid #e0e0e0;">
+
+        <h3>Instructions:</h3>
+        <p style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffa500;">
+            <strong>Download buttons not working?</strong> Try this instead:<br><br>
+            <strong>RIGHT-CLICK</strong> on each favicon image above and select <strong>"Save Image As..."</strong><br>
+            Then save to: <code>c:\Users\Admin\Documents\culture-media-agency\public\</code>
+        </p>
+        <ol>
+            <li><strong>Right-click the 512x512 image</strong> → Save as → <code>icon.png</code></li>
+            <li><strong>Right-click the 180x180 image</strong> → Save as → <code>apple-icon.png</code></li>
+            <li><strong>Right-click the 32x32 image</strong> → Save as → <code>favicon.ico</code></li>
+            <li>Restart your dev server (npm run dev)</li>
+            <li>Your CM favicon will appear in browser tabs!</li>
+        </ol>
+    </div>
+
+    <script>
+        function drawCMFavicon(canvas, size) {
+            const ctx = canvas.getContext('2d');
+
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+
+            // Draw GREY circle (matching Culture Media branding)
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const radius = size * 0.48; // 96% of half the canvas
+
+            ctx.fillStyle = '#808080'; // Grey background
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw white "CM" letters SIDE BY SIDE
+            ctx.fillStyle = '#FFFFFF';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Font size relative to canvas size
+            const fontSize = size * 0.32;
+            ctx.font = `900 ${fontSize}px Inter, Arial, sans-serif`;
+
+            // Position letters horizontally side by side
+            const letterSpacing = size * 0.15;
+
+            ctx.fillText('C', centerX - letterSpacing, centerY);
+            ctx.fillText('M', centerX + letterSpacing, centerY);
+        }
+
+        // Draw all preview canvases
+        drawCMFavicon(document.getElementById('canvas512'), 512);
+        drawCMFavicon(document.getElementById('canvas180'), 180);
+        drawCMFavicon(document.getElementById('canvas32'), 32);
+
+        function downloadIcon(size, filename, isIco = false) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            drawCMFavicon(canvas, size);
+
+            canvas.toBlob(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename + (isIco ? '.ico' : '.png');
+                a.click();
+                URL.revokeObjectURL(url);
+
+                // Show success message
+                const successMsg = document.getElementById('success');
+                successMsg.style.display = 'block';
+                setTimeout(() => {
+                    successMsg.style.display = 'none';
+                }, 3000);
+            });
+        }
+    </script>
+</body>
+
+</html>
