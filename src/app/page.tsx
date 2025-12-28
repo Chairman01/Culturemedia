@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ParticlesBackground } from "@/components/ui/particles";
 import { TypingText } from "@/components/ui/typing-text";
+import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { ContactModal } from "@/components/ui/contact-modal";
 import { PhoneModal } from "@/components/ui/phone-modal";
 import { motion } from "framer-motion";
@@ -145,22 +146,18 @@ export default function Home() {
             </motion.div>
 
             {/* Trusted By / Stats Preview */}
-            <motion.div variants={fadeInUp} className="mt-16 grid grid-cols-2 gap-8 md:grid-cols-4 border-t border-gray-200 pt-8">
+            <motion.div variants={fadeInUp} className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-3 border-t border-gray-200 pt-8">
               <div>
-                <div className="text-3xl font-bold text-foreground">380K+</div>
+                <AnimatedCounter end={300000} suffix="+" className="text-3xl font-bold text-foreground" />
                 <div className="text-sm text-muted-foreground">Community Reach</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-foreground">700K+</div>
+                <AnimatedCounter end={1000000} suffix="+" className="text-3xl font-bold text-foreground" />
                 <div className="text-sm text-muted-foreground">Monthly Impressions</div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-foreground">100+</div>
+                <AnimatedCounter end={100} suffix="+" className="text-3xl font-bold text-foreground" />
                 <div className="text-sm text-muted-foreground">Campaigns Delivered</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-foreground">50+</div>
-                <div className="text-sm text-muted-foreground">Active Partners</div>
               </div>
             </motion.div>
           </motion.div>
@@ -168,7 +165,7 @@ export default function Home() {
       </section>
 
       {/* Value Proposition Section - Antigravity Inspired */}
-      <section id="platforms" className="relative py-32 overflow-hidden bg-white">
+      <section id="about" className="relative py-32 overflow-hidden bg-white">
         <div className="container mx-auto px-4 md:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -315,6 +312,50 @@ export default function Home() {
         </div>
       </section>
 
+
+
+      {/* Hyper-Local Coverage Section */}
+      <section className="relative py-24 bg-white">
+        <div className="container mx-auto px-4 md:px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              Hyper-Local Coverage
+            </h2>
+            <p className="text-lg text-muted-foreground mb-12">
+              We know Alberta inside and out
+            </p>
+
+            <div className="flex flex-wrap gap-4 items-center justify-center">
+              {[
+                { name: "CALGARY", color: "bg-red-600 hover:bg-red-700" },
+                { name: "EDMONTON", color: "bg-blue-600 hover:bg-blue-700" },
+                { name: "RED DEER", color: "bg-gray-100 hover:bg-gray-200 text-gray-700" },
+                { name: "LETHBRIDGE", color: "bg-gray-100 hover:bg-gray-200 text-gray-700" },
+                { name: "& MORE", color: "bg-gray-100 hover:bg-gray-200 text-gray-700" }
+              ].map((location, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <div className={`px-8 py-3 rounded-full font-bold text-sm ${location.color} ${location.color.includes('gray') ? '' : 'text-white'} transition-all cursor-pointer shadow-md`}>
+                    {location.name}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Services Section */}
       <section id="services" className="relative py-24 md:py-32">
         <div className="container mx-auto px-4 md:px-6">
@@ -394,9 +435,9 @@ export default function Home() {
       </section>
 
       {/* Why Us Section */}
-      <section id="about" className="relative py-24 bg-gray-50/50">
+      <section id="platforms" className="relative py-16 bg-gray-50/50">
         <div className="container mx-auto px-4 md:px-6">
-          <div className="grid gap-12 lg:grid-cols-2 items-center">
+          <div className="grid gap-8 lg:grid-cols-2 items-stretch">
             <motion.div
               initial={{ opacity: 0, x: -50 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -405,66 +446,197 @@ export default function Home() {
               <h2 className="mb-6 text-3xl font-bold md:text-5xl text-foreground">
                 Your Strategic <span className="text-[#808080]">Growth Partner</span>
               </h2>
-              <div className="space-y-6 text-lg text-muted-foreground">
+              <div className="space-y-4 text-lg text-muted-foreground">
                 <p>
                   Culture Media is a full-service digital marketing agency specializing in the Alberta and Canadian markets. We've helped countless brands transform their digital presence and achieve sustainable growth.
                 </p>
                 <p>
                   Our approach is built on partnership, not transactions. We work primarily with retainer clients because we believe the best results come from deep collaboration and continuous optimization over time.
                 </p>
-                <div className="pt-4">
-                  <h3 className="text-foreground font-bold mb-4">Why Partner With Us?</h3>
-                  <ul className="space-y-4">
-                    {[
-                      "Local Expertise: Deep understanding of Alberta markets.",
-                      "Full-Service Solutions: From strategy to execution.",
-                      "Dedicated Partnership: Invested in your long-term success."
-                    ].map((item, i) => (
-                      <li key={i} className="flex items-center gap-3">
-                        <div className="h-2 w-2 rounded-full bg-[#808080]" />
-                        <span className="text-foreground">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
+              </div>
+
+              {/* Why Partner With Us Cards */}
+              <div className="mt-8">
+                <h3 className="text-2xl font-bold text-foreground mb-6">Why Partner With Us?</h3>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {[
+                    {
+                      icon: Zap,
+                      title: "Viral Content",
+                      description: "Our team crafts share-worthy content that gets your brand noticed"
+                    },
+                    {
+                      icon: Target,
+                      title: "Targeted Reach",
+                      description: "Connect with Calgary & Edmonton's most engaged audiences"
+                    },
+                    {
+                      icon: BarChart3,
+                      title: "Proven Results",
+                      description: "Data-driven campaigns that deliver measurable ROI"
+                    },
+                    {
+                      icon: Users,
+                      title: "Community Trust",
+                      description: "Built on 50K+ followers who trust our recommendations"
+                    },
+                    {
+                      icon: Sparkles,
+                      title: "Creative Excellence",
+                      description: "In-house team dedicated to making your brand shine"
+                    },
+                    {
+                      icon: Globe,
+                      title: "Local Expertise",
+                      description: "Deep understanding of Alberta's culture and trends"
+                    }
+                  ].map((benefit, index) => {
+                    const Icon = benefit.icon;
+                    return (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <Card className="h-full p-4 border-gray-200 bg-white hover:shadow-lg transition-all duration-300">
+                          <div className="mb-3 inline-block rounded-lg bg-blue-50 p-2">
+                            <Icon className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <h3 className="mb-2 text-base font-bold text-foreground">{benefit.title}</h3>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{benefit.description}</p>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </div>
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, x: 50 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="relative aspect-square rounded-2xl bg-white p-8 shadow-xl border border-gray-100 flex flex-col justify-center"
+              className="relative bg-white rounded-2xl p-6 shadow-xl border border-gray-100"
             >
-              <div className="text-center mb-8">
-                <h3 className="text-2xl font-bold text-foreground mb-2">Our Media Platforms</h3>
-                <p className="text-muted-foreground">Proprietary channels reaching Alberta's most engaged audiences</p>
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-bold text-foreground mb-3">Our Media Platforms</h3>
+                <p className="text-sm text-muted-foreground mb-4">Proprietary channels reaching Alberta's most engaged audiences</p>
+
+                {/* Free Access Highlight */}
+                <div className="inline-block bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl px-6 py-3 mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-600 text-white rounded-full p-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <div className="text-base font-bold text-blue-900">Free Platform Access</div>
+                      <div className="text-xs text-blue-700">Get featured across all our platforms when you partner with us</div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-6">
-                <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-foreground">Culture Alberta</span>
-                    <span className="text-gray-600 text-sm">@culturealberta</span>
+              <div className="space-y-4">
+                {/* Our Media Platforms - Unified Display */}
+                <div className="overflow-hidden rounded-xl border border-gray-200 hover:border-blue-400 transition-all duration-300 hover:shadow-2xl bg-white group">
+                  <div className="block transition-transform duration-300 group-hover:scale-[1.01]">
+                    <div className="p-6">
+                      <Image
+                        src="/our-media-platforms.png"
+                        alt="Our Media Platforms - Instagram, Website, and Newsletter"
+                        width={1200}
+                        height={600}
+                        className="w-full h-auto rounded-lg shadow-lg"
+                        priority
+                      />
+                    </div>
                   </div>
-                  <div className="text-3xl font-bold text-foreground mb-1">290K+</div>
-                  <div className="text-sm text-muted-foreground">Community Followers</div>
-                </div>
 
-                <div className="bg-gray-50 p-6 rounded-xl border border-gray-100">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-bold text-foreground">Culture YYC</span>
-                    <span className="text-gray-600 text-sm">@cultureyyc</span>
+                  {/* Platform Links */}
+                  <div className="px-4 pb-4 space-y-3">
+                    <div className="text-center pb-3 border-b border-gray-100">
+                      <h3 className="text-base font-bold text-foreground mb-1">Our Media Platforms</h3>
+                      <p className="text-xs text-muted-foreground">Proprietary channels reaching Alberta's most engaged audiences</p>
+                    </div>
+
+                    {/* Instagram Profiles */}
+                    <div className="space-y-2">
+                      <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Instagram</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <a
+                          href="https://www.instagram.com/culturealberta._/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-gradient-to-r from-blue-50 to-blue-100 text-xs text-blue-700 font-semibold hover:from-blue-100 hover:to-blue-200 hover:shadow-md transition-all duration-300 hover:scale-105"
+                        >
+                          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                          </svg>
+                          <div className="text-left min-w-0">
+                            <div className="font-bold truncate">@culturealberta._</div>
+                            <div className="text-[10px] opacity-75">19K followers</div>
+                          </div>
+                        </a>
+                        <a
+                          href="https://www.instagram.com/cultureyyc._/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-gradient-to-r from-red-50 to-red-100 text-xs text-red-700 font-semibold hover:from-red-100 hover:to-red-200 hover:shadow-md transition-all duration-300 hover:scale-105"
+                        >
+                          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+                          </svg>
+                          <div className="text-left min-w-0">
+                            <div className="font-bold truncate">@cultureyyc._</div>
+                            <div className="text-[10px] opacity-75">20.8K followers</div>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Website & Newsletter */}
+                    <div className="space-y-2">
+                      <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Website & Newsletter</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <a
+                          href="https://www.culturealberta.com"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-gradient-to-r from-green-50 to-green-100 text-xs text-green-700 font-semibold hover:from-green-100 hover:to-green-200 hover:shadow-md transition-all duration-300 hover:scale-105"
+                        >
+                          <Globe className="w-3.5 h-3.5 flex-shrink-0" />
+                          <div className="text-left min-w-0">
+                            <div className="font-bold truncate">culturealberta.com</div>
+                            <div className="text-[10px] opacity-75">60K+ monthly views</div>
+                          </div>
+                        </a>
+                        <a
+                          href="https://www.culturealberta.com"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-2 rounded-lg bg-gradient-to-r from-purple-50 to-purple-100 text-xs text-purple-700 font-semibold hover:from-purple-100 hover:to-purple-200 hover:shadow-md transition-all duration-300 hover:scale-105"
+                        >
+                          <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          <div className="text-left min-w-0">
+                            <div className="font-bold truncate">Newsletter</div>
+                            <div className="text-[10px] opacity-75">2,500+ subscribers</div>
+                          </div>
+                        </a>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-3xl font-bold text-foreground mb-1">90K+</div>
-                  <div className="text-sm text-muted-foreground">Community Followers</div>
                 </div>
               </div>
             </motion.div>
           </div>
         </div>
       </section>
-
       {/* CTA Section */}
       <section id="contact" className="relative py-24 md:py-32 bg-black overflow-hidden">
         <ParticlesBackground
@@ -555,7 +727,7 @@ export default function Home() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-white mb-2">Location</h3>
-                      <p className="text-gray-200 group-hover:text-white transition-colors">Calgary, Alberta</p>
+                      <p className="text-gray-200 group-hover:text-white transition-colors">Edmonton & Calgary, Alberta</p>
                       <p className="text-gray-200 group-hover:text-white transition-colors">Canada</p>
                     </div>
                   </div>
@@ -580,21 +752,21 @@ export default function Home() {
 
               <ul className="space-y-4 mb-8 relative z-10">
                 <li className="flex items-start gap-3">
-                  <span className="text-blue-500 mt-1">•</span>
+                  <span className="text-blue-500 mt-1">â€¢</span>
                   <div>
                     <span className="font-bold text-white">Free Strategy Session:</span>
                     <span className="text-gray-300"> Discuss your goals and challenges with our team</span>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="text-blue-500 mt-1">•</span>
+                  <span className="text-blue-500 mt-1">â€¢</span>
                   <div>
                     <span className="font-bold text-white">Custom Proposals:</span>
                     <span className="text-gray-300"> Tailored strategies and transparent pricing</span>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="text-blue-500 mt-1">•</span>
+                  <span className="text-blue-500 mt-1">â€¢</span>
                   <div>
                     <span className="font-bold text-white">Retainer Programs:</span>
                     <span className="text-gray-300"> Flexible partnership models built for long-term success</span>
