@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Culture Media × Tutti Frutti - Partnership Proposal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Animated Gradient Background */
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: linear-gradient(135deg, #FDB913 0%, #FF6B35 50%, #FDB913 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            opacity: 0.03;
+        }
+
+        @keyframes gradientShift {
+
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 40px;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 100px 40px 60px;
+            background: linear-gradient(135deg, rgba(253, 185, 19, 0.03) 0%, rgba(255, 107, 53, 0.03) 100%);
+        }
+
+        .logo-container {
+            margin-bottom: 40px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .logo {
+            height: 140px;
+            width: auto;
+            filter: drop-shadow(0 8px 24px rgba(253, 185, 19, 0.3));
+        }
+
+        .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 100px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            letter-spacing: 0.5px;
+            animation: fadeInUp 0.6s ease-out 0.2s backwards;
+            box-shadow: 0 4px 16px rgba(253, 185, 19, 0.3);
+        }
+
+        h1 {
+            font-size: 72px;
+            font-weight: 900;
+            margin-bottom: 24px;
+            letter-spacing: -2px;
+            line-height: 1.1;
+            animation: fadeInUp 0.6s ease-out 0.4s backwards;
+            background: linear-gradient(135deg, #1a1a1a 0%, #666 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            color: #666;
+            font-weight: 500;
+            animation: fadeInUp 0.6s ease-out 0.6s backwards;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 40px;
+            margin-top: 80px;
+            padding-top: 60px;
+            border-top: 2px solid rgba(253, 185, 19, 0.2);
+            animation: fadeInUp 0.6s ease-out 0.8s backwards;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 52px;
+            font-weight: 900;
+            display: block;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Food Showcase Section */
+        .food-showcase {
+            padding: 80px 40px;
+            background: #fff;
+        }
+
+        /* Carousel Container */
+        .carousel-container {
+            position: relative;
+            margin-top: 48px;
+            overflow: hidden;
+        }
+
+        .carousel-wrapper {
+            display: flex;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            gap: 24px;
+        }
+
+        .food-item {
+            min-width: calc(33.333% - 16px);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .food-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 48px rgba(253, 185, 19, 0.2);
+        }
+
+        .food-item img {
+            width: 100%;
+            height: 320px;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Carousel Navigation */
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(253, 185, 19, 0.95);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            display: flex;
+            /* Hidden for auto-advance carousel */
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .carousel-nav:hover {
+            transform: translateY(-50%) scale(1.1);
+            background: rgba(255, 107, 53, 0.95);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .carousel-nav:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .carousel-nav.prev {
+            left: 16px;
+        }
+
+        .carousel-nav.next {
+            right: 16px;
+        }
+
+        .carousel-nav:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .carousel-nav:disabled:hover {
+            transform: translateY(-50%) scale(1);
+            box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4);
+        }
+
+        /* Section Styles */
+        section {
+            padding: 50px 40px;
+            position: relative;
+        }
+
+        .section-alt {
+            background: rgba(253, 185, 19, 0.02);
+        }
+
+        .section-header {
+            max-width: 800px;
+            margin-bottom: 48px;
+        }
+
+        .section-tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 52px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            letter-spacing: -1.5px;
+            line-height: 1.2;
+        }
+
+        h3 {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .section-description {
+            font-size: 20px;
+            color: #666;
+            line-height: 1.8;
+        }
+
+        /* Video Grid */
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin: 50px 0;
+            justify-items: center;
+        }
+
+        .video-container {
+            text-align: center;
+        }
+
+        .video-container iframe {
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            max-width: 100%;
+        }
+
+        .video-caption {
+            margin-top: 16px;
+            font-size: 15px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* About Cards */
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin: 48px 0;
+        }
+
+        .about-card {
+            background: white;
+            border: 2px solid rgba(253, 185, 19, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.5s ease-out backwards;
+        }
+
+        .about-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .about-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .about-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 48px rgba(253, 185, 19, 0.15);
+            border-color: rgba(253, 185, 19, 0.5);
+        }
+
+        .about-card h4 {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: #FF6B35;
+        }
+
+        .about-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .about-card li {
+            padding: 12px 0;
+            padding-left: 32px;
+            position: relative;
+            font-size: 17px;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .about-card li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #FDB913;
+            font-weight: 900;
+            font-size: 20px;
+        }
+
+        /* Services Grid */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin: 48px 0;
+        }
+
+        .service-card {
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 36px 28px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            text-align: center;
+            animation: fadeInUp 0.5s ease-out backwards;
+        }
+
+        .service-card:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .service-card:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .service-card:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .service-card:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .service-card:nth-child(5) {
+            animation-delay: 0.25s;
+        }
+
+        .service-card:nth-child(6) {
+            animation-delay: 0.3s;
+        }
+
+        .service-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 48px rgba(253, 185, 19, 0.15);
+            border-color: rgba(253, 185, 19, 0.3);
+        }
+
+        .service-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .service-card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .service-card p {
+            font-size: 15px;
+            color: #666;
+            line-height: 1.7;
+        }
+
+        /* Strategy Section */
+        .strategy-card {
+            background: linear-gradient(135deg, rgba(253, 185, 19, 0.05) 0%, rgba(255, 107, 53, 0.05) 100%);
+            border: 2px solid rgba(253, 185, 19, 0.3);
+            border-radius: 24px;
+            padding: 48px;
+            margin: 48px 0;
+            animation: fadeInScale 0.6s ease-out backwards;
+        }
+
+        .strategy-card h3 {
+            color: #FF6B35;
+            margin-bottom: 24px;
+        }
+
+        .strategy-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .strategy-list li {
+            padding: 16px 0;
+            padding-left: 48px;
+            position: relative;
+            font-size: 18px;
+            line-height: 1.7;
+        }
+
+        .strategy-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #FDB913;
+            font-weight: 900;
+            font-size: 28px;
+        }
+
+        /* Pricing Section */
+        .pricing-container {
+            background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%);
+            color: white;
+            padding: 80px 60px;
+            border-radius: 28px;
+            text-align: center;
+            box-shadow: 0 24px 64px rgba(253, 185, 19, 0.4);
+            animation: fadeInScale 0.6s ease-out backwards;
+            margin: 48px 0;
+        }
+
+        .pricing-container h3 {
+            font-size: 36px;
+            margin-bottom: 32px;
+            font-weight: 800;
+            color: white;
+        }
+
+        .price-tag {
+            font-size: 96px;
+            font-weight: 900;
+            display: block;
+            margin: 24px 0;
+            letter-spacing: -4px;
+        }
+
+        .price-period {
+            font-size: 28px;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        .pricing-note {
+            font-size: 19px;
+            opacity: 0.95;
+            margin-top: 32px;
+            font-weight: 500;
+        }
+
+        /* Why Grid */
+        .why-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin: 48px 0;
+        }
+
+        .why-card {
+            background: white;
+            border: 1px solid rgba(253, 185, 19, 0.2);
+            padding: 36px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            animation: fadeInUp 0.5s ease-out backwards;
+        }
+
+        .why-card:nth-child(1) {
+            animation-delay: 0.05s;
+        }
+
+        .why-card:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .why-card:nth-child(3) {
+            animation-delay: 0.15s;
+        }
+
+        .why-card:nth-child(4) {
+            animation-delay: 0.2s;
+        }
+
+        .why-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 36px rgba(253, 185, 19, 0.15);
+            border-color: rgba(253, 185, 19, 0.5);
+        }
+
+        .why-icon {
+            font-size: 40px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .why-card h4 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #FF6B35;
+        }
+
+        .why-card p {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.7;
+        }
+
+        /* Contact Section */
+        .contact-section {
+            background: #1a1a1a;
+            color: white;
+            padding: 80px 60px;
+            text-align: center;
+        }
+
+        .contact-section h2 {
+            color: white;
+            margin-bottom: 24px;
+        }
+
+        .contact-description {
+            font-size: 22px;
+            opacity: 0.9;
+            margin-bottom: 40px;
+        }
+
+        .contact-grid {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            flex-wrap: wrap;
+        }
+
+        .contact-item {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .contact-item a {
+            color: #FDB913;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .contact-item a:hover {
+            color: #FF6B35;
+        }
+
+        /* Animations */
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-12px);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* Challenge Card Hover Effects */
+        .challenge-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            border-left: 4px solid #FF6B35 !important;
+        }
+
+        .challenge-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(255, 107, 53, 0.15) !important;
+            border-left-width: 8px !important;
+            background: linear-gradient(to right, #fff, #fffaf5);
+        }
+
+        .challenge-card:hover h4 {
+            color: #FDB913 !important;
+            transform: translateX(4px);
+        }
+
+        .challenge-card h4 {
+            transition: all 0.3s ease;
+        }
+
+        /* Platform Image Hover Glow */
+        .platform-image:hover {
+            box-shadow: 0 8px 32px rgba(253, 185, 19, 0.4), 0 0 40px rgba(253, 185, 19, 0.3) !important;
+            transform: translateY(-4px);
+        }
+
+        /* Platform Card Hover Glow */
+        .platform-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 0 20px rgba(253, 185, 19, 0.3) !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 44px;
+            }
+
+            h2 {
+                font-size: 36px;
+            }
+
+            h3 {
+                font-size: 24px;
+            }
+
+            .stats-grid,
+            .food-grid,
+            .about-grid,
+            .services-grid,
+            .why-grid {
+                grid-template-columns: 1fr;
+            }
+
+            section {
+                padding: 60px 24px;
+            }
+
+            .hero {
+                padding: 80px 24px 60px;
+            }
+
+            .pricing-container {
+                padding: 48px 32px;
+            }
+
+            .price-tag {
+                font-size: 72px;
+            }
+
+            .carousel-nav.prev {
+                left: 0px;
+            }
+
+            .carousel-nav.next {
+                right: 0px;
+            }
+
+            .food-item {
+                min-width: calc(100% - 0px);
+                /* Show 1 item on small screens */
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="gradient-bg"></div>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="logo-container" style="display: flex; align-items: center; justify-content: center; gap: 32px;">
+                <div
+                    style="background: rgba(0, 0, 0, 0.05); padding: 12px; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+                    <img src="./images/culture_media_logo.png" alt="Culture Media" class="logo">
+                </div>
+                <span style="font-size: 48px; font-weight: 900; color: #FDB913;">×</span>
+                <img src="./images/tutti_frutti_logo.png" alt="Tutti Frutti Breakfast & Lunch" class="logo">
+            </div>
+            <div class="badge">Partnership Proposal • January 2025</div>
+            <h1>Culture Media × Tutti Frutti</h1>
+            <p class="subtitle">Transform your breakfast & lunch destination into Alberta's most talked-about dining
+                experience</p>
+
+            <div class="stats-grid">
+                <div class="stat">
+                    <span class="stat-number">$2,500</span>
+                    <span class="stat-label">Monthly Investment</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">$4,500+</span>
+                    <span class="stat-label">Total Value Delivered</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">55K+</span>
+                    <span class="stat-label">Monthly Reach</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">290K+</span>
+                    <span class="stat-label">Community Size</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Tutti Frutti -->
+    <section class="section-alt">
+        <div class="container">
+            <div
+                style="display: flex; align-items: stretch; justify-content: space-between; gap: 60px; margin-bottom: 64px;">
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                    <span class="section-tag">YOUR BUSINESS</span>
+                    <h2 style="margin-top: 12px; margin-bottom: 24px;">About Tutti Frutti</h2>
+                    <p class="section-description" style="margin: 0; text-align: left; max-width: 100%;">You're
+                        Alberta's
+                        go-to breakfast & lunch destination, serving up joy on
+                        every plate. From decadent crepes and crispy waffles to hearty omelets and fresh fruit-topped
+                        dishes, you've mastered the art of making mornings memorable. With locations across Alberta,
+                        you've
+                        built a loyal following around quality ingredients, generous portions, and that warm,
+                        family-friendly atmosphere that keeps people coming back.</p>
+                </div>
+                <div
+                    style="flex: 1; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 48px rgba(0,0,0,0.12); display: flex;">
+                    <img src="./images/tutti_frutti_logo_wall_clean.png" alt="Tutti Frutti Logo on Wall"
+                        style="width: 100%; height: auto; object-fit: cover; display: block;">
+                </div>
+            </div>
+
+            <div class="about-grid" style="margin-top: 48px;">
+                <!-- What Makes You Special -->
+                <div class="about-card">
+                    <h4 style="display: flex; align-items: center; gap: 8px;">
+                        What Makes You Special
+                    </h4>
+                    <ul>
+                        <li><strong>Instagram-Worthy Food:</strong> Decadent, beautifully plated dishes made for sharing
+                        </li>
+                        <li><strong>Alberta's Favorite:</strong> A warm, welcoming atmosphere that spans across the
+                            province</li>
+                        <li><strong>Premium Quality:</strong> Fresh ingredients and handcrafted recipes in every single
+                            dish</li>
+                    </ul>
+                </div>
+
+                <!-- Growth Opportunities -->
+                <div class="about-card">
+                    <h4 style="display: flex; align-items: center; gap: 8px;">
+                        Growth Opportunities
+                    </h4>
+                    <ul>
+                        <li><strong>Digital Dominance:</strong> Tapping into your massive potential to turn scrollers
+                            into diners</li>
+                        <li><strong>Brand Visibility:</strong> Ensuring every Albertan knows your name and where to find
+                            you</li>
+                        <li><strong>Community Connection:</strong> Building a dominant digital footprint that drives
+                            foot traffic</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Food Showcase -->
+    <section class="food-showcase">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Your Delicious Story</span>
+                <h2>Food Worth Sharing</h2>
+                <p class="section-description">Every crepe, waffle, and omelet you craft is Instagram gold. We'll make
+                    sure Alberta sees it.</p>
+            </div>
+
+            <div class="carousel-container">
+                <button class="carousel-nav prev" onclick="moveCarousel(-1)">‹</button>
+                <button class="carousel-nav next" onclick="moveCarousel(1)">›</button>
+
+                <div class="carousel-wrapper" id="foodCarousel">
+                    <div class="food-item">
+                        <img src="./images/tutti_frutti_image_1.jpg" alt="Fresh Breakfast Bowl with Eggs">
+                    </div>
+                    <div class="food-item">
+                        <img src="./images/tutti_frutti_image_2.jpg" alt="Waffles and French Toast with Fresh Fruit">
+                    </div>
+                    <div class="food-item">
+                        <img src="./images/tutti_frutti_image_3.jpg" alt="French Toast with Maple Syrup">
+                    </div>
+                    <div class="food-item">
+                        <img src="./images/tutti_frutti_image_4.jpg" alt="Crepes and Breakfast Combo">
+                    </div>
+                    <div class="food-item">
+                        <img src="./images/tutti_frutti_image_5.jpg" alt="Omelet and Breakfast Dishes">
+                    </div>
+                    <div class="food-item">
+                        <img src="./images/tutti_frutti_image_6.png" alt="Hollandaise Sauce Drizzle">
+                    </div>
+                    <div class="food-item">
+                        <img src="./images/tutti_frutti_image_7.jpg" alt="Savory Crepes with Eggs and Bacon">
+                    </div>
+                    <div class="food-item">
+                        <img src="./images/tutti_frutti_image_8.jpg" alt="Tutti Frutti Coffee Service">
+                    </div>
+                    <div class="food-item">
+                        <img src="./images/tutti_frutti_image_9.jpg" alt="Sweet Crepes with Fresh Berries">
+                    </div>
+                    <!-- Clones for infinite loop -->
+                    <div class="food-item">
+                        <img src="./images/tutti_frutti_image_1.jpg" alt="Fresh Breakfast Bowl with Eggs">
+                    </div>
+                    <div class="food-item">
+                        <img src="./images/tutti_frutti_image_2.jpg" alt="Waffles and French Toast with Fresh Fruit">
+                    </div>
+                    <div class="food-item">
+                        <img src="./images/tutti_frutti_image_3.jpg" alt="French Toast with Maple Syrup">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- What You're Missing -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">The Gap</span>
+                <h2>What You're Missing Right Now</h2>
+                <p class="section-description">Great food and environment, but your digital presence isn't matching your
+                    in-restaurant experience.</p>
+            </div>
+
+            <!-- Challenge Grid -->
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
+                <div class="challenge-card"
+                    style="background: white; border-left: 4px solid #FF6B35; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                    <h4 style="color: #FF6B35; font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">Inactive Social
+                    </h4>
+                    <p style="margin: 0; font-size: 16px; color: #666; line-height: 1.6;">No posts since Nov 20th =
+                        missed daily customer connections</p>
+                </div>
+
+                <div class="challenge-card"
+                    style="background: white; border-left: 4px solid #FF6B35; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                    <h4 style="color: #FF6B35; font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">Low Visibility
+                    </h4>
+                    <p style="margin: 0; font-size: 16px; color: #666; line-height: 1.6;">Competitors post daily while
+                        your dishes go unseen</p>
+                </div>
+
+                <div class="challenge-card"
+                    style="background: white; border-left: 4px solid #FF6B35; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                    <h4 style="color: #FF6B35; font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">No Strategy</h4>
+                    <p style="margin: 0; font-size: 16px; color: #666; line-height: 1.6;">Sporadic content = not
+                        top-of-mind for brunch cravings</p>
+                </div>
+
+                <div class="challenge-card"
+                    style="background: white; border-left: 4px solid #FF6B35; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                    <h4 style="color: #FF6B35; font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">Untapped Reviews
+                    </h4>
+                    <p style="margin: 0; font-size: 16px; color: #666; line-height: 1.6;">Great food deserves great
+                        reviews, but missing community engagement means lost social proof</p>
+                </div>
+
+                <div class="challenge-card"
+                    style="background: white; border-left: 4px solid #FF6B35; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                    <h4 style="color: #FF6B35; font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">Missing Audience
+                    </h4>
+                    <p style="margin: 0; font-size: 16px; color: #666; line-height: 1.6;">Alberta's food community is
+                        ready to discover you, they just need regular reminders you exist</p>
+                </div>
+
+                <div class="challenge-card"
+                    style="background: white; border-left: 4px solid #FF6B35; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                    <h4 style="color: #FF6B35; font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">Weak Brand
+                        Presence
+                    </h4>
+                    <p style="margin: 0; font-size: 16px; color: #666; line-height: 1.6;">Without consistent digital
+                        visibility, your brand isn't building the recognition it deserves</p>
+                </div>
+            </div>
+
+            <div class="highlight-box" style="border-left-color: #FF6B35; margin-top: 16px;">
+                <p style="font-size: 19px; font-weight: 600; color: #1a1a1a;">
+                    <strong>You need a digital footprint:</strong> Every day without content is a day your competitors
+                    win over customers who could be yours. Your food is Instagram gold. It just needs to be
+                    shared consistently to turn scrollers into diners.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Proven Success Story -->
+    <section class="section-alt">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Proven Results</span>
+                <h2>We've Already Delivered Results Together</h2>
+                <p class="section-description">We've already worked with Tutti Frutti locations and delivered
+                    real results you can measure.</p>
+            </div>
+
+            <div class="highlight-box" style="border-left-color: #4CAF50; margin-top: 16px;">
+                <p style="font-size: 19px; font-weight: 600; color: #1a1a1a;">
+                    <strong>Recent Campaign:</strong> Our giveaway for Tutti Frutti West Edmonton and St. Albert
+                    reached over <strong>30,000+</strong> people. We got <strong>2,000+</strong> entries and drove real
+                    foot traffic
+                    to both locations.
+                </p>
+            </div>
+
+            <div class="video-grid">
+                <div class="video-container">
+                    <iframe src="https://www.instagram.com/p/DPux_eej2we/embed" width="400" height="600" frameborder="0"
+                        scrolling="no" allowtransparency="true"></iframe>
+                    <p class="video-caption">Campaign Announcement Video</p>
+                    <p style="text-align: center; font-size: 14px; color: #888; margin-top: 8px;">Engaging content that
+                        got
+                        people excited to visit</p>
+                </div>
+                <div class="video-container">
+                    <iframe src="https://www.instagram.com/p/DRBjikjEVwY/embed" width="400" height="600" frameborder="0"
+                        scrolling="no" allowtransparency="true"></iframe>
+                    <p class="video-caption">📹 Professional Food Content</p>
+                    <p style="text-align: center; font-size: 14px; color: #888; margin-top: 8px;">High-quality visuals
+                        that
+                        showcase your dishes perfectly</p>
+                </div>
+            </div>
+
+            <h3 style="text-align: center; margin: 60px 0 32px; font-size: 32px; font-weight: 800;">Campaign Giveaway
+                Posts</h3>
+
+            <div class="video-grid">
+                <div class="video-container">
+                    <iframe src="https://www.instagram.com/p/DRTTDOpkdC6/embed" width="400" height="600" frameborder="0"
+                        scrolling="no" allowtransparency="true"></iframe>
+                    <p class="video-caption">📸 St. Albert Giveaway Post</p>
+                    <p style="text-align: center; font-size: 14px; color: #888; margin-top: 8px;">Massive engagement and
+                        entries from the community</p>
+                </div>
+                <div class="video-container">
+                    <iframe src="https://www.instagram.com/p/DQLRXO4Drdf/embed" width="400" height="600" frameborder="0"
+                        scrolling="no" allowtransparency="true"></iframe>
+                    <p class="video-caption">📸 Terra Losa Giveaway Post</p>
+                    <p style="text-align: center; font-size: 14px; color: #888; margin-top: 8px;">Driving excitement and
+                        foot traffic to location</p>
+                </div>
+            </div>
+
+            <div class="stats-grid" style="margin-top: 60px; grid-template-columns: repeat(3, 1fr);">
+                <div class="stat">
+                    <span class="stat-number">30,000+</span>
+                    <span class="stat-label">People Reached</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">2,000+</span>
+                    <span class="stat-label">Entries in 48 Hours</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">2</span>
+                    <span class="stat-label">Locations Promoted</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Our Services -->
+    <section class="section-alt">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">What We Do</span>
+                <h2>Full-Spectrum Digital Growth</h2>
+                <p class="section-description">We handle everything so you can focus on serving exceptional meals. From
+                    content creation to community management, we're your dedicated digital team.</p>
+            </div>
+
+            <div class="services-grid">
+                <div class="service-card">
+
+                    <h3>Content Creation</h3>
+                    <p>Professional food photography & videography showcasing your dishes in their best light</p>
+                </div>
+
+                <div class="service-card">
+
+                    <h3>Social Media</h3>
+                    <p>Daily Instagram posts, stories, and reels that drive engagement and foot traffic</p>
+                </div>
+
+                <div class="service-card">
+
+                    <h3>Copywriting</h3>
+                    <p>Compelling captions and messaging that connect with your audience</p>
+                </div>
+
+                <div class="service-card">
+
+                    <h3>Community</h3>
+                    <p>Active engagement, responding to comments, building your loyal following</p>
+                </div>
+
+                <div class="service-card">
+
+                    <h3>Brand Strategy</h3>
+                    <p>Cohesive visual identity across all digital touchpoints</p>
+                </div>
+
+                <div class="service-card">
+
+                    <h3>Analytics</h3>
+                    <p>Monthly reporting showing real growth and ROI</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Partner Benefits -->
+    <section class="section-alt">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">PARTNER BENEFITS</span>
+                <h2>Free Access to Our Engaged Platforms</h2>
+                <p class="section-description">When you partner with us, you get way more than social media management.
+                    You get featured placement across all our channels at no extra cost.</p>
+            </div>
+
+            <!-- Media Platforms Visual -->
+            <div style="margin-top: 32px;">
+                <!-- Media Platforms Image -->
+                <div style="margin-bottom: 48px; text-align: center;">
+                    <img src="./images/our_platforms.jpg" alt="Our Media Platforms" class="platform-image"
+                        style="width: 100%; max-width: 1000px; height: auto; border-radius: 24px; box-shadow: 0 20px 48px rgba(0, 0, 0, 0.12); transition: all 0.3s ease;">
+                </div>
+
+                <h3 style="text-align: center; font-size: 32px; font-weight: 800; margin-bottom: 12px; color: #1a1a1a;">
+                    Our Media Platforms</h3>
+                <p style="text-align: center; font-size: 17px; color: #666; margin-bottom: 48px;">Proprietary channels
+                    reaching Alberta's most engaged audiences</p>
+
+                <!-- Platform Cards Grid -->
+                <div
+                    style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; max-width: 900px; margin: 0 auto;">
+                    <!-- Instagram Edmonton -->
+                    <a href="https://www.instagram.com/culturealberta._/" target="_blank"
+                        style="text-decoration: none; display: block;">
+                        <div class="platform-card"
+                            style="background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.3s ease;">
+                            <div
+                                style="background: #2196F3; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <span style="color: white; font-size: 22px;">📱</span>
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; color: #1565C0; font-size: 17px;">@culturealberta._</div>
+                                <div style="color: #1976D2; font-size: 15px; font-weight: 500;">19.1K followers</div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Instagram Calgary -->
+                    <a href="https://www.instagram.com/cultureyyc._/" target="_blank"
+                        style="text-decoration: none; display: block;">
+                        <div class="platform-card"
+                            style="background: linear-gradient(135deg, #FCE4EC 0%, #F8BBD0 100%); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.3s ease;">
+                            <div
+                                style="background: #E91E63; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <span style="color: white; font-size: 22px;">📱</span>
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; color: #C2185B; font-size: 17px;">@cultureyyc._</div>
+                                <div style="color: #D81B60; font-size: 15px; font-weight: 500;">21K followers</div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Website -->
+                    <a href="https://www.culturealberta.com/" target="_blank"
+                        style="text-decoration: none; display: block;">
+                        <div class="platform-card"
+                            style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.3s ease;">
+                            <div
+                                style="background: #4CAF50; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <span style="color: white; font-size: 22px;">🌐</span>
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; color: #2E7D32; font-size: 17px;">culturealberta.com</div>
+                                <div style="color: #388E3C; font-size: 15px; font-weight: 500;">60K+ monthly views</div>
+                            </div>
+                        </div>
+                    </a>
+
+                    <!-- Newsletter -->
+                    <a href="https://www.culturealberta.com/" target="_blank"
+                        style="text-decoration: none; display: block;">
+                        <div class="platform-card"
+                            style="background: linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.3s ease;">
+                            <div
+                                style="background: #9C27B0; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <span style="color: white; font-size: 22px;">📧</span>
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; color: #7B1FA2; font-size: 17px;">Newsletter</div>
+                                <div style="color: #8E24AA; font-size: 15px; font-weight: 500;">5,500+ subscribers</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Benefits Summary -->
+                <p
+                    style="font-size: 19px; font-weight: 600; color: #1a1a1a; margin-top: 60px; line-height: 1.8; text-align: left;">
+                    Building a strong social media presence takes time and consistent effort. By partnering with
+                    Culture Media, you skip that learning curve and tap directly into our engaged community of
+                    <strong>100,000+ local eyes</strong>. <strong>Tutti Frutti gets immediate visibility</strong>
+                    to Edmonton foodies actively looking for their next spot, and this exposure is
+                    <strong>included in your partnership package at no extra cost</strong>.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Our Strategy -->
+    <section class="section-alt">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">The Plan</span>
+                <h2>Your Growth Roadmap</h2>
+                <p class="section-description">Here's how we'll transform Tutti Frutti into Alberta's most visible
+                    breakfast & lunch destination</p>
+            </div>
+
+
+            <!-- Roadmap Timeline -->
+            <div style="position: relative; margin: 60px 0;">
+                <!-- Timeline Line -->
+                <div
+                    style="position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, #FDB913 0%, #FF6B35 100%); transform: translateX(-50%); z-index: 0;">
+                </div>
+
+                <!-- Phase 1 -->
+                <div style="position: relative; margin-bottom: 60px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+                        <div style="flex: 1; text-align: right; padding-right: 60px;">
+                            <div
+                                style="background: white; border: 2px solid #FDB913; border-radius: 20px; padding: 32px; box-shadow: 0 8px 32px rgba(253, 185, 19, 0.15);">
+                                <div
+                                    style="display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin-bottom: 16px;">
+                                    <h3 style="font-size: 24px; font-weight: 800; margin: 0; color: #FDB913;">Foundation
+                                        Phase</h3>
+                                    <div
+                                        style="background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 900;">
+                                        1</div>
+                                </div>
+                                <p
+                                    style="font-size: 14px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
+                                    Month 1-2</p>
+                                <p style="font-size: 16px; line-height: 1.7; color: #444; margin: 0;">Brand audit,
+                                    content calendar development, and professional photo/video shoots at your locations
+                                    to establish your visual identity</p>
+                            </div>
+                        </div>
+                        <div
+                            style="position: relative; z-index: 1; width: 60px; height: 60px; background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4); display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                            🚀
+                        </div>
+                        <div style="flex: 1;"></div>
+                    </div>
+                </div>
+
+                <!-- Phase 2 -->
+                <div style="position: relative; margin-bottom: 60px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+                        <div style="flex: 1;"></div>
+                        <div
+                            style="position: relative; z-index: 1; width: 60px; height: 60px; background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4); display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                            📱
+                        </div>
+                        <div style="flex: 1; padding-left: 60px;">
+                            <div
+                                style="background: white; border: 2px solid #FF8E53; border-radius: 20px; padding: 32px; box-shadow: 0 8px 32px rgba(255, 142, 83, 0.15);">
+                                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                                    <div
+                                        style="background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 900;">
+                                        2</div>
+                                    <h3 style="font-size: 24px; font-weight: 800; margin: 0; color: #FF6B35;">
+                                        Launch
+                                        Phase</h3>
+                                </div>
+                                <p
+                                    style="font-size: 14px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
+                                    Month 3-4</p>
+                                <p style="font-size: 16px; line-height: 1.7; color: #444; margin: 0;">Consistent
+                                    daily
+                                    posting across Instagram, building an engaged community, and creating
+                                    viral-worthy
+                                    reels that get people excited</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 3 -->
+                <div style="position: relative; margin-bottom: 60px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+                        <div style="flex: 1; text-align: right; padding-right: 60px;">
+                            <div
+                                style="background: white; border: 2px solid #FDB913; border-radius: 20px; padding: 32px; box-shadow: 0 8px 32px rgba(253, 185, 19, 0.15);">
+                                <div
+                                    style="display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin-bottom: 16px;">
+                                    <h3 style="font-size: 24px; font-weight: 800; margin: 0; color: #FDB913;">
+                                        Growth
+                                        Phase</h3>
+                                    <div
+                                        style="background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 900;">
+                                        3</div>
+                                </div>
+                                <p
+                                    style="font-size: 14px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
+                                    Month 5-6</p>
+                                <p style="font-size: 16px; line-height: 1.7; color: #444; margin: 0;">
+                                    User-generated
+                                    content campaigns, collaborations with local food influencers, and
+                                    optimization of
+                                    peak times for maximum impact</p>
+                            </div>
+                        </div>
+                        <div
+                            style="position: relative; z-index: 1; width: 60px; height: 60px; background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4); display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                            📈
+                        </div>
+                        <div style="flex: 1;"></div>
+                    </div>
+                </div>
+
+                <!-- Phase 4 - Ongoing -->
+                <div style="position: relative;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+                        <div style="flex: 1;"></div>
+                        <div
+                            style="position: relative; z-index: 1; width: 60px; height: 60px; background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4); display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                            ♾️
+                        </div>
+                        <div style="flex: 1; padding-left: 60px;">
+                            <div
+                                style="background: white; border: 2px solid #FF6B35; border-radius: 20px; padding: 32px; box-shadow: 0 8px 32px rgba(255, 107, 53, 0.15);">
+                                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                                    <div
+                                        style="background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: 900;">
+                                        ∞</div>
+                                    <h3 style="font-size: 24px; font-weight: 800; margin: 0; color: #FF6B35;">
+                                        Ongoing
+                                        Excellence</h3>
+                                </div>
+                                <p
+                                    style="font-size: 14px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
+                                    Continuous</p>
+                                <p style="font-size: 16px; line-height: 1.7; color: #444; margin: 0;">
+                                    Monthly
+                                    in-restaurant shoots, seasonal campaign development, and continuous
+                                    optimization
+                                    based on analytics to keep you ahead</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section>
+        <div class="container">
+            <div class="pricing-container">
+                <h3>Simple, Transparent Investment</h3>
+                <span class="price-tag">$2,500</span>
+                <p class="price-period">per month</p>
+                <p class="pricing-note">Full-service digital marketing • $4,500+ value • No long-term contract required
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Partner -->
+    <section class="section-alt">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Why Choose Us</span>
+                <h2>Why Tutti Frutti Needs Culture Media</h2>
+            </div>
+
+            <div class="why-grid">
+                <div class="why-card">
+                    <span class="why-icon">🎯</span>
+                    <h4>Alberta Experts</h4>
+                    <p>We know your market inside-out. Our 290K+ community is exactly who you want to reach.</p>
+                </div>
+
+                <div class="why-card">
+                    <span class="why-icon">📈</span>
+                    <h4>Proven Results</h4>
+                    <p>We reach over 1,000,000 Albertans monthly. We've helped Alberta restaurants grow from hidden gems
+                        to
+                        community staples.</p>
+                </div>
+
+                <div class="why-card">
+                    <span class="why-icon">🍽️</span>
+                    <h4>Food-Focused</h4>
+                    <p>We specialize in making food irresistible. Your dishes will look as good online as they taste in
+                        person.</p>
+                </div>
+
+                <div class="why-card">
+                    <span class="why-icon">🤝</span>
+                    <h4>Hands-Off for You</h4>
+                    <p>We handle everything. You run your restaurant, we'll bring the customers through your doors.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="contact-section">
+        <div class="container">
+            <h2>Let's Grow Together</h2>
+            <p class="contact-description">Ready to fill your tables and build your brand? Let's talk.</p>
+
+            <div class="contact-grid">
+                <div class="contact-item">
+                    Email: <a href="mailto:culturemedia101@gmail.com">culturemedia101@gmail.com</a>
+                </div>
+                <div class="contact-item">
+                    Website: <a href="https://culturemedia.ca" target="_blank">culturemedia.ca</a>
+                </div>
+                <div class="contact-item">
+                    Instagram: <a href="https://instagram.com/culturealberta._" target="_blank">@culturealberta._</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        let currentSlide = 0;
+        const slidesToShow = 3;
+        const totalSlides = 9; // Total original items
+        let isTransitioning = false;
+        let autoAdvanceTimer;
+
+        function moveCarousel(direction) {
+            if (isTransitioning) return;
+
+            const carousel = document.getElementById('foodCarousel');
+            const items = carousel.getElementsByClassName('food-item');
+            const slideWidth = items[0].offsetWidth;
+            const gap = 24;
+
+            isTransitioning = true;
+            carousel.style.transition = 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+
+            currentSlide += direction;
+
+            const offset = -(currentSlide * (slideWidth + gap));
+            carousel.style.transform = `translateX(${offset}px)`;
+
+            // Reset timer on manual interaction
+            resetAutoAdvance();
+
+            carousel.addEventListener('transitionend', function handleTransitionEnd() {
+                carousel.removeEventListener('transitionend', handleTransitionEnd);
+                isTransitioning = false;
+
+                if (currentSlide >= totalSlides) {
+                    carousel.style.transition = 'none';
+                    currentSlide = 0;
+                    carousel.style.transform = `translateX(0px)`;
+                } else if (currentSlide < 0) {
+                    carousel.style.transition = 'none';
+                    currentSlide = totalSlides - 1;
+                    const newOffset = -(currentSlide * (slideWidth + gap));
+                    carousel.style.transform = `translateX(${newOffset}px)`;
+                }
+            });
+        }
+
+        function resetAutoAdvance() {
+            clearInterval(autoAdvanceTimer);
+            startAutoAdvance();
+        }
+
+        function startAutoAdvance() {
+            autoAdvanceTimer = setInterval(() => {
+                if (!document.hidden) {
+                    moveCarousel(1);
+                }
+            }, 3000); // 3 seconds for better readability
+        }
+
+        // Initialize
+        window.addEventListener('load', () => {
+            startAutoAdvance();
+
+            // Pause on hover
+            const container = document.querySelector('.carousel-container');
+            container.addEventListener('mouseenter', () => clearInterval(autoAdvanceTimer));
+            container.addEventListener('mouseleave', startAutoAdvance);
+        });
+    </script>
+
+</body>
+
+</html>
