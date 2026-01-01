@@ -752,21 +752,21 @@ export default function Home() {
 
               <ul className="space-y-4 mb-8 relative z-10">
                 <li className="flex items-start gap-3">
-                  <span className="text-blue-500 mt-1">â€¢</span>
+                  <span className="text-blue-500 mt-1">•</span>
                   <div>
                     <span className="font-bold text-white">Free Strategy Session:</span>
                     <span className="text-gray-300"> Discuss your goals and challenges with our team</span>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="text-blue-500 mt-1">â€¢</span>
+                  <span className="text-blue-500 mt-1">•</span>
                   <div>
                     <span className="font-bold text-white">Custom Proposals:</span>
                     <span className="text-gray-300"> Tailored strategies and transparent pricing</span>
                   </div>
                 </li>
                 <li className="flex items-start gap-3">
-                  <span className="text-blue-500 mt-1">â€¢</span>
+                  <span className="text-blue-500 mt-1">•</span>
                   <div>
                     <span className="font-bold text-white">Retainer Programs:</span>
                     <span className="text-gray-300"> Flexible partnership models built for long-term success</span>
