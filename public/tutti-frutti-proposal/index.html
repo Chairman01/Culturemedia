@@ -127,6 +127,14 @@
             animation: fadeInUp 0.6s ease-out 0.8s backwards;
         }
 
+        .stats-grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 40px;
+            margin-top: 60px;
+            animation: fadeInUp 0.6s ease-out 0.8s backwards;
+        }
+
         .stat {
             text-align: center;
         }
@@ -771,11 +779,14 @@
             }
 
             .stats-grid,
+            .stats-grid-3,
             .food-grid,
             .about-grid,
             .services-grid,
-            .why-grid {
-                grid-template-columns: 1fr;
+            .why-grid,
+            .platforms-grid,
+            .video-grid {
+                grid-template-columns: 1fr !important;
             }
 
             section {
@@ -823,9 +834,7 @@
                 gap: 32px;
             }
 
-            .platforms-grid {
-                grid-template-columns: 1fr;
-            }
+
 
             /* Timeline Mobile */
             .timeline-line {
@@ -1343,7 +1352,7 @@
                 </div>
             </div>
 
-            <div class="stats-grid" style="margin-top: 60px; grid-template-columns: repeat(3, 1fr);">
+            <div class="stats-grid-3">
                 <div class="stat">
                     <span class="stat-number">30,000+</span>
                     <span class="stat-label">People Reached</span>
