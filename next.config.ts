@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
         source: '/tutti-frutti-proposal',
         destination: '/tutti-frutti-proposal/index.html',
       },
+      {
+        source: '/aef-proposal',
+        destination: '/aef-proposal/index.html',
+      },
     ];
   },
 };
