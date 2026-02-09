@@ -127,14 +127,6 @@
             animation: fadeInUp 0.6s ease-out 0.8s backwards;
         }
 
-        .stats-grid-3 {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 40px;
-            margin-top: 60px;
-            animation: fadeInUp 0.6s ease-out 0.8s backwards;
-        }
-
         .stat {
             text-align: center;
         }
@@ -611,41 +603,6 @@
             flex-wrap: wrap;
         }
 
-        /* Services Grid Base */
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
-            margin: 48px 0;
-        }
-
-        .service-card-base {
-            background: white;
-            border: 1px solid rgba(0, 0, 0, 0.08);
-            padding: 36px 28px;
-            border-radius: 20px;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-
-        .service-card-base:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 16px 48px rgba(253, 185, 19, 0.15);
-            border-color: rgba(253, 185, 19, 0.3);
-        }
-
-        .service-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 12px;
-        }
-
-        .service-desc {
-            font-size: 15px;
-            color: #666;
-            line-height: 1.7;
-        }
-
         .contact-item {
             font-size: 18px;
             color: rgba(255, 255, 255, 0.8);
@@ -734,36 +691,6 @@
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 0 20px rgba(253, 185, 19, 0.3) !important;
         }
 
-        /* Challenge Grid Base */
-        .challenge-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
-            margin-bottom: 32px;
-        }
-
-        .challenge-card-base {
-            background: white;
-            border-left: 4px solid #FF6B35;
-            padding: 24px;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        }
-
-        .challenge-title {
-            color: #FF6B35;
-            font-size: 20px;
-            font-weight: 800;
-            margin: 0 0 8px 0;
-        }
-
-        .challenge-desc {
-            margin: 0;
-            font-size: 16px;
-            color: #666;
-            line-height: 1.6;
-        }
-
         /* Responsive */
         @media (max-width: 768px) {
             h1 {
@@ -779,14 +706,11 @@
             }
 
             .stats-grid,
-            .stats-grid-3,
             .food-grid,
             .about-grid,
             .services-grid,
-            .why-grid,
-            .platforms-grid,
-            .video-grid {
-                grid-template-columns: 1fr !important;
+            .why-grid {
+                grid-template-columns: 1fr;
             }
 
             section {
@@ -818,264 +742,30 @@
                 /* Show 1 item on small screens */
             }
 
-            /* New Mobile Styles */
-            .hero-logos {
+            /* Roadmap Mobile */
+            .roadmap-row {
                 flex-direction: column;
-                gap: 16px;
+                gap: 24px !important;
             }
 
-            .hero-x {
-                transform: rotate(90deg);
-                margin: 8px 0;
-            }
-
-            .about-container {
-                flex-direction: column;
-                gap: 32px;
-            }
-
-
-
-            /* Timeline Mobile */
-            .timeline-line {
-                left: 28px !important;
-                transform: none !important;
-            }
-
-            .timeline-row {
-                flex-direction: column;
-                align-items: flex-start !important;
-                gap: 16px !important;
-                position: relative;
-            }
-
-            .timeline-spacer {
+            .roadmap-spacer {
                 display: none;
             }
 
-            .timeline-icon {
-                position: absolute;
-                left: 0;
-                top: 24px;
-                width: 56px !important;
-                height: 56px !important;
-                font-size: 24px !important;
+            .roadmap-content-wrapper {
+                text-align: center !important;
+                padding: 0 !important;
+                order: 2;
             }
 
-            .timeline-content-wrapper {
-                width: 100% !important;
-                padding-left: 72px !important;
-                padding-right: 0 !important;
-                text-align: left !important;
-                box-sizing: border-box;
+            .roadmap-icon-wrapper {
+                order: 1;
+                margin-bottom: 16px;
             }
 
-            .timeline-card {
-                padding: 24px !important;
-                text-align: left !important;
+            .timeline-line {
+                display: none;
             }
-
-            .timeline-card h3 {
-                font-size: 20px !important;
-            }
-
-            .timeline-header-group {
-                justify-content: flex-start !important;
-            }
-
-            .timeline-phase-num {
-                width: 40px !important;
-                height: 40px !important;
-                font-size: 18px !important;
-            }
-        }
-
-        /* Utility Classes for Refactoring */
-        .hero-logos {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 32px;
-        }
-
-        .hero-logo-bg {
-            background: rgba(0, 0, 0, 0.05);
-            padding: 12px;
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .hero-x {
-            font-size: 48px;
-            font-weight: 900;
-            color: #FDB913;
-            transition: transform 0.3s ease;
-        }
-
-        .about-container {
-            display: flex;
-            align-items: stretch;
-            justify-content: space-between;
-            gap: 60px;
-            margin-bottom: 64px;
-        }
-
-        .about-text {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .about-image {
-            flex: 1;
-            display: flex;
-        }
-
-        .about-image img {
-            width: 100%;
-            height: auto;
-            object-fit: cover;
-            display: block;
-            border-radius: 20px;
-        }
-
-        .platforms-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .platform-card {
-            background: white;
-            /* Fallback */
-            border-radius: 16px;
-            padding: 20px 24px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        /* Timeline Base Styles */
-        .timeline-line-base {
-            position: absolute;
-            left: 50%;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: linear-gradient(180deg, #FDB913 0%, #FF6B35 100%);
-            transform: translateX(-50%);
-            z-index: 0;
-        }
-
-        .timeline-card-base {
-            background: white;
-            border-radius: 20px;
-            padding: 32px;
-            position: relative;
-            z-index: 10;
-        }
-
-        .timeline-icon-base {
-            position: relative;
-            z-index: 10;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%);
-            border-radius: 50%;
-            border: 4px solid white;
-            box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-        }
-
-        /* Timeline Base Styles - Continued */
-        .timeline-container {
-            position: relative;
-            margin: 60px 0;
-        }
-
-        .timeline-line {
-            position: absolute;
-            left: 50%;
-            top: 0;
-            bottom: 0;
-            width: 3px;
-            background: linear-gradient(180deg, #FDB913 0%, #FF6B35 100%);
-            transform: translateX(-50%);
-            z-index: 0;
-        }
-
-        .timeline-phase {
-            position: relative;
-            margin-bottom: 60px;
-        }
-
-        .timeline-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 40px;
-        }
-
-        .timeline-content-wrapper {
-            flex: 1;
-        }
-
-        .timeline-spacer {
-            flex: 1;
-        }
-
-        .timeline-card {
-            background: white;
-            border-radius: 20px;
-            padding: 32px;
-            position: relative;
-            z-index: 1;
-            box-shadow: 0 8px 32px rgba(253, 185, 19, 0.15);
-            border: 2px solid #FDB913;
-        }
-
-        .timeline-icon {
-            position: relative;
-            z-index: 1;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%);
-            border-radius: 50%;
-            border: 4px solid white;
-            box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-        }
-
-        .text-right {
-            text-align: right;
-        }
-
-        .platform-card-wrapper {
-            text-decoration: none;
-            display: block;
-        }
-
-        .platform-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
         }
     </style>
 </head>
@@ -1086,22 +776,22 @@
     <!-- Hero -->
     <section class="hero">
         <div class="container">
-            <div class="logo-container hero-logos">
-                <div class="hero-logo-bg">
-                    <img src="/tutti-frutti-proposal/culture_media_logo.png" alt="Culture Media" class="logo">
+            <div class="logo-container" style="display: flex; align-items: center; justify-content: center; gap: 32px;">
+                <div
+                    style="background: rgba(0, 0, 0, 0.05); padding: 12px; border-radius: 16px; display: flex; align-items: center; justify-content: center;">
+                    <img src="./culture_media_logo.png" alt="Culture Media" class="logo">
                 </div>
-                <span class="hero-x">×</span>
-                <img src="/tutti-frutti-proposal/tutti_frutti_logo.png" alt="Tutti Frutti Breakfast & Lunch"
-                    class="logo">
+                <span style="font-size: 48px; font-weight: 900; color: #FDB913;">×</span>
+                <img src="./tutti_frutti_logo.png" alt="Tutti Frutti Breakfast & Lunch" class="logo">
             </div>
-            <div class="badge">Partnership Proposal • January 2025</div>
+            <div class="badge">Partnership Proposal • February 2026</div>
             <h1>Culture Media × Tutti Frutti</h1>
             <p class="subtitle">Transform your breakfast & lunch destination into Alberta's most talked-about dining
                 experience</p>
 
             <div class="stats-grid">
                 <div class="stat">
-                    <span class="stat-number">$1,500</span>
+                    <span class="stat-number">$2,500</span>
                     <span class="stat-label">Monthly Investment</span>
                 </div>
                 <div class="stat">
@@ -1110,11 +800,11 @@
                 </div>
                 <div class="stat">
                     <span class="stat-number">55K+</span>
-                    <span class="stat-label">Monthly Reach</span>
+                    <span class="stat-label">Monthly Network Reach</span>
                 </div>
                 <div class="stat">
                     <span class="stat-number">290K+</span>
-                    <span class="stat-label">Community Size</span>
+                    <span class="stat-label">Network Audience</span>
                 </div>
             </div>
         </div>
@@ -1123,8 +813,9 @@
     <!-- About Tutti Frutti -->
     <section class="section-alt">
         <div class="container">
-            <div class="about-container">
-                <div class="about-text">
+            <div
+                style="display: flex; align-items: stretch; justify-content: space-between; gap: 60px; margin-bottom: 64px;">
+                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
                     <span class="section-tag">YOUR BUSINESS</span>
                     <h2 style="margin-top: 12px; margin-bottom: 24px;">About Tutti Frutti</h2>
                     <p class="section-description" style="margin: 0; text-align: left; max-width: 100%;">You're
@@ -1136,8 +827,10 @@
                         built a loyal following around quality ingredients, generous portions, and that warm,
                         family-friendly atmosphere that keeps people coming back.</p>
                 </div>
-                <div class="about-image">
-                    <img src="/tutti-frutti-proposal/tutti_frutti_logo_wall_clean.jpg" alt="Tutti Frutti Logo on Wall">
+                <div
+                    style="flex: 1; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 48px rgba(0,0,0,0.12); display: flex;">
+                    <img src="./tutti_frutti_logo_wall_clean.png" alt="Tutti Frutti Logo on Wall"
+                        style="width: 100%; height: auto; object-fit: cover; display: block;">
                 </div>
             </div>
 
@@ -1191,45 +884,41 @@
 
                 <div class="carousel-wrapper" id="foodCarousel">
                     <div class="food-item">
-                        <img src="/tutti-frutti-proposal/tutti_frutti_image_1.jpg" alt="Fresh Breakfast Bowl with Eggs">
+                        <img src="./tutti_frutti_image_1.jpg" alt="Fresh Breakfast Bowl with Eggs">
                     </div>
                     <div class="food-item">
-                        <img src="/tutti-frutti-proposal/tutti_frutti_image_2.jpg"
-                            alt="Waffles and French Toast with Fresh Fruit">
+                        <img src="./tutti_frutti_image_2.jpg" alt="Waffles and French Toast with Fresh Fruit">
                     </div>
                     <div class="food-item">
-                        <img src="/tutti-frutti-proposal/tutti_frutti_image_3.jpg" alt="French Toast with Maple Syrup">
+                        <img src="./tutti_frutti_image_3.jpg" alt="French Toast with Maple Syrup">
                     </div>
                     <div class="food-item">
-                        <img src="/tutti-frutti-proposal/tutti_frutti_image_4.jpg" alt="Crepes and Breakfast Combo">
+                        <img src="./tutti_frutti_image_4.jpg" alt="Crepes and Breakfast Combo">
                     </div>
                     <div class="food-item">
-                        <img src="/tutti-frutti-proposal/tutti_frutti_image_5.jpg" alt="Omelet and Breakfast Dishes">
+                        <img src="./tutti_frutti_image_5.jpg" alt="Omelet and Breakfast Dishes">
                     </div>
                     <div class="food-item">
-                        <img src="/tutti-frutti-proposal/tutti_frutti_image_6.png" alt="Hollandaise Sauce Drizzle">
+                        <img src="./tutti_frutti_image_6.png" alt="Hollandaise Sauce Drizzle">
                     </div>
                     <div class="food-item">
-                        <img src="/tutti-frutti-proposal/tutti_frutti_image_7.jpg"
-                            alt="Savory Crepes with Eggs and Bacon">
+                        <img src="./tutti_frutti_image_7.jpg" alt="Savory Crepes with Eggs and Bacon">
                     </div>
                     <div class="food-item">
-                        <img src="/tutti-frutti-proposal/tutti_frutti_image_8.jpg" alt="Tutti Frutti Coffee Service">
+                        <img src="./tutti_frutti_image_8.jpg" alt="Tutti Frutti Coffee Service">
                     </div>
                     <div class="food-item">
-                        <img src="/tutti-frutti-proposal/tutti_frutti_image_9.jpg"
-                            alt="Sweet Crepes with Fresh Berries">
+                        <img src="./tutti_frutti_image_9.jpg" alt="Sweet Crepes with Fresh Berries">
                     </div>
                     <!-- Clones for infinite loop -->
                     <div class="food-item">
-                        <img src="/tutti-frutti-proposal/tutti_frutti_image_1.jpg" alt="Fresh Breakfast Bowl with Eggs">
+                        <img src="./tutti_frutti_image_1.jpg" alt="Fresh Breakfast Bowl with Eggs">
                     </div>
                     <div class="food-item">
-                        <img src="/tutti-frutti-proposal/tutti_frutti_image_2.jpg"
-                            alt="Waffles and French Toast with Fresh Fruit">
+                        <img src="./tutti_frutti_image_2.jpg" alt="Waffles and French Toast with Fresh Fruit">
                     </div>
                     <div class="food-item">
-                        <img src="/tutti-frutti-proposal/tutti_frutti_image_3.jpg" alt="French Toast with Maple Syrup">
+                        <img src="./tutti_frutti_image_3.jpg" alt="French Toast with Maple Syrup">
                     </div>
                 </div>
             </div>
@@ -1249,38 +938,54 @@
             </div>
 
             <!-- Challenge Grid -->
-            <div class="challenge-grid">
-                <div class="challenge-card challenge-card-base">
-                    <h4 class="challenge-title">Inactive Social</h4>
-                    <p class="challenge-desc">No posts since Nov 20th = missed daily customer connections</p>
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
+                <div class="challenge-card"
+                    style="background: white; border-left: 4px solid #FF6B35; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                    <h4 style="color: #FF6B35; font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">Inactive Social
+                    </h4>
+                    <p style="margin: 0; font-size: 16px; color: #666; line-height: 1.6;">No posts since Nov 20th =
+                        missed daily customer connections</p>
                 </div>
 
-                <div class="challenge-card challenge-card-base">
-                    <h4 class="challenge-title">Low Visibility</h4>
-                    <p class="challenge-desc">Competitors post daily while your dishes go unseen</p>
+                <div class="challenge-card"
+                    style="background: white; border-left: 4px solid #FF6B35; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                    <h4 style="color: #FF6B35; font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">Low Visibility
+                    </h4>
+                    <p style="margin: 0; font-size: 16px; color: #666; line-height: 1.6;">Competitors post daily while
+                        your dishes go unseen</p>
                 </div>
 
-                <div class="challenge-card challenge-card-base">
-                    <h4 class="challenge-title">No Strategy</h4>
-                    <p class="challenge-desc">Sporadic content = not top-of-mind for brunch cravings</p>
+                <div class="challenge-card"
+                    style="background: white; border-left: 4px solid #FF6B35; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                    <h4 style="color: #FF6B35; font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">No Strategy</h4>
+                    <p style="margin: 0; font-size: 16px; color: #666; line-height: 1.6;">Sporadic content = not
+                        top-of-mind for brunch cravings</p>
                 </div>
 
-                <div class="challenge-card challenge-card-base">
-                    <h4 class="challenge-title">Untapped Reviews</h4>
-                    <p class="challenge-desc">Great food deserves great reviews, but missing community engagement means
-                        lost social proof</p>
+                <div class="challenge-card"
+                    style="background: white; border-left: 4px solid #FF6B35; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                    <h4 style="color: #FF6B35; font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">Untapped Reviews
+                    </h4>
+                    <p style="margin: 0; font-size: 16px; color: #666; line-height: 1.6;">Great food deserves great
+                        reviews, but missing community engagement means lost social proof</p>
                 </div>
 
-                <div class="challenge-card challenge-card-base">
-                    <h4 class="challenge-title">Missing Audience</h4>
-                    <p class="challenge-desc">Alberta's food community is ready to discover you, they just need regular
-                        reminders you exist</p>
+                <div class="challenge-card"
+                    style="background: white; border-left: 4px solid #FF6B35; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                    <h4 style="color: #FF6B35; font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">Missing Audience
+                    </h4>
+                    <p style="margin: 0; font-size: 16px; color: #666; line-height: 1.6;">Alberta's food community is
+                        ready to discover you, they just need regular reminders you exist</p>
                 </div>
 
-                <div class="challenge-card challenge-card-base">
-                    <h4 class="challenge-title">Weak Brand Presence</h4>
-                    <p class="challenge-desc">Without consistent digital visibility, your brand isn't building the
-                        recognition it deserves</p>
+                <div class="challenge-card"
+                    style="background: white; border-left: 4px solid #FF6B35; padding: 24px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);">
+                    <h4 style="color: #FF6B35; font-size: 20px; font-weight: 800; margin: 0 0 8px 0;">Weak Brand
+                        Presence
+                    </h4>
+                    <p style="margin: 0; font-size: 16px; color: #666; line-height: 1.6;">Without consistent digital
+                        visibility, your brand isn't building the recognition it deserves</p>
                 </div>
             </div>
 
@@ -1352,7 +1057,7 @@
                 </div>
             </div>
 
-            <div class="stats-grid-3">
+            <div class="stats-grid" style="margin-top: 60px; grid-template-columns: repeat(3, 1fr);">
                 <div class="stat">
                     <span class="stat-number">30,000+</span>
                     <span class="stat-label">People Reached</span>
@@ -1380,36 +1085,44 @@
             </div>
 
             <div class="services-grid">
-                <div class="service-card service-card-base">
-                    <h3 class="service-title">Content Creation</h3>
-                    <p class="service-desc">Professional food photography & videography showcasing your dishes in their
-                        best light</p>
+                <div class="service-card">
+
+                    <h3>Content Creation</h3>
+                    <p>Professional food photography & videography showcasing your dishes. <strong>Includes 1
+                            professional shoot per month at your location.</strong></p>
                 </div>
 
-                <div class="service-card service-card-base">
-                    <h3 class="service-title">Social Media</h3>
-                    <p class="service-desc">Daily Instagram posts, stories, and reels that drive engagement and foot
-                        traffic</p>
+                <div class="service-card">
+
+                    <h3>Social Media</h3>
+                    <p><strong>5 feed posts + daily stories per week.</strong> We handle everything from scheduling to
+                        posting.</p>
                 </div>
 
-                <div class="service-card service-card-base">
-                    <h3 class="service-title">Copywriting</h3>
-                    <p class="service-desc">Compelling captions and messaging that connect with your audience</p>
+                <div class="service-card">
+
+                    <h3>Copywriting</h3>
+                    <p>Compelling, <strong>SEO-optimized captions</strong> and messaging that connect with your audience
+                        and drive action.</p>
                 </div>
 
-                <div class="service-card service-card-base">
-                    <h3 class="service-title">Community</h3>
-                    <p class="service-desc">Active engagement, responding to comments, building your loyal following</p>
+                <div class="service-card">
+
+                    <h3>Community</h3>
+                    <p><strong>Daily engagement</strong>, responding to comments/DMs, and reputation management to build
+                        loyalty.</p>
                 </div>
 
-                <div class="service-card service-card-base">
-                    <h3 class="service-title">Brand Strategy</h3>
-                    <p class="service-desc">Cohesive visual identity across all digital touchpoints</p>
+                <div class="service-card">
+
+                    <h3>Brand Strategy</h3>
+                    <p>Cohesive visual identity across all digital touchpoints</p>
                 </div>
 
-                <div class="service-card service-card-base">
-                    <h3 class="service-title">Analytics</h3>
-                    <p class="service-desc">Monthly reporting showing real growth and ROI</p>
+                <div class="service-card">
+
+                    <h3>Analytics</h3>
+                    <p>Monthly reporting showing real growth and ROI</p>
                 </div>
             </div>
         </div>
@@ -1429,7 +1142,7 @@
             <div style="margin-top: 32px;">
                 <!-- Media Platforms Image -->
                 <div style="margin-bottom: 48px; text-align: center;">
-                    <img src="/tutti-frutti-proposal/our_platforms.jpg" alt="Our Media Platforms" class="platform-image"
+                    <img src="./our_platforms.jpg" alt="Our Media Platforms" class="platform-image"
                         style="width: 100%; max-width: 1000px; height: auto; border-radius: 24px; box-shadow: 0 20px 48px rgba(0, 0, 0, 0.12); transition: all 0.3s ease;">
                 </div>
 
@@ -1439,13 +1152,15 @@
                     reaching Alberta's most engaged audiences</p>
 
                 <!-- Platform Cards Grid -->
-                <!-- Platform Cards Grid -->
-                <div class="platforms-grid">
+                <div
+                    style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; max-width: 900px; margin: 0 auto;">
                     <!-- Instagram Edmonton -->
-                    <a href="https://www.instagram.com/culturealberta._/" target="_blank" class="platform-card-wrapper">
+                    <a href="https://www.instagram.com/culturealberta._/" target="_blank"
+                        style="text-decoration: none; display: block;">
                         <div class="platform-card"
-                            style="background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);">
-                            <div class="platform-icon" style="background: #2196F3;">
+                            style="background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.3s ease;">
+                            <div
+                                style="background: #2196F3; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                 <span style="color: white; font-size: 22px;">📱</span>
                             </div>
                             <div>
@@ -1456,10 +1171,12 @@
                     </a>
 
                     <!-- Instagram Calgary -->
-                    <a href="https://www.instagram.com/cultureyyc._/" target="_blank" class="platform-card-wrapper">
+                    <a href="https://www.instagram.com/cultureyyc._/" target="_blank"
+                        style="text-decoration: none; display: block;">
                         <div class="platform-card"
-                            style="background: linear-gradient(135deg, #FCE4EC 0%, #F8BBD0 100%);">
-                            <div class="platform-icon" style="background: #E91E63;">
+                            style="background: linear-gradient(135deg, #FCE4EC 0%, #F8BBD0 100%); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.3s ease;">
+                            <div
+                                style="background: #E91E63; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                 <span style="color: white; font-size: 22px;">📱</span>
                             </div>
                             <div>
@@ -1470,10 +1187,12 @@
                     </a>
 
                     <!-- Website -->
-                    <a href="https://www.culturealberta.com/" target="_blank" class="platform-card-wrapper">
+                    <a href="https://www.culturealberta.com/" target="_blank"
+                        style="text-decoration: none; display: block;">
                         <div class="platform-card"
-                            style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);">
-                            <div class="platform-icon" style="background: #4CAF50;">
+                            style="background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.3s ease;">
+                            <div
+                                style="background: #4CAF50; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                 <span style="color: white; font-size: 22px;">🌐</span>
                             </div>
                             <div>
@@ -1484,10 +1203,12 @@
                     </a>
 
                     <!-- Newsletter -->
-                    <a href="https://www.culturealberta.com/" target="_blank" class="platform-card-wrapper">
+                    <a href="https://www.culturealberta.com/" target="_blank"
+                        style="text-decoration: none; display: block;">
                         <div class="platform-card"
-                            style="background: linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%);">
-                            <div class="platform-icon" style="background: #9C27B0;">
+                            style="background: linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%); border-radius: 16px; padding: 20px 24px; display: flex; align-items: center; gap: 16px; cursor: pointer; transition: all 0.3s ease;">
+                            <div
+                                style="background: #9C27B0; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                 <span style="color: white; font-size: 22px;">📧</span>
                             </div>
                             <div>
@@ -1523,20 +1244,24 @@
 
 
             <!-- Roadmap Timeline -->
-            <div class="timeline-container">
+            <div style="position: relative; margin: 60px 0;">
                 <!-- Timeline Line -->
-                <div class="timeline-line"></div>
+                <div class="timeline-line"
+                    style="position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, #FDB913 0%, #FF6B35 100%); transform: translateX(-50%); z-index: 0;">
+                </div>
 
                 <!-- Phase 1 -->
-                <div class="timeline-phase">
-                    <div class="timeline-row">
-                        <div class="timeline-content-wrapper text-right">
-                            <div class="timeline-card">
-                                <div class="timeline-header-group"
+                <div style="position: relative; margin-bottom: 60px;">
+                    <div class="roadmap-row"
+                        style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+                        <div class="roadmap-content-wrapper" style="flex: 1; text-align: right; padding-right: 60px;">
+                            <div
+                                style="background: white; border: 2px solid #FDB913; border-radius: 20px; padding: 32px; box-shadow: 0 8px 32px rgba(253, 185, 19, 0.15);">
+                                <div
                                     style="display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin-bottom: 16px;">
                                     <h3 style="font-size: 24px; font-weight: 800; margin: 0; color: #FDB913;">Foundation
                                         Phase</h3>
-                                    <div class="timeline-phase-num"
+                                    <div
                                         style="background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 900;">
                                         1</div>
                                 </div>
@@ -1544,89 +1269,112 @@
                                     style="font-size: 14px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
                                     Month 1-2</p>
                                 <p style="font-size: 16px; line-height: 1.7; color: #444; margin: 0;">Brand audit,
-                                    content calendar development, and professional photo/video shoots at your locations
-                                    to establish your visual identity</p>
+                                    content calendar development, and professional photo/video shoots to establish your
+                                    visual identity. <strong>Quick Wins: Google Business Profile optimization & bio
+                                        refresh.</strong></p>
                             </div>
                         </div>
-                        <div class="timeline-icon">🚀</div>
-                        <div class="timeline-spacer"></div>
+                        <div class="roadmap-icon-wrapper"
+                            style="position: relative; z-index: 1; width: 60px; height: 60px; background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4); display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                            🚀
+                        </div>
+                        <div class="roadmap-spacer" style="flex: 1;"></div>
                     </div>
                 </div>
 
                 <!-- Phase 2 -->
-                <div class="timeline-phase">
-                    <div class="timeline-row">
-                        <div class="timeline-spacer"></div>
-                        <div class="timeline-icon">📱</div>
-                        <div class="timeline-content-wrapper" style="padding-left: 0;">
-                            <div class="timeline-card"
-                                style="border-color: #FF8E53; box-shadow: 0 8px 32px rgba(255, 142, 83, 0.15);">
-                                <div class="timeline-header-group"
-                                    style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-                                    <div class="timeline-phase-num"
+                <div style="position: relative; margin-bottom: 60px;">
+                    <div class="roadmap-row"
+                        style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+                        <div class="roadmap-spacer" style="flex: 1;"></div>
+                        <div class="roadmap-icon-wrapper"
+                            style="position: relative; z-index: 1; width: 60px; height: 60px; background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4); display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                            📱
+                        </div>
+                        <div class="roadmap-content-wrapper" style="flex: 1; padding-left: 60px;">
+                            <div
+                                style="background: white; border: 2px solid #FF8E53; border-radius: 20px; padding: 32px; box-shadow: 0 8px 32px rgba(255, 142, 83, 0.15);">
+                                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                                    <div
                                         style="background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 900;">
                                         2</div>
-                                    <h3 style="font-size: 24px; font-weight: 800; margin: 0; color: #FF6B35;">Launch
+                                    <h3 style="font-size: 24px; font-weight: 800; margin: 0; color: #FF6B35;">
+                                        Launch
                                         Phase</h3>
                                 </div>
                                 <p
                                     style="font-size: 14px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
                                     Month 3-4</p>
-                                <p style="font-size: 16px; line-height: 1.7; color: #444; margin: 0;">Consistent daily
-                                    posting across Instagram, building an engaged community, and creating viral-worthy
-                                    reels that get people excited</p>
+                                <p style="font-size: 16px; line-height: 1.7; color: #444; margin: 0;">Consistent
+                                    <strong>daily posting (Feed + Stories)</strong> across Instagram, building an
+                                    engaged community, and creating viral-worthy reels that get people excited.
+                                </p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Phase 3 -->
-                <div class="timeline-phase">
-                    <div class="timeline-row">
-                        <div class="timeline-content-wrapper text-right">
-                            <div class="timeline-card">
-                                <div class="timeline-header-group"
+                <div style="position: relative; margin-bottom: 60px;">
+                    <div class="roadmap-row"
+                        style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+                        <div class="roadmap-content-wrapper" style="flex: 1; text-align: right; padding-right: 60px;">
+                            <div
+                                style="background: white; border: 2px solid #FDB913; border-radius: 20px; padding: 32px; box-shadow: 0 8px 32px rgba(253, 185, 19, 0.15);">
+                                <div
                                     style="display: flex; align-items: center; justify-content: flex-end; gap: 16px; margin-bottom: 16px;">
-                                    <h3 style="font-size: 24px; font-weight: 800; margin: 0; color: #FDB913;">Growth
+                                    <h3 style="font-size: 24px; font-weight: 800; margin: 0; color: #FDB913;">
+                                        Growth
                                         Phase</h3>
-                                    <div class="timeline-phase-num"
+                                    <div
                                         style="background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 900;">
                                         3</div>
                                 </div>
                                 <p
                                     style="font-size: 14px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
                                     Month 5-6</p>
-                                <p style="font-size: 16px; line-height: 1.7; color: #444; margin: 0;">User-generated
-                                    content campaigns, collaborations with local food influencers, and optimization of
+                                <p style="font-size: 16px; line-height: 1.7; color: #444; margin: 0;">
+                                    User-generated
+                                    content campaigns, collaborations with local food influencers, and
+                                    optimization of
                                     peak times for maximum impact</p>
                             </div>
                         </div>
-                        <div class="timeline-icon">📈</div>
-                        <div class="timeline-spacer"></div>
+                        <div class="roadmap-icon-wrapper"
+                            style="position: relative; z-index: 1; width: 60px; height: 60px; background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4); display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                            📈
+                        </div>
+                        <div class="roadmap-spacer" style="flex: 1;"></div>
                     </div>
                 </div>
 
                 <!-- Phase 4 - Ongoing -->
-                <div class="timeline-phase" style="margin-bottom: 0;">
-                    <div class="timeline-row">
-                        <div class="timeline-spacer"></div>
-                        <div class="timeline-icon">♾️</div>
-                        <div class="timeline-content-wrapper" style="padding-left: 0;">
-                            <div class="timeline-card"
-                                style="border-color: #FF6B35; box-shadow: 0 8px 32px rgba(255, 107, 53, 0.15);">
-                                <div class="timeline-header-group"
-                                    style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
-                                    <div class="timeline-phase-num"
+                <div style="position: relative;">
+                    <div class="roadmap-row"
+                        style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+                        <div class="roadmap-spacer" style="flex: 1;"></div>
+                        <div class="roadmap-icon-wrapper"
+                            style="position: relative; z-index: 1; width: 60px; height: 60px; background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4); display: flex; align-items: center; justify-content: center; font-size: 28px;">
+                            ♾️
+                        </div>
+                        <div class="roadmap-content-wrapper" style="flex: 1; padding-left: 60px;">
+                            <div
+                                style="background: white; border: 2px solid #FF6B35; border-radius: 20px; padding: 32px; box-shadow: 0 8px 32px rgba(255, 107, 53, 0.15);">
+                                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                                    <div
                                         style="background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: 900;">
                                         ∞</div>
-                                    <h3 style="font-size: 24px; font-weight: 800; margin: 0; color: #FF6B35;">Ongoing
+                                    <h3 style="font-size: 24px; font-weight: 800; margin: 0; color: #FF6B35;">
+                                        Ongoing
                                         Excellence</h3>
                                 </div>
                                 <p
                                     style="font-size: 14px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
                                     Continuous</p>
-                                <p style="font-size: 16px; line-height: 1.7; color: #444; margin: 0;">Monthly
-                                    in-restaurant shoots, seasonal campaign development, and continuous optimization
+                                <p style="font-size: 16px; line-height: 1.7; color: #444; margin: 0;">
+                                    Monthly
+                                    in-restaurant shoots, seasonal campaign development, and continuous
+                                    optimization
                                     based on analytics to keep you ahead</p>
                             </div>
                         </div>
@@ -1641,10 +1389,15 @@
         <div class="container">
             <div class="pricing-container">
                 <h3>Simple, Transparent Investment</h3>
-                <span class="price-tag">$1,500</span>
+                <span class="price-tag">$2,500</span>
                 <p class="price-period">per month</p>
                 <p class="pricing-note">Full-service digital marketing • $4,500+ value • No long-term contract required
                 </p>
+                <div
+                    style="margin-top: 24px; font-size: 15px; color: rgba(255,255,255,0.9); background: rgba(0,0,0,0.1); padding: 16px; border-radius: 12px; display: inline-block; max-width: 100%; box-sizing: border-box;">
+                    <strong>Value Breakdown:</strong> Content Production ($2,000) + Social Management ($1,500) +
+                    Community Growth ($1,000)
+                </div>
             </div>
         </div>
     </section>
