@@ -738,6 +738,31 @@
                 min-width: calc(100% - 0px);
                 /* Show 1 item on small screens */
             }
+
+            /* Roadmap Mobile */
+            .roadmap-row {
+                flex-direction: column;
+                gap: 24px !important;
+            }
+
+            .roadmap-spacer {
+                display: none;
+            }
+
+            .roadmap-content-wrapper {
+                text-align: center !important;
+                padding: 0 !important;
+                order: 2;
+            }
+
+            .roadmap-icon-wrapper {
+                order: 1;
+                margin-bottom: 16px;
+            }
+
+            .timeline-line {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -756,7 +781,7 @@
                 <span style="font-size: 48px; font-weight: 900; color: #FDB913;">×</span>
                 <img src="./images/tutti_frutti_logo.png" alt="Tutti Frutti Breakfast & Lunch" class="logo">
             </div>
-            <div class="badge">Partnership Proposal • January 2025</div>
+            <div class="badge">Partnership Proposal • February 2026</div>
             <h1>Culture Media × Tutti Frutti</h1>
             <p class="subtitle">Transform your breakfast & lunch destination into Alberta's most talked-about dining
                 experience</p>
@@ -772,11 +797,11 @@
                 </div>
                 <div class="stat">
                     <span class="stat-number">55K+</span>
-                    <span class="stat-label">Monthly Reach</span>
+                    <span class="stat-label">Monthly Network Reach</span>
                 </div>
                 <div class="stat">
                     <span class="stat-number">290K+</span>
-                    <span class="stat-label">Community Size</span>
+                    <span class="stat-label">Network Audience</span>
                 </div>
             </div>
         </div>
@@ -1060,25 +1085,29 @@
                 <div class="service-card">
 
                     <h3>Content Creation</h3>
-                    <p>Professional food photography & videography showcasing your dishes in their best light</p>
+                    <p>Professional food photography & videography showcasing your dishes. <strong>Includes 1
+                            professional shoot per month at your location.</strong></p>
                 </div>
 
                 <div class="service-card">
 
                     <h3>Social Media</h3>
-                    <p>Daily Instagram posts, stories, and reels that drive engagement and foot traffic</p>
+                    <p><strong>5 feed posts + daily stories per week.</strong> We handle everything from scheduling to
+                        posting.</p>
                 </div>
 
                 <div class="service-card">
 
                     <h3>Copywriting</h3>
-                    <p>Compelling captions and messaging that connect with your audience</p>
+                    <p>Compelling, <strong>SEO-optimized captions</strong> and messaging that connect with your audience
+                        and drive action.</p>
                 </div>
 
                 <div class="service-card">
 
                     <h3>Community</h3>
-                    <p>Active engagement, responding to comments, building your loyal following</p>
+                    <p><strong>Daily engagement</strong>, responding to comments/DMs, and reputation management to build
+                        loyalty.</p>
                 </div>
 
                 <div class="service-card">
@@ -1214,14 +1243,15 @@
             <!-- Roadmap Timeline -->
             <div style="position: relative; margin: 60px 0;">
                 <!-- Timeline Line -->
-                <div
+                <div class="timeline-line"
                     style="position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, #FDB913 0%, #FF6B35 100%); transform: translateX(-50%); z-index: 0;">
                 </div>
 
                 <!-- Phase 1 -->
                 <div style="position: relative; margin-bottom: 60px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
-                        <div style="flex: 1; text-align: right; padding-right: 60px;">
+                    <div class="roadmap-row"
+                        style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+                        <div class="roadmap-content-wrapper" style="flex: 1; text-align: right; padding-right: 60px;">
                             <div
                                 style="background: white; border: 2px solid #FDB913; border-radius: 20px; padding: 32px; box-shadow: 0 8px 32px rgba(253, 185, 19, 0.15);">
                                 <div
@@ -1236,27 +1266,29 @@
                                     style="font-size: 14px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
                                     Month 1-2</p>
                                 <p style="font-size: 16px; line-height: 1.7; color: #444; margin: 0;">Brand audit,
-                                    content calendar development, and professional photo/video shoots at your locations
-                                    to establish your visual identity</p>
+                                    content calendar development, and professional photo/video shoots to establish your
+                                    visual identity. <strong>Quick Wins: Google Business Profile optimization & bio
+                                        refresh.</strong></p>
                             </div>
                         </div>
-                        <div
+                        <div class="roadmap-icon-wrapper"
                             style="position: relative; z-index: 1; width: 60px; height: 60px; background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4); display: flex; align-items: center; justify-content: center; font-size: 28px;">
                             🚀
                         </div>
-                        <div style="flex: 1;"></div>
+                        <div class="roadmap-spacer" style="flex: 1;"></div>
                     </div>
                 </div>
 
                 <!-- Phase 2 -->
                 <div style="position: relative; margin-bottom: 60px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
-                        <div style="flex: 1;"></div>
-                        <div
+                    <div class="roadmap-row"
+                        style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+                        <div class="roadmap-spacer" style="flex: 1;"></div>
+                        <div class="roadmap-icon-wrapper"
                             style="position: relative; z-index: 1; width: 60px; height: 60px; background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4); display: flex; align-items: center; justify-content: center; font-size: 28px;">
                             📱
                         </div>
-                        <div style="flex: 1; padding-left: 60px;">
+                        <div class="roadmap-content-wrapper" style="flex: 1; padding-left: 60px;">
                             <div
                                 style="background: white; border: 2px solid #FF8E53; border-radius: 20px; padding: 32px; box-shadow: 0 8px 32px rgba(255, 142, 83, 0.15);">
                                 <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
@@ -1271,10 +1303,9 @@
                                     style="font-size: 14px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px;">
                                     Month 3-4</p>
                                 <p style="font-size: 16px; line-height: 1.7; color: #444; margin: 0;">Consistent
-                                    daily
-                                    posting across Instagram, building an engaged community, and creating
-                                    viral-worthy
-                                    reels that get people excited</p>
+                                    <strong>daily posting (Feed + Stories)</strong> across Instagram, building an
+                                    engaged community, and creating viral-worthy reels that get people excited.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -1282,8 +1313,9 @@
 
                 <!-- Phase 3 -->
                 <div style="position: relative; margin-bottom: 60px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
-                        <div style="flex: 1; text-align: right; padding-right: 60px;">
+                    <div class="roadmap-row"
+                        style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+                        <div class="roadmap-content-wrapper" style="flex: 1; text-align: right; padding-right: 60px;">
                             <div
                                 style="background: white; border: 2px solid #FDB913; border-radius: 20px; padding: 32px; box-shadow: 0 8px 32px rgba(253, 185, 19, 0.15);">
                                 <div
@@ -1305,23 +1337,24 @@
                                     peak times for maximum impact</p>
                             </div>
                         </div>
-                        <div
+                        <div class="roadmap-icon-wrapper"
                             style="position: relative; z-index: 1; width: 60px; height: 60px; background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4); display: flex; align-items: center; justify-content: center; font-size: 28px;">
                             📈
                         </div>
-                        <div style="flex: 1;"></div>
+                        <div class="roadmap-spacer" style="flex: 1;"></div>
                     </div>
                 </div>
 
                 <!-- Phase 4 - Ongoing -->
                 <div style="position: relative;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
-                        <div style="flex: 1;"></div>
-                        <div
+                    <div class="roadmap-row"
+                        style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+                        <div class="roadmap-spacer" style="flex: 1;"></div>
+                        <div class="roadmap-icon-wrapper"
                             style="position: relative; z-index: 1; width: 60px; height: 60px; background: linear-gradient(135deg, #FDB913 0%, #FF6B35 100%); border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 16px rgba(253, 185, 19, 0.4); display: flex; align-items: center; justify-content: center; font-size: 28px;">
                             ♾️
                         </div>
-                        <div style="flex: 1; padding-left: 60px;">
+                        <div class="roadmap-content-wrapper" style="flex: 1; padding-left: 60px;">
                             <div
                                 style="background: white; border: 2px solid #FF6B35; border-radius: 20px; padding: 32px; box-shadow: 0 8px 32px rgba(255, 107, 53, 0.15);">
                                 <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
@@ -1357,6 +1390,11 @@
                 <p class="price-period">per month</p>
                 <p class="pricing-note">Full-service digital marketing • $4,500+ value • No long-term contract required
                 </p>
+                <div
+                    style="margin-top: 24px; font-size: 15px; color: rgba(255,255,255,0.9); background: rgba(0,0,0,0.1); padding: 16px; border-radius: 12px; display: inline-block; max-width: 100%; box-sizing: border-box;">
+                    <strong>Value Breakdown:</strong> Content Production ($2,000) + Social Management ($1,500) +
+                    Community Growth ($1,000)
+                </div>
             </div>
         </div>
     </section>
