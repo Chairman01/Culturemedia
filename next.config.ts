@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         source: '/aef-proposal',
         destination: '/aef-proposal/index.html',
       },
+      {
+        source: '/aef-nextsteps',
+        destination: '/aef-nextsteps/index.html',
+      },
     ];
   },
 };

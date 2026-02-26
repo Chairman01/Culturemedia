@@ -1,0 +1,730 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<meta name="ProgId" content="Word.Document">
+<meta name="Generator" content="Microsoft Word 15">
+<meta name="Originator" content="Microsoft Word 15">
+<!--[if gte mso 9]>
+<xml>
+<o:DocumentProperties>
+  <o:Title>Culture Media x AEF | 3% Membership Growth Campaign</o:Title>
+  <o:Author>Culture Media</o:Author>
+</o:DocumentProperties>
+<o:OfficeDocumentSettings>
+  <o:AllowPNG/>
+</o:OfficeDocumentSettings>
+</xml>
+<xml>
+<w:WordDocument>
+  <w:View>Print</w:View>
+  <w:Zoom>100</w:Zoom>
+  <w:DoNotOptimizeForBrowser/>
+</w:WordDocument>
+</xml>
+<![endif]-->
+<style>
+  /* Page setup */
+  @page {
+    size: letter;
+    margin: 1in 1in 1in 1in;
+    mso-header-margin: 0.5in;
+    mso-footer-margin: 0.5in;
+  }
+  @page Section1 {
+    mso-header: h1;
+    mso-footer: f1;
+  }
+  div.Section1 {
+    page: Section1;
+  }
+
+  /* Base */
+  body {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 11pt;
+    color: #2d2d2d;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Headings */
+  h1 {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 26pt;
+    font-weight: bold;
+    color: #0072bc;
+    margin-top: 0;
+    margin-bottom: 4pt;
+    line-height: 1.2;
+  }
+  h2 {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 18pt;
+    font-weight: bold;
+    color: #0072bc;
+    margin-top: 24pt;
+    margin-bottom: 8pt;
+    padding-bottom: 4pt;
+    border-bottom: 2px solid #0072bc;
+    line-height: 1.3;
+  }
+  h3 {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 13pt;
+    font-weight: bold;
+    color: #0072bc;
+    margin-top: 16pt;
+    margin-bottom: 6pt;
+    line-height: 1.3;
+  }
+  h4 {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 11pt;
+    font-weight: bold;
+    color: #0072bc;
+    margin-top: 12pt;
+    margin-bottom: 4pt;
+  }
+
+  /* Paragraphs */
+  p {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 11pt;
+    margin-top: 0;
+    margin-bottom: 8pt;
+    line-height: 1.5;
+  }
+
+  /* Subtitle */
+  .subtitle {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 13pt;
+    color: #555555;
+    margin-bottom: 20pt;
+  }
+
+  /* Divider */
+  hr {
+    border: none;
+    border-top: 1px solid #cccccc;
+    margin: 16pt 0;
+  }
+
+  /* Lists */
+  ul {
+    margin-top: 4pt;
+    margin-bottom: 10pt;
+    padding-left: 20pt;
+  }
+  li {
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 11pt;
+    margin-bottom: 3pt;
+    line-height: 1.5;
+  }
+
+  /* Tables */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 10pt;
+    margin-bottom: 14pt;
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 11pt;
+  }
+  th {
+    background-color: #0072bc;
+    color: #ffffff;
+    font-weight: bold;
+    text-align: left;
+    padding: 8pt 12pt;
+    border: 1px solid #005a96;
+    font-size: 11pt;
+  }
+  td {
+    padding: 7pt 12pt;
+    border: 1px solid #d0d0d0;
+    vertical-align: top;
+    font-size: 11pt;
+  }
+  tr:nth-child(even) td {
+    background-color: #f5f9fc;
+  }
+  .total-row td {
+    background-color: #e8f2fa !important;
+    font-weight: bold;
+    font-size: 11.5pt;
+    border-top: 2px solid #0072bc;
+  }
+
+  /* Stats box */
+  .stats-box {
+    background-color: #f5f9fc;
+    border-left: 4px solid #0072bc;
+    padding: 12pt 16pt;
+    margin: 12pt 0 16pt 0;
+  }
+  .stats-box p {
+    margin-bottom: 3pt;
+  }
+
+  /* Callout */
+  .callout {
+    background-color: #f0f7fc;
+    border: 1px solid #b8d8ef;
+    padding: 12pt 16pt;
+    margin: 12pt 0 16pt 0;
+  }
+
+  /* Comparison block */
+  .comparison {
+    background-color: #fafafa;
+    border: 1px solid #e0e0e0;
+    padding: 12pt 16pt;
+    margin: 12pt 0 16pt 0;
+  }
+
+  /* Team member */
+  .team-member {
+    margin-bottom: 10pt;
+  }
+  .team-name {
+    font-weight: bold;
+    color: #0072bc;
+    font-size: 11pt;
+  }
+
+  /* Value highlight */
+  .value-highlight {
+    background-color: #f0f7fc;
+    border: 1px solid #b8d8ef;
+    padding: 10pt 16pt;
+    margin: 10pt 0 14pt 0;
+    text-align: center;
+    font-size: 12pt;
+    color: #0072bc;
+  }
+
+  /* Page break */
+  .page-break {
+    page-break-before: always;
+    mso-special-character: line-break;
+  }
+
+  /* Header table */
+  .header-table {
+    width: 100%;
+    border: none;
+    margin-bottom: 10pt;
+  }
+  .header-table td {
+    border: none;
+    padding: 0;
+    vertical-align: middle;
+  }
+
+  /* Footer */
+  .footer {
+    border-top: 2px solid #0072bc;
+    padding-top: 10pt;
+    margin-top: 20pt;
+    font-size: 9.5pt;
+    color: #666666;
+    line-height: 1.6;
+  }
+
+  /* Advantage grid */
+  .advantage-box {
+    border: 1px solid #d0d0d0;
+    padding: 10pt 14pt;
+    margin-bottom: 10pt;
+    background-color: #fafcfe;
+  }
+  .advantage-title {
+    font-weight: bold;
+    color: #0072bc;
+    font-size: 11pt;
+    margin-bottom: 4pt;
+  }
+</style>
+</head>
+<body>
+<div class="Section1">
+
+<!-- ============================================ -->
+<!-- COVER / HEADER                               -->
+<!-- ============================================ -->
+
+<table class="header-table">
+  <tr>
+    <td style="width:50%; text-align:left;">
+      <img src="images/culture_media_logo.png" alt="Culture Media" style="height:50pt;">
+    </td>
+    <td style="width:50%; text-align:right; font-size:10pt; color:#888888;">
+      RFP Response | February 2026
+    </td>
+  </tr>
+</table>
+
+<hr style="border-top: 3px solid #0072bc; margin-bottom: 20pt;">
+
+<h1>Culture Media x AEF<br>3% Membership Growth Campaign</h1>
+<p class="subtitle">Marketing &amp; Creative Services RFP Response &nbsp;|&nbsp; February 2026</p>
+
+<hr>
+
+<!-- ============================================ -->
+<!-- ABOUT THE CLIENT                             -->
+<!-- ============================================ -->
+
+<h2>About the Client &mdash; The Alberta Equestrian Federation</h2>
+
+<p>The Alberta Equestrian Federation is the province's sole governing body for equestrian sport and industry, recognized by the Government of Alberta since 1978. AEF serves nearly 15,000 members across more than 425 Alberta communities, covering everything from competitive sport to recreational trail riding. Their programs include coaching certification, Learn to Ride/Drive, Wild Rose competitions, trail initiatives, and equine welfare advocacy.</p>
+
+<p>Every membership includes $5M liability insurance and $40K AD&amp;D coverage, making it one of the highest-value equestrian memberships in the country.</p>
+
+<div class="stats-box">
+  <h3 style="margin-top:0; border:none; padding:0;">AEF at a Glance</h3>
+  <table style="border:none; margin:6pt 0 0 0;">
+    <tr>
+      <td style="border:none; padding:2pt 20pt 2pt 0; width:50%;">&bull;&nbsp; 15,000 members across Alberta</td>
+      <td style="border:none; padding:2pt 0;">&bull;&nbsp; Serving Alberta's equine community since 1978</td>
+    </tr>
+    <tr>
+      <td style="border:none; padding:2pt 20pt 2pt 0;">&bull;&nbsp; 425+ communities represented</td>
+      <td style="border:none; padding:2pt 0;">&bull;&nbsp; Coaching, competition, recreation, trail riding, welfare</td>
+    </tr>
+    <tr>
+      <td style="border:none; padding:2pt 20pt 2pt 0;">&bull;&nbsp; 22,000+ newsletter subscribers</td>
+      <td style="border:none; padding:2pt 0;">&bull;&nbsp; $5M liability + $40K AD&amp;D with every membership</td>
+    </tr>
+  </table>
+</div>
+
+<p>The goal: grow total AEF membership by 3% over the next four months through a targeted digital marketing campaign. That means reaching the thousands of equestrian participants across Alberta who ride, train, and compete but haven't signed up yet.</p>
+
+<!-- PAGE BREAK -->
+<br clear="all" style="page-break-before:always; mso-special-character:line-break;">
+
+<!-- ============================================ -->
+<!-- ABOUT CULTURE MEDIA                          -->
+<!-- ============================================ -->
+
+<h2>Company Overview &mdash; About Culture Media</h2>
+
+<p>We're an Alberta-based digital marketing agency that owns the media platforms reaching this province every day. When AEF partners with us, your campaign gets amplified across our entire network at no additional cost.</p>
+
+<h3>Our Platforms</h3>
+
+<table>
+  <tr>
+    <th>Platform</th>
+    <th>Audience</th>
+  </tr>
+  <tr>
+    <td>@culturealberta._</td>
+    <td>19.1K followers (Edmonton &amp; Alberta)</td>
+  </tr>
+  <tr>
+    <td>@cultureyyc._</td>
+    <td>21K followers (Calgary)</td>
+  </tr>
+  <tr>
+    <td>culturealberta.com</td>
+    <td>60K+ monthly page views</td>
+  </tr>
+  <tr>
+    <td>Newsletter</td>
+    <td>5,500+ active subscribers</td>
+  </tr>
+</table>
+
+<h3>Your Dedicated Team</h3>
+
+<div class="team-member">
+  <p><span class="team-name">Adam Harrison &mdash; Founder &amp; Campaign Strategist</span><br>
+  Leads strategy, creative direction, content production, platform integration, and performance optimization across the full campaign.</p>
+</div>
+
+<div class="team-member">
+  <p><span class="team-name">Mariam Abdihalim &mdash; Account Manager &amp; Direct Point of Contact</span><br>
+  Your go-to person for everything. Manages the AEF relationship, coordinates deliverables, handles day-to-day communication, and keeps the project on track.</p>
+</div>
+
+<div class="team-member">
+  <p><span class="team-name">Kish Flores &mdash; Communications Specialist</span><br>
+  Handles copywriting, social media content, email campaigns, and community engagement. Keeps all messaging on-brand and connected to the right audiences.</p>
+</div>
+
+<!-- PAGE BREAK -->
+<br clear="all" style="page-break-before:always; mso-special-character:line-break;">
+
+<!-- ============================================ -->
+<!-- BARRIERS TO GROWTH                           -->
+<!-- ============================================ -->
+
+<h2>The Barriers to Membership Growth</h2>
+
+<p>AEF doesn't have a competition problem. It has an awareness and clarity problem. We'll fix that.</p>
+
+<table>
+  <tr>
+    <th>Barrier</th>
+    <th>What's Happening</th>
+  </tr>
+  <tr>
+    <td>Limited Awareness</td>
+    <td>Many equestrian participants across Alberta don't know AEF exists or what it does for them.</td>
+  </tr>
+  <tr>
+    <td>Unclear Benefits</td>
+    <td>$5M liability insurance, $40K AD&amp;D coverage, and funding programs aren't reaching the right people.</td>
+  </tr>
+  <tr>
+    <td>&ldquo;Not For Me&rdquo; Perception</td>
+    <td>Recreational riders, trail riders, and hobbyists think AEF is only for competitive equestrians.</td>
+  </tr>
+  <tr>
+    <td>Transactional Engagement</td>
+    <td>Members renew for insurance but don't feel connected to a community or movement.</td>
+  </tr>
+</table>
+
+<div class="callout">
+  <p style="margin-bottom:0;">Our approach: reframe AEF membership from a transaction to a statement of identity. When you're part of the equestrian community in Alberta, AEF membership is what responsible participants do. Protection, value, and belonging.</p>
+</div>
+
+<!-- PAGE BREAK -->
+<br clear="all" style="page-break-before:always; mso-special-character:line-break;">
+
+<!-- ============================================ -->
+<!-- STRATEGIC APPROACH                           -->
+<!-- ============================================ -->
+
+<h2>Strategic Approach &mdash; One Campaign, Four Audience Pathways</h2>
+
+<h3>1. Barn Owners, Facilities &amp; Coaches (High Priority / Multiplier Audience)</h3>
+<p>One facility requiring AEF membership can bring in dozens of riders.</p>
+<ul>
+  <li>AEF membership protects your facility, students, and reputation</li>
+  <li>Professional liability framing, not fear-based</li>
+  <li>Toolkit assets for facilities to share with riders and boarders</li>
+</ul>
+
+<h3>2. Broader Equestrian Community (Recreational &amp; Non-Competitive)</h3>
+<p>Trail riders and hobbyists who don't realize AEF is for everyone.</p>
+<ul>
+  <li>Normalize AEF membership as part of riding in Alberta</li>
+  <li>Plain-language benefit breakdowns and community stories</li>
+  <li>&ldquo;I ride in Alberta. I'm AEF.&rdquo; &mdash; identity-driven messaging</li>
+</ul>
+
+<h3>3. Families, Youth &amp; New Riders (Growth Segment)</h3>
+<p>Parents need reassurance. New riders need structure. AEF provides both.</p>
+<ul>
+  <li>Safety-first messaging: insurance as peace of mind</li>
+  <li>Highlight Learn to Ride/Drive and coaching pathways</li>
+  <li>Welcoming tone that removes intimidation</li>
+</ul>
+
+<h3>4. Lapsed &amp; Inactive Members (Re-engagement)</h3>
+<p>They said yes once. We remind them why.</p>
+<ul>
+  <li>&ldquo;Welcome back&rdquo; email sequences and retargeting</li>
+  <li>What's new since they last engaged</li>
+  <li>Community-driven &ldquo;you're missed&rdquo; social proof</li>
+</ul>
+
+<h3>Insurance Messaging (Without Fear)</h3>
+<p>Insurance is the number-one motivator, but fear-based messaging is off the table. We agree.</p>
+
+<div class="comparison">
+  <table style="border:none; margin:0;">
+    <tr>
+      <td style="border:none; padding:4pt 10pt; width:50%; vertical-align:top; color:#cc0000;">
+        <span style="font-size:9pt; color:#cc0000;">NOT THIS:</span><br>
+        &ldquo;Without insurance, one accident could cost you everything.&rdquo;
+      </td>
+      <td style="border:none; padding:4pt 10pt; width:50%; vertical-align:top; color:#0072bc;">
+        <span style="font-size:9pt; color:#0072bc;">INSTEAD:</span><br>
+        &ldquo;Responsible riders ride protected. AEF membership means $5M in liability coverage, so you can focus on what you love.&rdquo;
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- PAGE BREAK -->
+<br clear="all" style="page-break-before:always; mso-special-character:line-break;">
+
+<!-- ============================================ -->
+<!-- SCOPE OF SERVICES                            -->
+<!-- ============================================ -->
+
+<h2>Scope of Services &mdash; What We'll Deliver</h2>
+
+<p>Hands-on execution, not advisory-only. We build it, run it, optimize it, and report on it.</p>
+
+<table>
+  <tr>
+    <th>Service Area</th>
+    <th>Deliverables</th>
+  </tr>
+  <tr>
+    <td>Strategy &amp; Messaging</td>
+    <td>Core campaign concept, audience pathway frameworks, content calendar</td>
+  </tr>
+  <tr>
+    <td>Creative Production</td>
+    <td>Campaign visuals, video content, social graphics, branded facility toolkits</td>
+  </tr>
+  <tr>
+    <td>Social Media</td>
+    <td>Organic + paid on Instagram &amp; Facebook, plus amplification through our 40K+ network</td>
+  </tr>
+  <tr>
+    <td>Paid Digital Ads</td>
+    <td>Targeted campaigns across social &amp; search in rural and urban Alberta</td>
+  </tr>
+  <tr>
+    <td>Landing Page &amp; Email</td>
+    <td>Conversion-optimized landing page + email sequences</td>
+  </tr>
+  <tr>
+    <td>Tracking &amp; Reporting</td>
+    <td>Bi-weekly reports on reach, clicks, conversions, new memberships, cost-per-acquisition</td>
+  </tr>
+</table>
+
+<!-- ============================================ -->
+<!-- COMPETITIVE ADVANTAGE                        -->
+<!-- ============================================ -->
+
+<h2>Our Competitive Advantage &mdash; Built-In Reach Across Alberta</h2>
+
+<p>You don't just get a marketing team. You get immediate access to our owned media platforms. That means reduced paid ad spend and higher ROI from day one.</p>
+
+<div class="value-highlight">
+  Your campaign gets organic amplification to 290,000+ Albertans at no additional cost.<br>
+  This drastically reduces the paid media you'd need.
+</div>
+
+<p>Most agencies charge for every impression. We already have the audience.</p>
+
+<!-- PAGE BREAK -->
+<br clear="all" style="page-break-before:always; mso-special-character:line-break;">
+
+<!-- ============================================ -->
+<!-- CAMPAIGN ROADMAP                             -->
+<!-- ============================================ -->
+
+<h2>Campaign Roadmap &mdash; Your 4-Month Growth Plan</h2>
+
+<table>
+  <tr>
+    <th style="width:25%;">Phase</th>
+    <th style="width:25%;">Timeline</th>
+    <th style="width:50%;">Activities</th>
+  </tr>
+  <tr>
+    <td>Month 1: Foundation &amp; Launch</td>
+    <td>Feb / Mar 2026</td>
+    <td>Strategy finalization, messaging &amp; creative development, landing page build, ad setup. Quick win: organic content on Culture Media platforms starts immediately.</td>
+  </tr>
+  <tr>
+    <td>Month 2: Full Campaign Activation</td>
+    <td>Mar / Apr 2026</td>
+    <td>Paid ads live. Email sequences deployed. Facility-focused assets distributed. Organic amplification running in parallel.</td>
+  </tr>
+  <tr>
+    <td>Month 3: Optimization &amp; Push</td>
+    <td>Apr / May 2026</td>
+    <td>Analyze data, double down on best-converting pathways, A/B test messaging, retarget warm leads. Peak spring/summer riding season.</td>
+  </tr>
+  <tr>
+    <td>Month 4: Final Push &amp; Reporting</td>
+    <td>May / Jun 2026</td>
+    <td>Final conversion push, comprehensive campaign report, KPI analysis, and recommendations for future campaigns if targets are met.</td>
+  </tr>
+</table>
+
+<!-- PAGE BREAK -->
+<br clear="all" style="page-break-before:always; mso-special-character:line-break;">
+
+<!-- ============================================ -->
+<!-- HOW WE'LL WORK TOGETHER                      -->
+<!-- ============================================ -->
+
+<h2>How We'll Work Together</h2>
+
+<h3>Communication &amp; Workflow</h3>
+<ul>
+  <li>Weekly check-ins with AEF staff (15&ndash;30 min virtual)</li>
+  <li>Shared project board (Notion/Asana) for real-time visibility</li>
+  <li>Content approval: Draft &rarr; AEF Review &rarr; Revisions &rarr; Publish</li>
+  <li>Bi-weekly performance reports with clear takeaways</li>
+</ul>
+
+<h3>Tools &amp; Platforms</h3>
+<table>
+  <tr>
+    <th>Category</th>
+    <th>Tools</th>
+  </tr>
+  <tr>
+    <td>Social</td>
+    <td>Meta Business Suite, Instagram, Facebook</td>
+  </tr>
+  <tr>
+    <td>Ads</td>
+    <td>Meta Ads Manager, Google Ads</td>
+  </tr>
+  <tr>
+    <td>Email</td>
+    <td>Mailchimp or AEF's preferred platform</td>
+  </tr>
+  <tr>
+    <td>Analytics</td>
+    <td>Google Analytics, Meta Pixel, UTM tracking</td>
+  </tr>
+  <tr>
+    <td>Design</td>
+    <td>Adobe Creative Suite, Canva Pro</td>
+  </tr>
+</table>
+
+<!-- PAGE BREAK -->
+<br clear="all" style="page-break-before:always; mso-special-character:line-break;">
+
+<!-- ============================================ -->
+<!-- RELEVANT EXPERIENCE                          -->
+<!-- ============================================ -->
+
+<h2>Relevant Experience &mdash; Proven Partnerships Across Alberta</h2>
+
+<div class="advantage-box">
+  <p class="advantage-title">Tutti Frutti (Restaurant Growth Campaign)</p>
+  <p style="margin-bottom:0;">Reached 30,000+ people with 2,000+ entries in 48 hours across two locations. Drove measurable foot traffic through organic platform amplification.</p>
+</div>
+
+<div class="advantage-box">
+  <p class="advantage-title">GameCon Canada (Event Marketing &amp; Community)</p>
+  <p style="margin-bottom:0;">Built awareness and drove attendance for a community event through social content, digital ads, and cross-platform promotion.</p>
+</div>
+
+<div class="advantage-box">
+  <p class="advantage-title">TC Legal (Professional Services)</p>
+  <p style="margin-bottom:0;">Developed brand identity and digital presence. Demonstrated trust-based, professional messaging to Alberta audiences.</p>
+</div>
+
+<p>Like AEF, these partners needed to reach under-aware Alberta audiences with clear benefit messaging. Our platform provided the reach; our creative converted it into action. References available upon request.</p>
+
+<!-- PAGE BREAK -->
+<br clear="all" style="page-break-before:always; mso-special-character:line-break;">
+
+<!-- ============================================ -->
+<!-- BUDGET & PRICING                             -->
+<!-- ============================================ -->
+
+<h2>Budget &amp; Pricing</h2>
+
+<table>
+  <tr>
+    <th>Service</th>
+    <th style="text-align:right;">Investment</th>
+  </tr>
+  <tr>
+    <td>Campaign Strategy &amp; Planning</td>
+    <td style="text-align:right;">$1,500</td>
+  </tr>
+  <tr>
+    <td>Creative &amp; Asset Production</td>
+    <td style="text-align:right;">$2,500</td>
+  </tr>
+  <tr>
+    <td>Social Media Execution</td>
+    <td style="text-align:right;">$2,000</td>
+  </tr>
+  <tr>
+    <td>Landing Page &amp; Email</td>
+    <td style="text-align:right;">$1,500</td>
+  </tr>
+  <tr>
+    <td>Ad Management &amp; Optimization</td>
+    <td style="text-align:right;">$1,500</td>
+  </tr>
+  <tr class="total-row">
+    <td>TOTAL</td>
+    <td style="text-align:right;">$9,500</td>
+  </tr>
+</table>
+
+<div class="callout">
+  <h4 style="margin-top:0;">Paid Media Spend (Separate)</h4>
+  <p>We recommend $1,500 to $3,000 for the 4-month campaign. Our platform amplification significantly reduces the paid spend needed.</p>
+
+  <h4>Bonus &mdash; Included Free</h4>
+  <p>Organic exposure across our 290K+ network (Instagram, website, newsletter).<br>
+  Estimated value: $3,000 to $5,000+.</p>
+
+  <h4>Hourly Rate</h4>
+  <p style="margin-bottom:0;">$75/hr for any out-of-scope work. All additional work approved by AEF in advance.</p>
+</div>
+
+<!-- PAGE BREAK -->
+<br clear="all" style="page-break-before:always; mso-special-character:line-break;">
+
+<!-- ============================================ -->
+<!-- WHY AEF SHOULD PARTNER WITH US               -->
+<!-- ============================================ -->
+
+<h2>Why AEF Should Partner With Culture Media</h2>
+
+<div class="advantage-box">
+  <p class="advantage-title">Alberta Experts</p>
+  <p style="margin-bottom:0;">We don't just market in Alberta &mdash; we are Alberta. Our platforms, audience, and content are rooted here. We understand rural communities, equestrian culture, and how Albertans actually engage online.</p>
+</div>
+
+<div class="advantage-box">
+  <p class="advantage-title">Built-In Audience</p>
+  <p style="margin-bottom:0;">290K+ Albertans already follow our platforms. AEF gets immediate visibility without building from scratch. Faster results, lower cost-per-acquisition.</p>
+</div>
+
+<div class="advantage-box">
+  <p class="advantage-title">Hands-On Execution</p>
+  <p style="margin-bottom:0;">We don't hand you a strategy deck and disappear. We build the assets, run the campaigns, manage the ads, and optimize weekly.</p>
+</div>
+
+<div class="advantage-box">
+  <p class="advantage-title">Maximum Value</p>
+  <p style="margin-bottom:0;">Your $9,500 delivers $12,000 to $15,000+ in total value with our platform amplification. No other agency offers this built-in reach at this price.</p>
+</div>
+
+<br>
+
+<!-- ============================================ -->
+<!-- FOOTER                                       -->
+<!-- ============================================ -->
+
+<div class="footer">
+  <table style="border:none; width:100%;">
+    <tr>
+      <td style="border:none; padding:0; vertical-align:top; width:50%;">
+        Submitted by Culture Media&nbsp;&nbsp;|&nbsp;&nbsp;February 9, 2026<br>
+        Prepared for Sonia Dantu, Executive Director<br>
+        Alberta Equestrian Federation
+      </td>
+      <td style="border:none; padding:0; vertical-align:top; width:50%; text-align:right;">
+        Mariam Abdihalim, Account Manager<br>
+        culturemedia101@gmail.com<br>
+        culturemedia.ca&nbsp;&nbsp;|&nbsp;&nbsp;@culturealberta._
+      </td>
+    </tr>
+  </table>
+</div>
+
+</div>
+</body>
+</html>

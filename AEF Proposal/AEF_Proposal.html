@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Culture Media x AEF - 3% Membership Growth Campaign</title>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="/logo.png" sizes="192x192" type="image/png">
+    <link rel="apple-touch-icon" href="/logo.png" sizes="180x180">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --blue: #0072bc;
+            --blue-dark: #004d80;
+            --blue-deep: #003356;
+            --blue-light: #e8f4fc;
+            --blue-pale: #f4f9fd;
+            --sky: #00a3e0;
+            --dark: #111;
+            --text: #333;
+            --muted: #666;
+            --light-border: rgba(0, 114, 188, 0.12);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text);
+            background: #fff;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container { max-width: 1080px; margin: 0 auto; padding: 0 36px; }
+
+        /* ===== HERO ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 80px 36px 60px;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(175deg, #fff 0%, var(--blue-pale) 35%, #fff 70%);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 50vw;
+            height: 50vw;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,114,188,0.05) 0%, transparent 65%);
+        }
+
+        .hero .container { position: relative; z-index: 2; }
+
+        /* Logos */
+        .logo-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            margin-bottom: 32px;
+            animation: fadeIn .6s ease;
+        }
+        .logo-row img { height: 72px; width: auto; object-fit: contain; }
+        .cm-logo-wrap { background: #f5f5f5; padding: 10px 14px; border-radius: 14px; display: flex; align-items: center; }
+        .logo-x { font-size: 28px; font-weight: 900; color: var(--blue); opacity: .6; }
+
+        .hero-badge {
+            display: inline-block;
+            background: var(--blue);
+            color: #fff;
+            padding: 9px 24px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            animation: fadeUp .6s ease .15s backwards;
+        }
+
+        .hero h1 {
+            font-size: 58px;
+            font-weight: 900;
+            letter-spacing: -2.5px;
+            line-height: 1.08;
+            margin-bottom: 20px;
+            color: var(--dark);
+            animation: fadeUp .6s ease .3s backwards;
+        }
+        .hero h1 em { font-style: normal; color: var(--blue); }
+
+        .hero-sub {
+            font-size: 19px;
+            color: var(--muted);
+            font-weight: 500;
+            max-width: 660px;
+            margin: 0 auto;
+            line-height: 1.65;
+            animation: fadeUp .6s ease .45s backwards;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-top: 56px;
+            padding-top: 40px;
+            border-top: 2px solid var(--light-border);
+            animation: fadeUp .6s ease .6s backwards;
+        }
+        .hs-num {
+            font-size: 40px;
+            font-weight: 900;
+            display: block;
+            background: linear-gradient(135deg, var(--blue-dark), var(--sky));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hs-label { font-size: 12px; color: #999; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; }
+
+        /* ===== PHOTO STRIP ===== */
+        .photo-strip { display: grid; grid-template-columns: repeat(3, 1fr); }
+        .photo-strip img {
+            width: 100%;
+            height: 260px;
+            object-fit: cover;
+            display: block;
+            transition: filter .3s;
+            filter: brightness(.88) saturate(1.1);
+        }
+        .photo-strip img:hover { filter: brightness(1); }
+
+        /* ===== SECTIONS ===== */
+        section { padding: 72px 36px; }
+        .alt-bg { background: var(--blue-pale); }
+        .white-bg { background: #fff; }
+
+        .tag {
+            display: inline-block;
+            color: var(--blue);
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.8px;
+            margin-bottom: 14px;
+        }
+
+        h2 {
+            font-size: 40px;
+            font-weight: 900;
+            letter-spacing: -1.5px;
+            line-height: 1.15;
+            color: var(--blue-deep);
+            margin-bottom: 16px;
+        }
+
+        h3 {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--blue-deep);
+            margin-bottom: 12px;
+            letter-spacing: -.3px;
+        }
+
+        .desc {
+            font-size: 17px;
+            color: var(--muted);
+            line-height: 1.7;
+            max-width: 640px;
+            margin-bottom: 40px;
+        }
+
+        /* ===== VALUE BANNER ===== */
+        .value-banner {
+            background: linear-gradient(135deg, var(--blue-dark), var(--blue));
+            border-radius: 24px;
+            padding: 48px 56px;
+            color: #fff;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 36px;
+            margin-bottom: 56px;
+            box-shadow: 0 20px 60px rgba(0,114,188,.25);
+        }
+        .vb-item { text-align: center; }
+        .vb-num { font-size: 36px; font-weight: 900; display: block; margin-bottom: 4px; }
+        .vb-label { font-size: 13px; opacity: .85; font-weight: 500; }
+        .vb-sub { font-size: 11px; opacity: .6; margin-top: 2px; }
+
+        /* ===== TEAM ===== */
+        .team-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+        .team-card {
+            background: #fff;
+            border: 1.5px solid var(--light-border);
+            border-radius: 18px;
+            padding: 36px;
+            text-align: center;
+            transition: all .3s;
+        }
+        .team-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,114,188,.08); border-color: rgba(0,114,188,.25); }
+        .avatar {
+            width: 64px; height: 64px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--blue-deep), var(--blue));
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 24px; font-weight: 900;
+            margin: 0 auto 16px;
+        }
+        .team-card h4 { font-size: 19px; font-weight: 800; color: var(--blue-deep); margin-bottom: 2px; }
+        .team-role { color: var(--blue); font-weight: 600; font-size: 13px; margin-bottom: 12px; display: block; }
+        .team-card p { color: var(--muted); font-size: 13px; line-height: 1.65; }
+
+        /* ===== BARRIER CARDS ===== */
+        .barriers { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+        .b-card {
+            background: #fff;
+            border-left: 4px solid var(--blue);
+            padding: 24px 24px 24px 28px;
+            border-radius: 0 14px 14px 0;
+            box-shadow: 0 2px 12px rgba(0,0,0,.04);
+            transition: all .3s;
+        }
+        .b-card:hover { transform: translateX(6px); box-shadow: 0 6px 24px rgba(0,114,188,.1); }
+        .b-card h4 { font-size: 16px; font-weight: 800; color: var(--blue-deep); margin-bottom: 4px; }
+        .b-card p { font-size: 14px; color: var(--muted); line-height: 1.55; margin: 0; }
+
+        /* ===== CALLOUT BOX ===== */
+        .callout {
+            background: #fff;
+            border-left: 4px solid var(--blue);
+            padding: 24px 32px;
+            border-radius: 0 14px 14px 0;
+            box-shadow: 0 2px 12px rgba(0,0,0,.03);
+        }
+        .callout p { font-size: 16px; font-weight: 500; color: var(--text); line-height: 1.7; margin: 0; }
+
+        /* ===== PATHWAY CARDS ===== */
+        .pathways { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 40px; }
+        .pw {
+            background: #fff;
+            border: 1.5px solid var(--light-border);
+            border-radius: 18px;
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+            transition: all .3s;
+        }
+        .pw::after { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--blue), var(--sky)); }
+        .pw:hover { transform: translateY(-5px); box-shadow: 0 16px 48px rgba(0,114,188,.08); border-color: rgba(0,114,188,.25); }
+        .pw-num {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 36px; height: 36px; background: var(--blue); color: #fff;
+            border-radius: 9px; font-size: 16px; font-weight: 900; margin-bottom: 14px;
+        }
+        .pw h4 { font-size: 18px; font-weight: 800; color: var(--blue-deep); margin-bottom: 2px; }
+        .pw-label { font-size: 11px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px; display: block; }
+        .pw p { font-size: 14px; color: var(--muted); line-height: 1.65; }
+        .al { list-style: none; padding: 0; margin-top: 12px; }
+        .al li { padding: 5px 0 5px 22px; position: relative; font-size: 13px; color: #555; line-height: 1.55; }
+        .al li::before { content: '\2192'; position: absolute; left: 0; color: var(--blue); font-weight: 900; }
+
+        /* ===== INSURANCE BOX ===== */
+        .ins-box {
+            background: linear-gradient(135deg, var(--blue-pale), #f0f8ff);
+            border: 1.5px solid var(--light-border);
+            border-radius: 20px;
+            padding: 40px;
+        }
+        .ins-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0 16px; }
+        .ins-bad { background: #fff5f5; border: 1px solid #fecaca; border-radius: 14px; padding: 20px; }
+        .ins-good { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 14px; padding: 20px; }
+        .ins-bad h5 { color: #dc2626; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+        .ins-good h5 { color: #16a34a; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+        .ins-bad p { color: #aaa; font-size: 13px; font-style: italic; margin: 0; }
+        .ins-good p { color: #333; font-size: 13px; font-weight: 500; margin: 0; }
+
+        /* ===== SERVICES ===== */
+        .svc-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .svc {
+            background: #fff;
+            border: 1px solid rgba(0,0,0,.05);
+            padding: 32px 24px;
+            border-radius: 18px;
+            text-align: center;
+            transition: all .3s;
+        }
+        .svc:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(0,114,188,.08); border-color: rgba(0,114,188,.15); }
+        .svc-icon { font-size: 28px; margin-bottom: 10px; display: block; }
+        .svc h3 { font-size: 17px; margin-bottom: 8px; }
+        .svc p { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+        /* ===== PLATFORM CARDS ===== */
+        .plat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 760px; margin: 0 auto 36px; }
+        .plat {
+            border-radius: 14px;
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            transition: all .3s;
+        }
+        .plat:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+        .plat-icon {
+            width: 42px; height: 42px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; font-size: 18px; color: #fff;
+        }
+        .plat-name { font-weight: 700; font-size: 15px; }
+        .plat-sub { font-size: 13px; font-weight: 500; }
+
+        /* ===== ROADMAP ===== */
+        .rm-item { display: flex; gap: 28px; margin-bottom: 40px; align-items: flex-start; }
+        .rm-item:last-child { margin-bottom: 0; }
+        .rm-dot-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+        .rm-dot {
+            width: 48px; height: 48px; border-radius: 50%; background: var(--blue);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 20px; font-weight: 900; flex-shrink: 0;
+            box-shadow: 0 4px 16px rgba(0,114,188,.25);
+        }
+        .rm-dot.accent { background: var(--sky); }
+        .rm-line { width: 3px; flex: 1; background: linear-gradient(180deg, var(--blue), var(--sky)); border-radius: 3px; margin-top: 8px; min-height: 40px; }
+        .rm-content {
+            background: #fff;
+            border: 1.5px solid var(--light-border);
+            border-radius: 18px;
+            padding: 28px;
+            flex: 1;
+            transition: all .3s;
+        }
+        .rm-content:hover { box-shadow: 0 8px 32px rgba(0,114,188,.06); }
+        .rm-tag { font-size: 12px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: .5px; display: block; margin-bottom: 8px; }
+        .rm-content h3 { font-size: 20px; margin-bottom: 8px; }
+        .rm-content p { font-size: 14px; color: #555; line-height: 1.65; margin: 0; }
+
+        /* ===== COLLAB CARDS ===== */
+        .collab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .collab-card {
+            background: #fff;
+            border: 1.5px solid var(--light-border);
+            border-radius: 18px;
+            padding: 32px;
+            transition: all .3s;
+        }
+        .collab-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,114,188,.06); }
+        .collab-card h4 { font-size: 18px; font-weight: 800; color: var(--blue-deep); margin-bottom: 8px; }
+
+        /* ===== REFERENCES ===== */
+        .ref-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .ref {
+            background: #fff;
+            border: 1.5px solid var(--light-border);
+            border-radius: 18px;
+            padding: 28px;
+            text-align: center;
+            transition: all .3s;
+        }
+        .ref:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(0,114,188,.08); border-color: rgba(0,114,188,.2); }
+        .ref-icon { font-size: 40px; margin-bottom: 12px; display: block; }
+        .ref h4 { font-size: 18px; font-weight: 800; color: var(--blue-deep); margin-bottom: 4px; }
+        .ref p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+        /* ===== BUDGET TABLE ===== */
+        .budget-tbl {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 2px 16px rgba(0,0,0,.05);
+            margin: 28px 0;
+        }
+        .budget-tbl thead th {
+            background: var(--blue-deep);
+            color: #fff;
+            padding: 16px 22px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+        }
+        .budget-tbl thead th:last-child { text-align: right; }
+        .budget-tbl tbody td {
+            padding: 16px 22px;
+            border-bottom: 1px solid rgba(0,0,0,.04);
+            font-size: 14px;
+            color: var(--text);
+        }
+        .budget-tbl tbody tr:last-child td { border-bottom: none; }
+        .budget-tbl tbody tr:hover { background: var(--blue-pale); }
+        .budget-tbl tfoot td {
+            padding: 18px 22px;
+            background: var(--blue-pale);
+            font-weight: 900;
+            font-size: 17px;
+            color: var(--blue-deep);
+            border-top: 3px solid var(--blue);
+        }
+
+        /* ===== WHY US ===== */
+        .why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .why-card {
+            background: #fff;
+            border: 1px solid var(--light-border);
+            padding: 32px;
+            border-radius: 18px;
+            transition: all .3s;
+        }
+        .why-card:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(0,114,188,.08); border-color: rgba(0,114,188,.25); }
+        .why-card h4 { font-size: 19px; font-weight: 700; color: var(--blue-deep); margin-bottom: 8px; }
+        .why-card p { font-size: 14px; color: var(--muted); line-height: 1.7; }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background: var(--dark);
+            color: #fff;
+            padding: 72px 36px;
+            text-align: center;
+        }
+        .footer h2 { color: #fff; }
+        .footer-link { color: var(--sky); text-decoration: none; font-weight: 600; transition: color .2s; }
+        .footer-link:hover { color: #fff; }
+
+        /* ===== TWO-COL HELPERS ===== */
+        .split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+        /* ===== ANIM ===== */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1024px) {
+            .team-row { grid-template-columns: 1fr 1fr; }
+            .svc-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 32px; letter-spacing: -1.5px; }
+            .hero-sub { font-size: 16px; }
+            h2 { font-size: 28px; letter-spacing: -1px; }
+            h3 { font-size: 20px; }
+            .hero-stats { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+            .hs-num { font-size: 30px; }
+            .photo-strip { grid-template-columns: 1fr; }
+            .photo-strip img { height: 200px; }
+            .value-banner { grid-template-columns: 1fr; padding: 28px 24px; gap: 20px; }
+            .vb-num { font-size: 28px; }
+            .team-row, .barriers, .pathways, .svc-grid, .plat-grid,
+            .collab-grid, .ref-grid, .why-grid, .split, .ins-compare { grid-template-columns: 1fr; }
+            section { padding: 48px 16px; }
+            .container { padding: 0 16px; }
+            .hero { padding: 48px 16px; min-height: auto; }
+            .logo-row img { height: 48px; }
+            .logo-row { gap: 14px; }
+            .logo-x { font-size: 22px; }
+            .hero-badge { font-size: 11px; padding: 7px 18px; }
+            .rm-item { flex-direction: column; align-items: center; text-align: center; }
+            .rm-dot-col { flex-direction: row; gap: 0; }
+            .rm-line { display: none; }
+            .rm-content { padding: 22px; }
+            .budget-tbl thead th { padding: 12px 14px; font-size: 11px; }
+            .budget-tbl tbody td { padding: 12px 14px; font-size: 13px; }
+            .callout { padding: 20px 22px; }
+            .ins-box { padding: 28px 22px; }
+            .pw { padding: 24px; }
+            .svc { padding: 24px 20px; }
+            .why-card { padding: 24px; }
+            .footer { padding: 48px 16px; }
+            .footer h2 { font-size: 26px; }
+        }
+
+        @media (max-width: 420px) {
+            .hero h1 { font-size: 28px; }
+            .hero-stats { grid-template-columns: 1fr 1fr; gap: 12px; }
+            .hs-num { font-size: 26px; }
+            .logo-row img { height: 40px; }
+            h2 { font-size: 24px; }
+            .budget-tbl tbody td:nth-child(2) { display: none; }
+            .budget-tbl thead th:nth-child(2) { display: none; }
+        }
+
+        @media print {
+            .hero { min-height: auto; padding: 48px 36px; }
+            section { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ===== HERO ===== -->
+    <section class="hero">
+        <div class="container">
+            <div class="logo-row">
+                <a href="https://www.culturemedia.ca/" target="_blank" class="cm-logo-wrap" style="text-decoration: none;">
+                    <img src="./images/culture_media_logo.png" alt="Culture Media">
+                </a>
+                <span class="logo-x">x</span>
+                <img src="https://albertaequestrian.com/wp-content/uploads/2025/06/AEF-STACKED-Logo.png"
+                    alt="Alberta Equestrian Federation" style="height: 88px;">
+            </div>
+
+            <div class="hero-badge">Marketing & Creative Services RFP Response &bull; February 2026</div>
+
+            <h1>Grow AEF Membership<br><em>by 3% in 4 Months</em></h1>
+
+            <p class="hero-sub">A digital campaign powered by Culture Media's owned Alberta media network, giving AEF instant access to 290,000+ engaged Albertans at no extra cost.</p>
+
+            <div class="hero-stats">
+                <div>
+                    <span class="hs-num">290K+</span>
+                    <span class="hs-label">Our Alberta Reach</span>
+                </div>
+                <div>
+                    <span class="hs-num">40K+</span>
+                    <span class="hs-label">Instagram Followers</span>
+                </div>
+                <div>
+                    <span class="hs-num">60K+</span>
+                    <span class="hs-label">Monthly Web Views</span>
+                </div>
+                <div>
+                    <span class="hs-num">4 mo</span>
+                    <span class="hs-label">Campaign Duration</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== PHOTO STRIP ===== -->
+    <div class="photo-strip">
+        <img src="https://albertaequestrian.com/wp-content/uploads/shutterstock_1490799593-1280x862.jpg" alt="Equestrian riders in Alberta">
+        <img src="https://albertaequestrian.com/wp-content/uploads/2025/07/adult-and-youth-membership-Woman_on_horse-1-scaled-1-1280x1280.jpg" alt="Rider and horse">
+        <img src="https://albertaequestrian.com/wp-content/uploads/2025/07/two-white-horses-on-grand-pasture-picjumbo-com-scaled-e1753725434442.jpg" alt="Alberta horse pasture">
+    </div>
+
+    <!-- ===== ABOUT AEF ===== -->
+    <section class="white-bg">
+        <div class="container">
+            <span class="tag">About the Client</span>
+            <h2>The Alberta Equestrian Federation</h2>
+            <p class="desc">The province's sole governing body for equestrian sport and industry, recognized by the Government of Alberta since 1978.</p>
+
+            <div class="split" style="margin-bottom: 36px;">
+                <div>
+                    <p style="font-size: 15px; color: var(--text); line-height: 1.8;">AEF serves nearly 15,000 members across 425+ Alberta communities, covering everything from competitive sport to recreational trail riding. Programs include coaching certification, Learn to Ride/Drive, Wild Rose competitions, trail initiatives, and equine welfare advocacy.</p>
+                    <p style="font-size: 15px; color: var(--text); line-height: 1.8; margin-top: 14px;">Every membership includes $5M liability insurance and $40K AD&D coverage, making it one of the highest-value equestrian memberships in the country.</p>
+                </div>
+                <div>
+                    <div style="background: #fff; border-radius: 18px; padding: 28px; border: 1.5px solid var(--light-border);">
+                        <h4 style="font-size: 16px; font-weight: 800; color: var(--blue-deep); margin-bottom: 16px;">AEF at a Glance</h4>
+                        <ul class="al" style="margin: 0;">
+                            <li>15,000 members across Alberta</li>
+                            <li>425+ communities represented</li>
+                            <li>22,000+ newsletter subscribers</li>
+                            <li>Serving Alberta's equine community since 1978</li>
+                            <li>Coaching, competition, recreation, trail riding, welfare</li>
+                            <li>$5M liability + $40K AD&D with every membership</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="callout">
+                <p>The goal: grow total AEF membership by 3% over the next 4 months through a targeted digital marketing campaign. That means reaching the thousands of equestrian participants across Alberta who ride, train, and compete but haven't signed up yet.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== COMPANY OVERVIEW ===== -->
+    <section class="alt-bg">
+        <div class="container">
+            <span class="tag">Company Overview</span>
+            <h2>About Culture Media</h2>
+            <p class="desc">We're an Alberta-based digital marketing agency that owns the media platforms reaching this province every day. When AEF partners with us, your campaign gets amplified across our entire network at no additional cost.</p>
+
+            <!-- Value Banner -->
+            <div class="value-banner">
+                <div class="vb-item">
+                    <span class="vb-num">40K+</span>
+                    <span class="vb-label">Instagram Followers</span>
+                    <span class="vb-sub">@culturealberta._ + @cultureyyc._</span>
+                </div>
+                <div class="vb-item">
+                    <span class="vb-num">60K+</span>
+                    <span class="vb-label">Monthly Web Views</span>
+                    <span class="vb-sub">culturealberta.com</span>
+                </div>
+                <div class="vb-item">
+                    <span class="vb-num">5,500+</span>
+                    <span class="vb-label">Newsletter Subscribers</span>
+                    <span class="vb-sub">Engaged Alberta audience</span>
+                </div>
+            </div>
+
+            <!-- Team -->
+            <h3 style="text-align: center; margin-bottom: 6px;">Your Dedicated Team</h3>
+            <p style="text-align: center; font-size: 14px; color: #999; margin-bottom: 28px;">A small, focused team dedicated to this campaign</p>
+
+            <div class="team-row">
+                <div class="team-card">
+                    <div class="avatar">AH</div>
+                    <h4>Adam Harrison</h4>
+                    <span class="team-role">Founder & Campaign Strategist</span>
+                    <p>Leads strategy, creative direction, content production, platform integration, and performance optimization across the full campaign.</p>
+                </div>
+                <div class="team-card">
+                    <div class="avatar">MA</div>
+                    <h4>Mariam Abdihalim</h4>
+                    <span class="team-role">Account Manager & Direct Point of Contact</span>
+                    <p>Your go-to person for everything. Manages the AEF relationship, coordinates deliverables, handles day-to-day communication, and keeps the project on track.</p>
+                </div>
+                <div class="team-card">
+                    <div class="avatar">KF</div>
+                    <h4>Kish Flores</h4>
+                    <span class="team-role">Communications Specialist</span>
+                    <p>Handles copywriting, social media content, email campaigns, and community engagement. Keeps all messaging on-brand and connected to the right audiences.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== THE CHALLENGE ===== -->
+    <section class="white-bg">
+        <div class="container">
+            <span class="tag">We Understand the Challenge</span>
+            <h2>The Barriers to Membership Growth</h2>
+            <p class="desc">AEF doesn't have a competition problem. It has an awareness and clarity problem. We'll fix that.</p>
+
+            <div class="barriers">
+                <div class="b-card">
+                    <h4>Limited Awareness</h4>
+                    <p>Many equestrian participants across Alberta don't know AEF exists or what it does for them</p>
+                </div>
+                <div class="b-card">
+                    <h4>Unclear Benefits</h4>
+                    <p>$5M liability insurance, $40K AD&D coverage, and funding programs aren't reaching the right people</p>
+                </div>
+                <div class="b-card">
+                    <h4>"Not For Me" Perception</h4>
+                    <p>Recreational riders, trail riders, and hobbyists think AEF is only for competitive equestrians</p>
+                </div>
+                <div class="b-card">
+                    <h4>Transactional Engagement</h4>
+                    <p>Members renew for insurance but don't feel connected to a community or movement</p>
+                </div>
+            </div>
+
+            <div class="callout">
+                <p>Our approach: reframe AEF membership from a transaction to a statement of identity. When you're part of the equestrian community in Alberta, AEF membership is what responsible participants do. Protection, value, and belonging.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== STRATEGIC APPROACH ===== -->
+    <section class="alt-bg">
+        <div class="container">
+            <span class="tag">Strategic Approach</span>
+            <h2>One Campaign. Four Audience Pathways.</h2>
+            <p class="desc">A unified message adapted for different motivations, all leading to the same outcome: AEF membership.</p>
+
+            <div class="pathways">
+                <div class="pw">
+                    <div class="pw-num">1</div>
+                    <h4>Barn Owners, Facilities & Coaches</h4>
+                    <span class="pw-label">High Priority / Multiplier Audience</span>
+                    <p>One facility requiring AEF membership can bring in dozens of riders.</p>
+                    <ul class="al">
+                        <li>AEF membership protects your facility, students, and reputation</li>
+                        <li>Professional liability framing, not fear-based</li>
+                        <li>Toolkit assets for facilities to share with riders/boarders</li>
+                    </ul>
+                </div>
+                <div class="pw">
+                    <div class="pw-num">2</div>
+                    <h4>Broader Equestrian Community</h4>
+                    <span class="pw-label">Recreational & Non-Competitive</span>
+                    <p>Trail riders and hobbyists who don't realize AEF is for everyone.</p>
+                    <ul class="al">
+                        <li>Normalize AEF membership as part of riding in Alberta</li>
+                        <li>Plain-language benefit breakdowns and community stories</li>
+                        <li>"I ride in Alberta. I'm AEF." identity-driven messaging</li>
+                    </ul>
+                </div>
+                <div class="pw">
+                    <div class="pw-num">3</div>
+                    <h4>Families, Youth & New Riders</h4>
+                    <span class="pw-label">Growth Segment</span>
+                    <p>Parents need reassurance. New riders need structure. AEF provides both.</p>
+                    <ul class="al">
+                        <li>Safety-first messaging: insurance as peace of mind</li>
+                        <li>Highlight Learn to Ride/Drive and coaching pathways</li>
+                        <li>Welcoming tone that removes intimidation</li>
+                    </ul>
+                </div>
+                <div class="pw">
+                    <div class="pw-num">4</div>
+                    <h4>Lapsed & Inactive Members</h4>
+                    <span class="pw-label">Re-engagement</span>
+                    <p>They said yes once. We remind them why.</p>
+                    <ul class="al">
+                        <li>"Welcome back" email sequences and retargeting</li>
+                        <li>What's new since they last engaged</li>
+                        <li>Community-driven "you're missed" social proof</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Insurance Approach -->
+            <div class="ins-box">
+                <h3 style="color: var(--blue-deep); margin-bottom: 10px;">How We Talk About Insurance (Without Fear)</h3>
+                <p style="font-size: 15px; color: var(--muted); line-height: 1.7;">Insurance is the #1 motivator, but fear-based messaging is off the table. We agree. Here's how we reframe it:</p>
+                <div class="ins-compare">
+                    <div class="ins-bad">
+                        <h5>&#10060; Not This</h5>
+                        <p>"Without insurance, one accident could cost you everything."</p>
+                    </div>
+                    <div class="ins-good">
+                        <h5>&#9989; This</h5>
+                        <p>"Responsible riders ride protected. AEF membership means $5M in liability coverage, so you can focus on what you love."</p>
+                    </div>
+                </div>
+                <p style="font-size: 14px; color: var(--muted); line-height: 1.7;">Insurance becomes a badge of responsibility, not a reaction to risk. It's what smart, committed equestrians do.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SCOPE OF SERVICES ===== -->
+    <section class="white-bg">
+        <div class="container">
+            <span class="tag">Scope of Services</span>
+            <h2>What We'll Deliver</h2>
+            <p class="desc">Hands-on execution, not advisory-only. We build it, run it, optimize it, and report on it.</p>
+
+            <div class="svc-grid">
+                <div class="svc">
+                    <span class="svc-icon">&#127919;</span>
+                    <h3>Strategy & Messaging</h3>
+                    <p>Core concept, audience pathway frameworks, content calendar for the full 4-month timeline</p>
+                </div>
+                <div class="svc">
+                    <span class="svc-icon">&#127912;</span>
+                    <h3>Creative Production</h3>
+                    <p>Campaign visuals, video, social graphics, and branded facility toolkits for barn owners</p>
+                </div>
+                <div class="svc">
+                    <span class="svc-icon">&#128241;</span>
+                    <h3>Social Media</h3>
+                    <p>Organic + paid on Instagram & Facebook, plus amplification through our 40K+ network</p>
+                </div>
+                <div class="svc">
+                    <span class="svc-icon">&#128269;</span>
+                    <h3>Paid Digital Ads</h3>
+                    <p>Targeted campaigns across social & search reaching equestrians in rural and urban Alberta</p>
+                </div>
+                <div class="svc">
+                    <span class="svc-icon">&#128187;</span>
+                    <h3>Landing Page & Email</h3>
+                    <p>Conversion-optimized landing page + email sequences for leads and lapsed members</p>
+                </div>
+                <div class="svc">
+                    <span class="svc-icon">&#128200;</span>
+                    <h3>Tracking & Reporting</h3>
+                    <p>Bi-weekly reports: reach, clicks, conversions, new memberships, cost-per-acquisition</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== PLATFORM ADVANTAGE ===== -->
+    <section class="alt-bg">
+        <div class="container">
+            <span class="tag">Our Competitive Advantage</span>
+            <h2>Built-In Reach Across Alberta</h2>
+            <p class="desc">You don't just get a marketing team. You get immediate access to our owned media platforms. That means reduced paid ad spend and higher ROI from day one.</p>
+
+            <div class="plat-grid">
+                <a href="https://www.instagram.com/culturealberta._/" target="_blank" class="plat" style="background: linear-gradient(135deg, #e8f4fc, #d0ebf9);">
+                    <div class="plat-icon" style="background: var(--blue);">&#128247;</div>
+                    <div>
+                        <div class="plat-name" style="color: var(--blue-deep);">@culturealberta._</div>
+                        <div class="plat-sub" style="color: var(--blue);">19.1K followers · Edmonton & Alberta</div>
+                    </div>
+                </a>
+                <a href="https://www.instagram.com/cultureyyc._/" target="_blank" class="plat" style="background: linear-gradient(135deg, #fef3e2, #fde8c4);">
+                    <div class="plat-icon" style="background: #e65100;">&#128247;</div>
+                    <div>
+                        <div class="plat-name" style="color: #bf360c;">@cultureyyc._</div>
+                        <div class="plat-sub" style="color: #e65100;">21K followers · Calgary</div>
+                    </div>
+                </a>
+                <a href="https://www.culturealberta.com/" target="_blank" class="plat" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9);">
+                    <div class="plat-icon" style="background: #2e7d32;">&#127760;</div>
+                    <div>
+                        <div class="plat-name" style="color: #1b5e20;">culturealberta.com</div>
+                        <div class="plat-sub" style="color: #2e7d32;">60K+ monthly page views</div>
+                    </div>
+                </a>
+                <a href="https://www.culturealberta.com/" target="_blank" class="plat" style="background: linear-gradient(135deg, #f3e5f5, #e1bee7);">
+                    <div class="plat-icon" style="background: #7b1fa2;">&#9993;</div>
+                    <div>
+                        <div class="plat-name" style="color: #4a148c;">Newsletter</div>
+                        <div class="plat-sub" style="color: #7b1fa2;">5,500+ active subscribers</div>
+                    </div>
+                </a>
+            </div>
+
+            <div class="callout">
+                <p>What this means for AEF: your campaign gets organic amplification to 290,000+ Albertans at no additional cost. This drastically reduces the paid media you'd need. Most agencies charge for every impression. We already have the audience.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== ROADMAP ===== -->
+    <section class="white-bg">
+        <div class="container">
+            <span class="tag">Campaign Roadmap</span>
+            <h2>Your 4-Month Growth Plan</h2>
+            <p class="desc">Phased approach building momentum toward measurable results</p>
+
+            <div style="max-width: 700px;">
+                <div class="rm-item">
+                    <div class="rm-dot-col">
+                        <div class="rm-dot">1</div>
+                        <div class="rm-line"></div>
+                    </div>
+                    <div class="rm-content">
+                        <span class="rm-tag">Month 1 | Feb/Mar 2026</span>
+                        <h3>Foundation & Launch</h3>
+                        <p>Strategy finalization, messaging & creative development, landing page build, ad setup. Quick win: organic content on Culture Media platforms starts immediately.</p>
+                    </div>
+                </div>
+                <div class="rm-item">
+                    <div class="rm-dot-col">
+                        <div class="rm-dot accent">2</div>
+                        <div class="rm-line"></div>
+                    </div>
+                    <div class="rm-content">
+                        <span class="rm-tag">Month 2 | Mar/Apr 2026</span>
+                        <h3>Full Campaign Activation</h3>
+                        <p>Paid ads live. Email sequences deployed. Facility-focused assets distributed. Organic amplification running in parallel.</p>
+                    </div>
+                </div>
+                <div class="rm-item">
+                    <div class="rm-dot-col">
+                        <div class="rm-dot">3</div>
+                        <div class="rm-line"></div>
+                    </div>
+                    <div class="rm-content">
+                        <span class="rm-tag">Month 3 | Apr/May 2026</span>
+                        <h3>Optimization & Push</h3>
+                        <p>Analyze data, double down on best-converting pathways, A/B test messaging, retarget warm leads. Peak spring/summer riding season.</p>
+                    </div>
+                </div>
+                <div class="rm-item">
+                    <div class="rm-dot-col">
+                        <div class="rm-dot accent">4</div>
+                    </div>
+                    <div class="rm-content">
+                        <span class="rm-tag">Month 4 | May/Jun 2026</span>
+                        <h3>Final Push & Reporting</h3>
+                        <p>Final conversion push, comprehensive campaign report, KPI analysis, and recommendations for future campaigns if targets are met.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== COLLABORATION ===== -->
+    <section class="alt-bg">
+        <div class="container">
+            <span class="tag">Collaboration</span>
+            <h2>How We'll Work Together</h2>
+            <p class="desc">AEF staff lead relationship-building with facilities. We support with aligned creative, messaging, and digital execution.</p>
+
+            <div class="collab-grid">
+                <div class="collab-card">
+                    <h4>Communication & Workflow</h4>
+                    <ul class="al" style="margin-top: 6px;">
+                        <li>Weekly check-ins with AEF staff (15-30 min virtual)</li>
+                        <li>Shared project board (Notion/Asana) for real-time visibility</li>
+                        <li>Content approval: Draft &rarr; AEF Review &rarr; Revisions &rarr; Publish</li>
+                        <li>Bi-weekly performance reports with clear takeaways</li>
+                    </ul>
+                </div>
+                <div class="collab-card">
+                    <h4>Tools & Platforms</h4>
+                    <ul class="al" style="margin-top: 6px;">
+                        <li>Social: Meta Business Suite, Instagram, Facebook</li>
+                        <li>Ads: Meta Ads Manager, Google Ads</li>
+                        <li>Email: Mailchimp or AEF's preferred platform</li>
+                        <li>Analytics: Google Analytics, Meta Pixel, UTM tracking</li>
+                        <li>Design: Adobe Creative Suite, Canva Pro</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== RELEVANT EXPERIENCE ===== -->
+    <section class="white-bg">
+        <div class="container">
+            <span class="tag">Relevant Experience</span>
+            <h2>Proven Partnerships Across Alberta</h2>
+            <p class="desc">Real results for Alberta brands across food, entertainment, and professional services. Same platform approach we're bringing to AEF.</p>
+
+            <div class="ref-grid">
+                <div class="ref">
+                    <img src="./images/tutti-frutti.png" alt="Tutti Frutti" style="height: 56px; width: auto; object-fit: contain; margin-bottom: 14px;">
+                    <h4>Tutti Frutti</h4>
+                    <p style="margin-bottom: 8px;">Restaurant Growth Campaign</p>
+                    <p>Reached 30,000+ people with 2,000+ entries in 48 hours across 2 locations. Drove measurable foot traffic through organic platform amplification.</p>
+                </div>
+                <div class="ref">
+                    <img src="./images/gamecon-canada.png" alt="GameCon Canada" style="height: 56px; width: auto; object-fit: contain; margin-bottom: 14px;">
+                    <h4>GameCon Canada</h4>
+                    <p style="margin-bottom: 8px;">Event Marketing & Community</p>
+                    <p>Built awareness and drove attendance for a community event through social content, digital ads, and cross-platform promotion.</p>
+                </div>
+                <div class="ref">
+                    <img src="./images/tc-legal.png" alt="TC Legal" style="height: 56px; width: auto; object-fit: contain; margin-bottom: 14px;">
+                    <h4>TC Legal</h4>
+                    <p style="margin-bottom: 8px;">Professional Services</p>
+                    <p>Developed brand identity and digital presence. Demonstrated trust-based, professional messaging to Alberta audiences.</p>
+                </div>
+            </div>
+
+            <div class="callout" style="margin-top: 28px;">
+                <p>Like AEF, these partners needed to reach under-aware Alberta audiences with clear benefit messaging. Our platform provided the reach; our creative converted it into action. References available upon request.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== BUDGET ===== -->
+    <section class="alt-bg">
+        <div class="container">
+            <span class="tag">Budget & Pricing</span>
+            <h2>Transparent, Itemized Investment</h2>
+            <p class="desc">A complete 4-month campaign for $9,500, within AEF's stated budget. Paid media spend is separate and determined by AEF.</p>
+
+            <table class="budget-tbl">
+                <thead>
+                    <tr>
+                        <th>Service</th>
+                        <th>Description</th>
+                        <th style="text-align: right;">Cost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Campaign Strategy & Planning</td>
+                        <td>Audience research, messaging frameworks, content calendar</td>
+                        <td style="text-align: right;">$1,500</td>
+                    </tr>
+                    <tr>
+                        <td>Creative & Asset Production</td>
+                        <td>Visuals, video, social graphics, facility toolkits</td>
+                        <td style="text-align: right;">$2,500</td>
+                    </tr>
+                    <tr>
+                        <td>Social Media Execution</td>
+                        <td>4 months organic content, scheduling, community engagement</td>
+                        <td style="text-align: right;">$2,000</td>
+                    </tr>
+                    <tr>
+                        <td>Landing Page & Email</td>
+                        <td>Campaign page, email sequences, lapsed member flows</td>
+                        <td style="text-align: right;">$1,500</td>
+                    </tr>
+                    <tr>
+                        <td>Ad Management & Optimization</td>
+                        <td>Setup, management, A/B testing, optimization (4 months)</td>
+                        <td style="text-align: right;">$1,500</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2">Total Campaign Services</td>
+                        <td style="text-align: right;">$9,500</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div class="split" style="margin-top: 20px;">
+                <div class="callout">
+                    <p><span style="color: var(--blue-deep); font-weight: 700;">Paid Media Spend:</span> Separate. We recommend $1,500 to $3,000 for the 4-month campaign. Our platform amplification significantly reduces paid spend needed.</p>
+                </div>
+                <div class="callout">
+                    <p><span style="color: var(--blue-deep); font-weight: 700;">Bonus (Included Free):</span> Organic exposure across our 290K+ network (Instagram, website, newsletter). Estimated value: $3,000 to $5,000+.</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 20px; text-align: center; background: #fff; border: 1px solid var(--light-border); border-radius: 14px; padding: 18px;">
+                <p style="font-size: 14px; color: var(--muted); margin: 0;">Hourly Rate: $75/hr for any out-of-scope work. All additional work approved by AEF in advance.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== WHY US ===== -->
+    <section class="white-bg">
+        <div class="container">
+            <span class="tag">Why Choose Us</span>
+            <h2>Why AEF Should Partner With Culture Media</h2>
+
+            <div class="why-grid" style="margin-top: 36px;">
+                <div class="why-card">
+                    <div style="font-size: 32px; margin-bottom: 10px;">&#127919;</div>
+                    <h4>Alberta Experts</h4>
+                    <p>We don't just market in Alberta, we are Alberta. Our platforms, audience, and content are rooted here. We understand rural communities, equestrian culture, and how Albertans actually engage online.</p>
+                </div>
+                <div class="why-card">
+                    <div style="font-size: 32px; margin-bottom: 10px;">&#128640;</div>
+                    <h4>Built-In Audience</h4>
+                    <p>290K+ Albertans already follow our platforms. AEF gets immediate visibility without building from scratch. Faster results, lower cost-per-acquisition.</p>
+                </div>
+                <div class="why-card">
+                    <div style="font-size: 32px; margin-bottom: 10px;">&#129309;</div>
+                    <h4>Hands-On Execution</h4>
+                    <p>We don't hand you a strategy deck and disappear. We build the assets, run the campaigns, manage the ads, and optimize weekly.</p>
+                </div>
+                <div class="why-card">
+                    <div style="font-size: 32px; margin-bottom: 10px;">&#128176;</div>
+                    <h4>Maximum Value</h4>
+                    <p>Your $9,500 delivers $12,000 to $15,000+ in total value with our platform amplification. No other agency offers this built-in reach at this price.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <section class="footer">
+        <div class="container">
+            <h2 style="margin-bottom: 12px;">Ready to Grow AEF Membership Together</h2>
+            <p style="font-size: 18px; opacity: .8; margin-bottom: 36px; max-width: 560px; margin-left: auto; margin-right: auto;">We're excited about this opportunity and ready to help AEF hit 3% growth.</p>
+
+            <div style="display: flex; justify-content: center; gap: 36px; flex-wrap: wrap; margin-bottom: 40px;">
+                <span style="font-size: 15px; color: rgba(255,255,255,.7);">Email: <a class="footer-link" href="mailto:culturemedia101@gmail.com">culturemedia101@gmail.com</a></span>
+                <span style="font-size: 15px; color: rgba(255,255,255,.7);">Web: <a class="footer-link" href="https://culturemedia.ca" target="_blank">culturemedia.ca</a></span>
+                <span style="font-size: 15px; color: rgba(255,255,255,.7);">IG: <a class="footer-link" href="https://instagram.com/culturealberta._" target="_blank">@culturealberta._</a></span>
+            </div>
+
+            <div style="padding-top: 24px; border-top: 1px solid rgba(255,255,255,.06);">
+                <p style="font-size: 12px; color: rgba(255,255,255,.35); line-height: 1.6;">
+                    Submitted by Culture Media in response to AEF Marketing & Creative Services RFP | February 9, 2026<br>
+                    Prepared for Sonia Dantu, Executive Director, Alberta Equestrian Federation<br>
+                    Direct Contact: Mariam Abdihalim, Account Manager | culturemedia101@gmail.com
+                </p>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>
