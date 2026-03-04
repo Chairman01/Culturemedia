@@ -704,7 +704,7 @@ export default function Home() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-white mb-2">Phone</h3>
-                      <p className="text-gray-200 group-hover:text-white transition-colors">226 236 1828</p>
+                      <p className="text-gray-200 group-hover:text-white transition-colors">587 897 9347</p>
                     </div>
                   </div>
                 </Card>

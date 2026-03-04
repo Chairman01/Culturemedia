@@ -9,8 +9,8 @@ interface PhoneModalProps {
 }
 
 export function PhoneModal({ isOpen, onClose }: PhoneModalProps) {
-    const phoneNumber = "2262361828";
-    const formattedPhone = "226 236 1828";
+    const phoneNumber = "5878979347";
+    const formattedPhone = "587 897 9347";
 
     return (
         <AnimatePresence>
