@@ -12,7 +12,8 @@ export function proxy(request: NextRequest) {
   // Only protect /dashboard, skip the login page itself and the auth API
   if (
     pathname.startsWith('/dashboard') &&
-    !pathname.startsWith('/dashboard/login')
+    !pathname.startsWith('/dashboard/login') &&
+    !pathname.startsWith('/dashboard/sync')
   ) {
     const token = request.cookies.get('cm_dashboard_auth')?.value;
     const pass = process.env.DASHBOARD_PASSWORD || 'culturemedia2026';
