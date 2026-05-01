@@ -19,9 +19,19 @@ function buildBookmarklet(): string {
   const code = `(function(){
 var SYNC='${DASHBOARD_SYNC_URL}';
 var QUERIES=${JSON.stringify(QUERIES)};
-var seen={};var all=[];var qi=0;
-var win=window.open(SYNC,'cm_apc','width=450,height=300');
+var seen={};var all=[];var qi=0;var firstResp='';
+var win=window.open(SYNC,'cm_apc','width=480,height=320');
 if(!win){alert('Allow popups for purchasing.alberta.ca, then try again.');return;}
+function sendProgress(){
+try{win.postMessage({type:'APC_PROGRESS',progressMsg:'Query '+(qi)+'/'+QUERIES.length+': '+QUERIES[qi-1],listings:all},'https://www.culturemedia.ca');}catch(e){}}
+function parseItems(d){
+var items=d.opportunities||d.results||d.items||d.postings||d.data||d.Opportunities||d.Results||[];
+if(!Array.isArray(items)&&typeof d==='object'){
+var keys=Object.keys(d);
+for(var k=0;k<keys.length;k++){if(Array.isArray(d[keys[k]])){items=d[keys[k]];break;}}
+}
+return items;
+}
 function doFetch(q,cb){
 var xhr=new XMLHttpRequest();
 xhr.open('POST','/api/opportunity/search',true);
@@ -32,7 +42,8 @@ if(xhr.readyState===4){
 if(xhr.status===200){
 try{
 var d=JSON.parse(xhr.responseText);
-var items=d.opportunities||d.results||d.items||d.postings||d.data||[];
+if(qi===1)firstResp=JSON.stringify(d).slice(0,300);
+var items=parseItems(d);
 items.forEach(function(item){
 var ref=item.referenceNumber||item.reference_number||item.id||'';
 if(ref&&!seen[ref]){
@@ -44,22 +55,24 @@ org:item.organization||item.buyerOrganization||item.orgName||'',
 closingDate:item.closingDate||item.closing_date||item.closingDateTime||'',
 postDate:item.postDate||item.post_date||item.postDateTime||'',
 status:item.status||'OPEN',
-description:(item.description||item.summary||'').slice(0,500)
+description:(item.description||item.summary||'').slice(0,400)
 });
 }
 });
-}catch(e){}
-}
+}catch(e){if(qi===1)firstResp='Parse error: '+e+' raw: '+xhr.responseText.slice(0,200);}
+}else{if(qi===1)firstResp='HTTP '+xhr.status+': '+xhr.responseText.slice(0,200);}
 cb();
 }
 };
 var payload=JSON.stringify({
+query:q,
+queryMode:'standard',
 filter:{
-textPhrases:[q],
+textPhrases:[],
 statuses:[],categories:[],postingTypes:[],
 solicitation:{types:[],noticeTypes:[]},
 regions:[],organizations:[],unspscCodes:[],
-postDateRange:'',closeDateRange:'',deliveryRegion:''
+postDateRange:'$$all',closeDateRange:'$$all',deliveryRegion:''
 },
 limit:100,offset:0,
 sortOptions:[{field:'PostDateTime',direction:'desc'}]
@@ -68,18 +81,23 @@ xhr.send(payload);
 }
 function next(){
 if(qi<QUERIES.length){
-document.title='APC Sync: '+(qi+1)+'/'+QUERIES.length;
-doFetch(QUERIES[qi++],next);
+document.title='APC Sync '+(qi+1)+'/'+QUERIES.length;
+doFetch(QUERIES[qi++],function(){sendProgress();next();});
 }else{
-document.title='APC Sync: Done';
+document.title='APC Sync: Done ('+all.length+')';
 setTimeout(function(){
 if(win&&!win.closed){
-win.postMessage({type:'APC_SYNC',listings:all,syncedAt:new Date().toISOString()},'https://www.culturemedia.ca');
+win.postMessage({
+type:'APC_SYNC',
+listings:all,
+syncedAt:new Date().toISOString(),
+debugInfo:'Found '+all.length+' listings. First response: '+firstResp
+},'https://www.culturemedia.ca');
 }
-},500);
+},300);
 }
 }
-setTimeout(next,1200);
+setTimeout(next,1500);
 })();`;
 
   return 'javascript:' + encodeURIComponent(code);
