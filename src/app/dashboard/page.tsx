@@ -113,70 +113,57 @@ function fmtDate(dateStr: string): string {
 
 // ─── API calls ────────────────────────────────────────────────────────────────
 
-async function fetchApcSearch(query: string, page = 1): Promise<Posting[]> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapPosting(item: any): Posting {
+  const ref = item.referenceNumber || item.reference_number || item.id || '';
+  const title = item.title || item.opportunityTitle || item.name || '';
+  const desc = item.description || item.summary || item.shortDescription || '';
+  const tab = classifyPosting(title, desc);
+  const posting: Posting = {
+    referenceNumber: ref,
+    title,
+    organization: item.organization || item.buyerOrganization || item.orgName || '',
+    closingDate: item.closingDate || item.closing_date || item.closingDateTime || '',
+    postDate: item.postDate || item.post_date || item.postDateTime || '',
+    status: item.status || 'OPEN',
+    estimatedValue: item.estimatedValue || item.contract_value,
+    interestedCount: null,
+    description: desc,
+    url: `https://purchasing.alberta.ca/posting/${ref}`,
+    tab,
+    score: 0,
+  };
+  posting.score = scorePosting(posting);
+  return posting;
+}
+
+async function fetchApcSearch(query: string, offset = 0): Promise<Posting[]> {
   const res = await fetch('/api/apc', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      endpoint: 'opportunity/search',
-      payload: {
-        query,
-        queryMode: 'standard',
-        filter: {
-          statuses: [{ value: 'OPEN', selected: true }],
-          categories: [],
-          postingTypes: [],
-          solicitation: { types: [], noticeTypes: [] },
-          regions: [],
-          organizations: [],
-          unspscCodes: [],
-          textPhrases: [],
-          postDateRange: '',
-          closeDateRange: '',
-          deliveryRegion: '',
-        },
-        limit: 100,
-        offset: (page - 1) * 100,
-        sortOptions: [{ field: 'PostDateTime', direction: 'desc' }],
-      },
-    }),
+    body: JSON.stringify({ query, offset }),
   });
 
   if (!res.ok) return [];
   const data = await res.json();
-  const items: Posting[] = (data.opportunities || data.results || data.items || []).map(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (item: any) => {
-      const ref = item.referenceNumber || item.reference_number || item.id || '';
-      const title = item.title || item.opportunityTitle || '';
-      const desc = item.description || item.summary || '';
-      const tab = classifyPosting(title, desc);
-      const posting: Posting = {
-        referenceNumber: ref,
-        title,
-        organization: item.organization || item.buyerOrganization || '',
-        closingDate: item.closingDate || item.closing_date || '',
-        postDate: item.postDate || item.post_date || '',
-        status: item.status || 'OPEN',
-        estimatedValue: item.estimatedValue || item.contract_value,
-        interestedCount: null,
-        description: desc,
-        url: `https://purchasing.alberta.ca/posting/${ref}`,
-        tab,
-        score: 0,
-      };
-      posting.score = scorePosting(posting);
-      return posting;
-    }
-  );
-  return items;
+
+  // APC returns results under various keys depending on version
+  const raw: unknown[] =
+    data.opportunities ||
+    data.results ||
+    data.items ||
+    data.postings ||
+    data.data ||
+    [];
+
+  return (raw as Record<string, unknown>[]).map(mapPosting).filter((p) => p.referenceNumber && p.title);
 }
 
 async function fetchInterestedCount(ref: string): Promise<number> {
   const res = await fetch(`/api/apc?ref=${encodeURIComponent(ref)}`);
   if (!res.ok) return 0;
   const data = await res.json();
-  return data.interestedSuppliers?.length ?? data.supplierCount ?? data.interested_count ?? 0;
+  return data.interestedCount ?? data.interestedSuppliers?.length ?? data.supplierCount ?? 0;
 }
 
 // ─── Pipeline helpers ─────────────────────────────────────────────────────────
@@ -482,6 +469,12 @@ export default function DashboardPage() {
     setPipeline(loadPipeline());
   }, []);
 
+  // Auto-load APC listings on first mount
+  useEffect(() => {
+    loadAllPostings();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handlePipelineChange = (leads: PipelineLead[]) => {
     setPipeline(leads);
     savePipeline(leads);
@@ -509,10 +502,12 @@ export default function DashboardPage() {
     alert(`Added "${posting.title}" to pipeline`);
   };
 
-  const loadAllPostings = useCallback(async () => {
+  const loadAllPostings = useCallback(async (force = false) => {
     if (loading) return;
+    if (hasLoaded && !force) return;
     setLoading(true);
     setLoadProgress(0);
+    if (force) setPostings([]);
     const seen = new Set<string>();
     const results: Posting[] = [];
 
@@ -521,7 +516,7 @@ export default function DashboardPage() {
       try {
         const items = await fetchApcSearch(q);
         for (const item of items) {
-          if (!seen.has(item.referenceNumber)) {
+          if (item.referenceNumber && !seen.has(item.referenceNumber)) {
             seen.add(item.referenceNumber);
             results.push(item);
           }
@@ -535,7 +530,7 @@ export default function DashboardPage() {
 
     setLoading(false);
     setHasLoaded(true);
-  }, [loading]);
+  }, [loading, hasLoaded]);
 
   const filteredPostings = (tab: MainTab) => {
     let list = tab === 'all' ? postings : postings.filter((p) => p.tab === tab);
@@ -583,7 +578,19 @@ export default function DashboardPage() {
               {pipeline.filter((l) => l.stage !== 'lost').length} active deals
             </div>
           )}
-          <a href="/" style={{ fontSize: 12, color: '#64748b', textDecoration: 'none' }}>← Back to site</a>
+          <a href="/" style={{ fontSize: 12, color: '#64748b', textDecoration: 'none' }}>← Site</a>
+          <button
+            onClick={async () => {
+              await fetch('/api/dashboard-auth', { method: 'DELETE' });
+              window.location.href = '/dashboard/login';
+            }}
+            style={{
+              fontSize: 12, color: '#94a3b8', background: '#1e1e2e',
+              border: '1px solid #2a2a3e', borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
+            }}
+          >
+            Sign out
+          </button>
         </div>
       </div>
 
@@ -631,19 +638,6 @@ export default function DashboardPage() {
           <div>
             {/* Toolbar */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-              {!hasLoaded && !loading && (
-                <button
-                  onClick={loadAllPostings}
-                  style={{
-                    background: '#3b82f6', color: '#fff', border: 'none',
-                    borderRadius: 8, padding: '8px 20px', cursor: 'pointer',
-                    fontWeight: 700, fontSize: 14,
-                  }}
-                >
-                  Load APC Listings
-                </button>
-              )}
-
               {loading && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ fontSize: 13, color: '#94a3b8' }}>
@@ -663,7 +657,7 @@ export default function DashboardPage() {
 
               {hasLoaded && (
                 <button
-                  onClick={() => { setPostings([]); setHasLoaded(false); loadAllPostings(); }}
+                  onClick={() => loadAllPostings(true)}
                   style={{
                     background: '#1e1e2e', color: '#94a3b8', border: '1px solid #2a2a3e',
                     borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 13,
@@ -729,7 +723,7 @@ export default function DashboardPage() {
             {/* Listings */}
             {!hasLoaded && !loading && (
               <div style={{ textAlign: 'center', padding: '60px 0', color: '#4b5563' }}>
-                Click &quot;Load APC Listings&quot; to scan Alberta purchasing opportunities
+                Loading Alberta purchasing opportunities...
               </div>
             )}
 
