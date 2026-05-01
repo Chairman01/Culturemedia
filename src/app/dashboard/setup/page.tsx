@@ -25,7 +25,7 @@ if(!win){alert('Allow popups for purchasing.alberta.ca, then try again.');return
 function sendProgress(){
 try{win.postMessage({type:'APC_PROGRESS',progressMsg:'Query '+(qi)+'/'+QUERIES.length+': '+QUERIES[qi-1],listings:all},'https://www.culturemedia.ca');}catch(e){}}
 function parseItems(d){
-var items=d.opportunities||d.results||d.items||d.postings||d.data||d.Opportunities||d.Results||[];
+var items=d.values||d.opportunities||d.results||d.items||d.postings||d.data||d.Opportunities||d.Results||[];
 if(!Array.isArray(items)&&typeof d==='object'){
 var keys=Object.keys(d);
 for(var k=0;k<keys.length;k++){if(Array.isArray(d[keys[k]])){items=d[keys[k]];break;}}

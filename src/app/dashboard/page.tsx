@@ -119,7 +119,7 @@ const APC_SYNCED_AT_KEY = 'apc_synced_at';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapStoredPosting(item: any): Posting {
   const ref = item.ref || item.referenceNumber || item.reference_number || item.id || '';
-  const title = item.title || item.opportunityTitle || item.name || '';
+  const title = item.title || item.shortTitle || item.opportunityTitle || item.name || '';
   const desc = item.description || item.summary || '';
   const tab = classifyPosting(title, desc);
   const posting: Posting = {
