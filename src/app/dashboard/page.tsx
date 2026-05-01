@@ -67,6 +67,11 @@ const EASY_MONEY_KW = [
   'training', 'professional development', 'printing', 'courier',
   'translation', 'interpretation', 'survey', 'data entry', 'administrative',
   'photography service', 'event', 'signage',
+  // Product/supply contracts (China connection relevant)
+  'furniture', 'office furniture', 'equipment', 'supplies', 'office supplies',
+  'uniform', 'apparel', 'workwear', 'clothing', 'protective equipment',
+  'ppe', 'hardware', 'tools', 'storage', 'shelving', 'flooring',
+  'appliance', 'electronics', 'computers', 'laptops', 'monitors',
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -698,9 +703,33 @@ export default function DashboardPage() {
               </p>
             )}
             {activeTab === 'easymoney' && (
-              <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
-                Contracts you could win by starting a new company — cleaning, grounds, catering, security, training, printing, and similar. Low barrier to entry, often low competition from large nationals.
-              </p>
+              <div style={{ marginBottom: 20 }}>
+                <p style={{ fontSize: 13, color: '#64748b', marginBottom: 14 }}>
+                  Contracts you could win by starting a new company — cleaning, grounds, catering, security, training, printing, and similar. Low barrier to entry, often low competition from large nationals.
+                </p>
+                {/* China Connection banner */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #1a2744 0%, #1e1e2e 100%)',
+                  border: '1px solid #f59e0b',
+                  borderRadius: 10, padding: '14px 18px',
+                  display: 'flex', gap: 14, alignItems: 'flex-start',
+                }}>
+                  <div style={{ fontSize: 26, flexShrink: 0 }}>🇨🇳</div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#fbbf24', marginBottom: 6 }}>
+                      China Connection — Supply Advantage
+                    </div>
+                    <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.6 }}>
+                      For contracts involving <strong style={{ color: '#e2e8f0' }}>furniture, equipment, uniforms, office supplies, signage, or goods</strong> — your China supplier connection is a real competitive edge.
+                      You can source product at wholesale cost and bid below local competitors.{' '}
+                      <strong style={{ color: '#e2e8f0' }}>Steps:</strong> register a Canadian import/supply company,
+                      get a business number + import account from CRA, quote the municipality directly,
+                      mark up 30–50% on landed cost, and deliver.
+                      Search &ldquo;furniture&rdquo;, &ldquo;equipment&rdquo;, &ldquo;supplies&rdquo;, or &ldquo;uniforms&rdquo; in the search bar above to find these contracts.
+                    </p>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* Listings */}
