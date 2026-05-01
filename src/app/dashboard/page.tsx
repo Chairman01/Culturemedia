@@ -71,6 +71,17 @@ const EASY_MONEY_KW = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Handles .NET /Date(ms)/ format, ISO strings, and plain timestamps */
+function parseApcDate(dateStr: string | number | undefined | null): Date | null {
+  if (!dateStr && dateStr !== 0) return null;
+  if (typeof dateStr === 'number') return new Date(dateStr);
+  // .NET JSON date: /Date(1747353600000)/ or /Date(1747353600000-0600)/
+  const netMatch = String(dateStr).match(/\/Date\((-?\d+)([+-]\d{4})?\)\//);
+  if (netMatch) return new Date(parseInt(netMatch[1]));
+  const d = new Date(dateStr);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 function classifyPosting(title: string, desc: string): Posting['tab'] {
   const text = (title + ' ' + desc).toLowerCase();
   if (CULTURE_MEDIA_KW.some((k) => text.includes(k))) return 'culturemedia';
@@ -90,15 +101,18 @@ function scorePosting(posting: Posting): number {
   else if (count === 1) score += 20;
   else if (count === 2) score += 10;
   else if (count !== null && count !== undefined && count > 5) score -= 15;
-  const daysLeft = Math.floor(
-    (new Date(posting.closingDate).getTime() - Date.now()) / 86400000
-  );
-  if (daysLeft > 0 && daysLeft <= 14) score += 5;
+  const parsed = parseApcDate(posting.closingDate);
+  if (parsed) {
+    const d = Math.floor((parsed.getTime() - Date.now()) / 86400000);
+    if (d > 0 && d <= 14) score += 5;
+  }
   return Math.min(100, Math.max(0, score));
 }
 
 function daysLeft(dateStr: string): string {
-  const d = Math.floor((new Date(dateStr).getTime() - Date.now()) / 86400000);
+  const parsed = parseApcDate(dateStr);
+  if (!parsed) return 'Unknown date';
+  const d = Math.floor((parsed.getTime() - Date.now()) / 86400000);
   if (d < 0) return 'Closed';
   if (d === 0) return 'Today';
   if (d === 1) return '1 day left';
@@ -106,7 +120,9 @@ function daysLeft(dateStr: string): string {
 }
 
 function fmtDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-CA', {
+  const parsed = parseApcDate(dateStr);
+  if (!parsed) return '—';
+  return parsed.toLocaleDateString('en-CA', {
     month: 'short', day: 'numeric', year: 'numeric',
   });
 }
@@ -504,8 +520,8 @@ export default function DashboardPage() {
     }
     return list.sort((a, b) => {
       if (sortBy === 'score') return b.score - a.score;
-      if (sortBy === 'closing') return new Date(a.closingDate).getTime() - new Date(b.closingDate).getTime();
-      if (sortBy === 'newest') return new Date(b.postDate).getTime() - new Date(a.postDate).getTime();
+      if (sortBy === 'closing') return (parseApcDate(a.closingDate)?.getTime() ?? 0) - (parseApcDate(b.closingDate)?.getTime() ?? 0);
+      if (sortBy === 'newest') return (parseApcDate(b.postDate)?.getTime() ?? 0) - (parseApcDate(a.postDate)?.getTime() ?? 0);
       if (sortBy === 'applicants') {
         const ca = a.interestedCount ?? 999;
         const cb = b.interestedCount ?? 999;
