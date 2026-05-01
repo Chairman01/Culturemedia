@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(git pull --rebase)",
+      "mcp__Claude_in_Chrome__javascript_tool",
+      "mcp__Claude_in_Chrome__navigate",
+      "Bash(curl -v -X POST \"https://purchasing.alberta.ca/api/opportunity/search\" -H \"Content-Type: application/json\" -H \"Accept: application/json\" -H \"User-Agent: Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36\" -d '{\"\"filter\"\":{\"\"textPhrases\"\":[\"\"marketing\"\"]},\"\"limit\"\":3}')",
+      "Bash(curl -s -X POST \"https://purchasing.alberta.ca/api/opportunity/search\" -H \"Content-Type: application/json\" -H \"Accept: application/json\" -H \"User-Agent: Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36\" -H \"Referer: https://purchasing.alberta.ca/search\" -d '{\"\"filter\"\":{\"\"textPhrases\"\":[\"\"marketing\"\"],\"\"statuses\"\":[],\"\"categories\"\":[],\"\"postingTypes\"\":[],\"\"solicitation\"\":{\"\"types\"\":[],\"\"noticeTypes\"\":[]},\"\"regions\"\":[],\"\"organizations\"\":[],\"\"unspscCodes\"\":[],\"\"postDateRange\"\":\"\"\"\",\"\"closeDateRange\"\":\"\"\"\",\"\"deliveryRegion\"\":\"\"\"\"},\"\"limit\"\":3,\"\"offset\"\":0,\"\"sortOptions\"\":[{\"\"field\"\":\"\"PostDateTime\"\",\"\"direction\"\":\"\"desc\"\"}]}')",
+      "Bash(curl -w \"\\\\n---HTTP_STATUS:%{http_code}---\\\\n\" -X POST \"https://purchasing.alberta.ca/api/opportunity/search\" -H \"Content-Type: application/json\" -H \"Accept: application/json\" -H \"User-Agent: Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36\" -H \"Referer: https://purchasing.alberta.ca/search\" -H \"Origin: https://purchasing.alberta.ca\" -d '{\"\"filter\"\":{\"\"textPhrases\"\":[\"\"marketing\"\"],\"\"statuses\"\":[],\"\"categories\"\":[],\"\"postingTypes\"\":[],\"\"solicitation\"\":{\"\"types\"\":[],\"\"noticeTypes\"\":[]},\"\"regions\"\":[],\"\"organizations\"\":[],\"\"unspscCodes\"\":[],\"\"postDateRange\"\":\"\"\"\",\"\"closeDateRange\"\":\"\"\"\",\"\"deliveryRegion\"\":\"\"\"\"},\"\"limit\"\":3,\"\"offset\"\":0,\"\"sortOptions\"\":[{\"\"field\"\":\"\"PostDateTime\"\",\"\"direction\"\":\"\"desc\"\"}]}')",
+      "Bash(git add -A)"
+    ]
+  }
+}

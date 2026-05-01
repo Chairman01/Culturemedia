@@ -6,7 +6,7 @@ function makeToken(password: string): string {
   return Buffer.from(`dashboard:${password}:auth`).toString('base64');
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Only protect /dashboard, skip the login page itself and the auth API

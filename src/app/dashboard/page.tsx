@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -111,22 +111,24 @@ function fmtDate(dateStr: string): string {
   });
 }
 
-// ─── API calls ────────────────────────────────────────────────────────────────
+// ─── Load from localStorage (synced via bookmarklet) ─────────────────────────
+
+const APC_STORAGE_KEY = 'apc_listings';
+const APC_SYNCED_AT_KEY = 'apc_synced_at';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapPosting(item: any): Posting {
-  const ref = item.referenceNumber || item.reference_number || item.id || '';
+function mapStoredPosting(item: any): Posting {
+  const ref = item.ref || item.referenceNumber || item.reference_number || item.id || '';
   const title = item.title || item.opportunityTitle || item.name || '';
-  const desc = item.description || item.summary || item.shortDescription || '';
+  const desc = item.description || item.summary || '';
   const tab = classifyPosting(title, desc);
   const posting: Posting = {
     referenceNumber: ref,
     title,
-    organization: item.organization || item.buyerOrganization || item.orgName || '',
-    closingDate: item.closingDate || item.closing_date || item.closingDateTime || '',
-    postDate: item.postDate || item.post_date || item.postDateTime || '',
+    organization: item.org || item.organization || item.buyerOrganization || '',
+    closingDate: item.closingDate || item.closing_date || '',
+    postDate: item.postDate || item.post_date || '',
     status: item.status || 'OPEN',
-    estimatedValue: item.estimatedValue || item.contract_value,
     interestedCount: null,
     description: desc,
     url: `https://purchasing.alberta.ca/posting/${ref}`,
@@ -137,26 +139,19 @@ function mapPosting(item: any): Posting {
   return posting;
 }
 
-async function fetchApcSearch(query: string, offset = 0): Promise<Posting[]> {
-  const res = await fetch('/api/apc', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, offset }),
-  });
-
-  if (!res.ok) return [];
-  const data = await res.json();
-
-  // APC returns results under various keys depending on version
-  const raw: unknown[] =
-    data.opportunities ||
-    data.results ||
-    data.items ||
-    data.postings ||
-    data.data ||
-    [];
-
-  return (raw as Record<string, unknown>[]).map(mapPosting).filter((p) => p.referenceNumber && p.title);
+function loadPostingsFromStorage(): { postings: Posting[]; syncedAt: string | null } {
+  try {
+    const raw = localStorage.getItem(APC_STORAGE_KEY);
+    const syncedAt = localStorage.getItem(APC_SYNCED_AT_KEY);
+    if (!raw) return { postings: [], syncedAt: null };
+    const items = JSON.parse(raw);
+    const postings = items
+      .map(mapStoredPosting)
+      .filter((p: Posting) => p.referenceNumber && p.title);
+    return { postings, syncedAt };
+  } catch {
+    return { postings: [], syncedAt: null };
+  }
 }
 
 async function fetchInterestedCount(ref: string): Promise<number> {
@@ -447,32 +442,21 @@ const TAB_CONFIG: { key: MainTab; label: string; desc: string }[] = [
   { key: 'all', label: 'All Listings', desc: 'Everything on APC' },
 ];
 
-const SEARCH_QUERIES = [
-  'marketing', 'communications', 'social media', 'design', 'consulting',
-  'strategy', 'research', 'training', 'cleaning', 'grounds', 'security',
-  'catering', 'photography', 'video', 'printing', 'survey', 'events',
-  'translation', 'administrative', 'staffing', 'branding', 'advertising',
-];
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<MainTab>('pipeline');
   const [postings, setPostings] = useState<Posting[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadProgress, setLoadProgress] = useState(0);
+  const [syncedAt, setSyncedAt] = useState<string | null>(null);
   const [pipeline, setPipeline] = useState<PipelineLead[]>([]);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'score' | 'closing' | 'newest' | 'applicants'>('score');
   const [filterLowComp, setFilterLowComp] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
     setPipeline(loadPipeline());
-  }, []);
-
-  // Auto-load APC listings on first mount
-  useEffect(() => {
-    loadAllPostings();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    const { postings: stored, syncedAt: sa } = loadPostingsFromStorage();
+    setPostings(stored);
+    setSyncedAt(sa);
   }, []);
 
   const handlePipelineChange = (leads: PipelineLead[]) => {
@@ -499,38 +483,13 @@ export default function DashboardPage() {
     };
     const updated = [lead, ...pipeline];
     handlePipelineChange(updated);
-    alert(`Added "${posting.title}" to pipeline`);
   };
 
-  const loadAllPostings = useCallback(async (force = false) => {
-    if (loading) return;
-    if (hasLoaded && !force) return;
-    setLoading(true);
-    setLoadProgress(0);
-    if (force) setPostings([]);
-    const seen = new Set<string>();
-    const results: Posting[] = [];
-
-    for (let i = 0; i < SEARCH_QUERIES.length; i++) {
-      const q = SEARCH_QUERIES[i];
-      try {
-        const items = await fetchApcSearch(q);
-        for (const item of items) {
-          if (item.referenceNumber && !seen.has(item.referenceNumber)) {
-            seen.add(item.referenceNumber);
-            results.push(item);
-          }
-        }
-      } catch {
-        // skip failed queries
-      }
-      setLoadProgress(Math.round(((i + 1) / SEARCH_QUERIES.length) * 100));
-      setPostings([...results]);
-    }
-
-    setLoading(false);
-    setHasLoaded(true);
-  }, [loading, hasLoaded]);
+  const reloadFromStorage = () => {
+    const { postings: stored, syncedAt: sa } = loadPostingsFromStorage();
+    setPostings(stored);
+    setSyncedAt(sa);
+  };
 
   const filteredPostings = (tab: MainTab) => {
     let list = tab === 'all' ? postings : postings.filter((p) => p.tab === tab);
@@ -557,6 +516,14 @@ export default function DashboardPage() {
   };
 
   const tabPostings = activeTab !== 'pipeline' ? filteredPostings(activeTab) : [];
+  const hasData = postings.length > 0;
+
+  function fmtSyncTime(iso: string | null): string {
+    if (!iso) return 'Never';
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) + ' at ' +
+      d.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
+  }
 
   return (
     <div style={{
@@ -638,33 +605,33 @@ export default function DashboardPage() {
           <div>
             {/* Toolbar */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-              {loading && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ fontSize: 13, color: '#94a3b8' }}>
-                    Scanning APC... {loadProgress}%
-                  </div>
-                  <div style={{
-                    width: 120, height: 6, background: '#2a2a3e', borderRadius: 3,
-                  }}>
-                    <div style={{
-                      width: `${loadProgress}%`, height: '100%',
-                      background: '#3b82f6', borderRadius: 3, transition: 'width 0.3s',
-                    }} />
-                  </div>
-                  <span style={{ fontSize: 12, color: '#64748b' }}>{postings.length} found</span>
-                </div>
-              )}
-
-              {hasLoaded && (
+              <a
+                href="/dashboard/setup"
+                style={{
+                  background: hasData ? '#1e1e2e' : '#3b82f6',
+                  color: hasData ? '#94a3b8' : '#fff',
+                  border: hasData ? '1px solid #2a2a3e' : 'none',
+                  borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
+                  fontSize: 13, textDecoration: 'none', fontWeight: hasData ? 400 : 700,
+                }}
+              >
+                {hasData ? '↻ Re-sync APC' : '⚡ Sync APC Listings'}
+              </a>
+              {hasData && (
                 <button
-                  onClick={() => loadAllPostings(true)}
+                  onClick={reloadFromStorage}
                   style={{
-                    background: '#1e1e2e', color: '#94a3b8', border: '1px solid #2a2a3e',
-                    borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 13,
+                    background: '#1e1e2e', color: '#64748b', border: '1px solid #2a2a3e',
+                    borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 12,
                   }}
                 >
-                  Refresh
+                  Reload
                 </button>
+              )}
+              {syncedAt && (
+                <span style={{ fontSize: 12, color: '#4b5563' }}>
+                  Last synced: {fmtSyncTime(syncedAt)} · {postings.length} listings
+                </span>
               )}
 
               <input
@@ -721,15 +688,31 @@ export default function DashboardPage() {
             )}
 
             {/* Listings */}
-            {!hasLoaded && !loading && (
-              <div style={{ textAlign: 'center', padding: '60px 0', color: '#4b5563' }}>
-                Loading Alberta purchasing opportunities...
+            {!hasData && (
+              <div style={{
+                textAlign: 'center', padding: '60px 24px',
+                background: '#13131f', borderRadius: 12, border: '1px dashed #2a2a3e',
+              }}>
+                <div style={{ fontSize: 40, marginBottom: 16 }}>📋</div>
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#e2e8f0', marginBottom: 8 }}>
+                  No listings yet
+                </div>
+                <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24, maxWidth: 400, margin: '0 auto 24px' }}>
+                  Sync APC listings from your browser using the one-click bookmarklet. Takes about 30 seconds and finds 300–500+ open contracts.
+                </p>
+                <a href="/dashboard/setup" style={{
+                  display: 'inline-block', background: '#3b82f6', color: '#fff',
+                  borderRadius: 8, padding: '10px 24px', fontWeight: 700,
+                  fontSize: 14, textDecoration: 'none',
+                }}>
+                  Set up APC Sync →
+                </a>
               </div>
             )}
 
-            {tabPostings.length === 0 && (hasLoaded || loading) && (
+            {hasData && tabPostings.length === 0 && (
               <div style={{ textAlign: 'center', padding: '40px 0', color: '#4b5563' }}>
-                {loading ? 'Loading...' : 'No matching listings found'}
+                No listings in this category
               </div>
             )}
 
