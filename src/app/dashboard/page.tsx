@@ -113,22 +113,122 @@ function isActive(p: Posting): boolean {
 }
 
 function scorePosting(posting: Posting): number {
-  let score = 50;
+  let score = 35; // base
+  const t = posting.title.toLowerCase();
+  const org = (posting.organization || '').toLowerCase();
   const tab = posting.tab;
-  if (tab === 'culturemedia') score += 20;
-  if (tab === 'consulting') score += 15;
-  if (tab === 'easymoney') score += 10;
+
+  // ── Tab relevance ──
+  if (tab === 'culturemedia') score += 12;
+  if (tab === 'consulting')   score += 8;
+  if (tab === 'easymoney')    score += 10;
+  if (tab === 'china')        score += 10;
+
+  // ── Contract format (biggest differentiator) ──
+  if (/\brfq\b|request for quote|request for quotation/.test(t)) score += 22; // easiest format
+  if (/\brfso\b|standing offer|standing agreement/.test(t))      score += 15; // recurring revenue
+  if (/\bacan\b/.test(t))                                         score -= 20; // pre-selected
+  if (/\brfp\b|request for proposal/.test(t))                    score += 2;  // standard
+
+  // ── Work simplicity signals ──
+  if (/\bsupply of\b|\bpurchase of\b|\bprovision of\b|\bprocurement of\b/.test(t)) score += 12;
+  if (/\bannual\b|\bongoing\b|\brecurring\b|\bmaintenance\b/.test(t)) score += 7;
+  if (/\bbasic\b|\bstandard\b|\broutine\b/.test(t))               score += 5;
+
+  // ── Complexity penalty ──
+  if (/\bintegrated\b|\benterprise\b|\bplatform\b|\bsystem\b|\binfrastructure\b/.test(t)) score -= 8;
+  if (/\bstrategy\b.*\bdigital\b|\btransformation\b/.test(t))    score -= 5;
+
+  // ── Organization size / type ──
+  // Small municipalities = less competition from big nationals
+  if (/\b(town of|village of|county of|md of|municipal district of|summer village|city of [a-z]+ \(small\))\b/.test(org)) score += 16;
+  if (/\bcounty\b|\bmunicipality\b|\btown\b|\bvillage\b|\bmd of\b/.test(org)) score += 10;
+  if (/\bcity of\b/.test(org)) score += 4;
+  if (/\balberta health\b|\bahs\b|\buniversity\b|\bgovernment of alberta\b/.test(org)) score -= 6;
+  if (/\bschool\b|\bschool division\b|\bschool board\b/.test(org)) score += 6;
+
+  // ── Competition (when count is loaded) ──
   const count = posting.interestedCount;
-  if (count === 0) score += 30;
-  else if (count === 1) score += 20;
-  else if (count === 2) score += 10;
-  else if (count !== null && count !== undefined && count > 5) score -= 15;
+  if (count === 0)                                                score += 30;
+  else if (count === 1)                                           score += 20;
+  else if (count === 2)                                           score += 12;
+  else if (count === 3)                                           score += 5;
+  else if (count !== null && count !== undefined && count > 5)   score -= 15;
+
+  // ── Timing ──
   const parsed = parseApcDate(posting.closingDate);
   if (parsed) {
     const d = Math.floor((parsed.getTime() - Date.now()) / 86400000);
-    if (d > 0 && d <= 14) score += 5;
+    if (d >= 21)      score += 8;  // plenty of time to prepare
+    else if (d >= 7)  score += 4;  // manageable
+    else              score -= 5;  // too rushed
   }
+
   return Math.min(100, Math.max(0, score));
+}
+
+/** Auto-generates a short "why this is a good opportunity" blurb */
+function generateInsight(posting: Posting): string {
+  const t = posting.title.toLowerCase();
+  const org = (posting.organization || '').toLowerCase();
+  const tips: string[] = [];
+
+  // Contract format
+  if (/\brfq\b|request for quote|request for quotation/.test(t)) {
+    tips.push('RFQ format — just submit a price, no full proposal needed');
+  } else if (/\brfso\b|standing offer|standing agreement/.test(t)) {
+    tips.push('Standing offer = recurring revenue over 1–3 years');
+  } else if (/\bacan\b/.test(t)) {
+    tips.push('ACAN — supplier likely pre-selected, low chance of winning');
+  }
+
+  // Work type
+  if (/\bsupply of\b|\bpurchase of\b|\bprovision of\b/.test(t)) {
+    tips.push('Supply/purchase contract — source the product and deliver');
+  } else if (/\bcleaning\b|\bjanitorial\b|\bcustodial\b/.test(t)) {
+    tips.push('Cleaning contract — company + WCB + insurance = you can bid');
+  } else if (/\btraining\b|\bworkshop\b/.test(t)) {
+    tips.push('Training contract — deliver content, no complex deliverables');
+  } else if (/\btranslation\b|\binterpretation\b/.test(t)) {
+    tips.push('Translation contract — subcontract to certified translators easily');
+  } else if (/\bprinting\b|\bsignage\b/.test(t)) {
+    tips.push('Print/signage — broker it, you don\'t need to own equipment');
+  }
+
+  // Org size
+  if (/\b(town of|village of|md of|municipal district|summer village)\b/.test(org)) {
+    tips.push('Small municipality — large contractors usually skip these');
+  } else if (/\bcounty\b|\btown\b|\bvillage\b/.test(org)) {
+    tips.push('Small/mid municipality — less competition than major city');
+  } else if (/\bschool\b/.test(org)) {
+    tips.push('School board — steady, predictable client');
+  } else if (/\balberta health\b|\bahs\b/.test(org)) {
+    tips.push('AHS contract — high scrutiny, expect strong competition');
+  }
+
+  // Recurring / annual
+  if (/\bannual\b|\brecurring\b|\bongoing\b/.test(t) && !tips.some(x => x.includes('recurring'))) {
+    tips.push('Recurring/annual contract — wins keep paying year after year');
+  }
+
+  // Competition
+  if (posting.interestedCount === 0) {
+    tips.push('Zero suppliers registered — you would be the only bidder');
+  } else if (posting.interestedCount === 1) {
+    tips.push('Only 1 competitor registered so far');
+  } else if (posting.interestedCount === 2) {
+    tips.push('Only 2 competitors — still very winnable');
+  }
+
+  // Timing
+  const closeDate = parseApcDate(posting.closingDate);
+  if (closeDate) {
+    const days = Math.floor((closeDate.getTime() - Date.now()) / 86400000);
+    if (days >= 28) tips.push(`${days} days to prepare — enough time for a strong bid`);
+    else if (days <= 5) tips.push(`Only ${days} day${days === 1 ? '' : 's'} left — act now`);
+  }
+
+  return tips.slice(0, 2).join(' · ');
 }
 
 function daysLeft(dateStr: string): string {
@@ -216,13 +316,17 @@ function savePipeline(leads: PipelineLead[]) {
 // ─── Components ───────────────────────────────────────────────────────────────
 
 function ScoreBadge({ score }: { score: number }) {
-  const color = score >= 70 ? '#10b981' : score >= 50 ? '#f59e0b' : '#6b7280';
+  const color = score >= 75 ? '#10b981' : score >= 55 ? '#f59e0b' : '#ef4444';
+  const label = score >= 75 ? 'Hot' : score >= 55 ? 'Good' : 'Tough';
   return (
     <span style={{
-      background: color, color: '#fff', borderRadius: 9999,
+      background: color, color: '#fff', borderRadius: 6,
       padding: '2px 8px', fontSize: 11, fontWeight: 700,
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      minWidth: 38, textAlign: 'center', flexShrink: 0,
     }}>
-      {score}
+      <span>{score}</span>
+      <span style={{ fontSize: 9, opacity: 0.85, letterSpacing: 0.3 }}>{label}</span>
     </span>
   );
 }
@@ -263,9 +367,14 @@ function PostingCard({
             <div style={{ fontWeight: 600, fontSize: 14, color: '#e2e8f0', lineHeight: 1.4 }}>
               {posting.title}
             </div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 3 }}>
+            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
               {posting.organization}
             </div>
+            {generateInsight(posting) && (
+              <div style={{ fontSize: 11, color: '#34d399', marginTop: 4, lineHeight: 1.5 }}>
+                💡 {generateInsight(posting)}
+              </div>
+            )}
           </div>
           <ScoreBadge score={posting.score} />
         </div>
