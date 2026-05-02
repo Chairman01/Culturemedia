@@ -353,10 +353,11 @@ function PostingCard({
   const urgency = daysLeft(posting.closingDate);
   const urgent = urgency !== 'Closed' && parseInt(urgency) <= 7;
 
+  const insight = generateInsight(posting);
   return (
     <div style={{
-      background: '#1e1e2e', border: '1px solid #2a2a3e', borderRadius: 10,
-      marginBottom: 10, overflow: 'hidden',
+      background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
+      marginBottom: 8, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
     }}>
       <div
         style={{ padding: '12px 14px', cursor: 'pointer' }}
@@ -364,29 +365,34 @@ function PostingCard({
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
           <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 600, fontSize: 14, color: '#e2e8f0', lineHeight: 1.4 }}>
+            <div style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', lineHeight: 1.4 }}>
               {posting.title}
             </div>
-            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
               {posting.organization}
             </div>
-            {generateInsight(posting) && (
-              <div style={{ fontSize: 11, color: '#34d399', marginTop: 4, lineHeight: 1.5 }}>
-                💡 {generateInsight(posting)}
+            {insight && (
+              <div style={{ fontSize: 11, color: '#059669', marginTop: 4, lineHeight: 1.5 }}>
+                💡 {insight}
               </div>
             )}
           </div>
           <ScoreBadge score={posting.score} />
         </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, color: urgent ? '#f87171' : '#94a3b8' }}>
+        <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{
+            fontSize: 11, color: urgent ? '#dc2626' : '#94a3b8',
+            background: urgent ? '#fef2f2' : '#f8fafc',
+            borderRadius: 4, padding: '2px 7px', border: `1px solid ${urgent ? '#fecaca' : '#e2e8f0'}`,
+          }}>
             {urgency !== 'Closed' ? `Closes ${fmtDate(posting.closingDate)} · ` : ''}{urgency}
           </span>
           {count !== null && (
             <span style={{
-              fontSize: 11, background: count === 0 ? '#065f46' : count <= 2 ? '#1e3a5f' : '#3f3f46',
-              color: count === 0 ? '#6ee7b7' : count <= 2 ? '#93c5fd' : '#a1a1aa',
-              borderRadius: 4, padding: '1px 6px',
+              fontSize: 11, borderRadius: 4, padding: '2px 7px', border: '1px solid',
+              background: count === 0 ? '#f0fdf4' : count <= 2 ? '#eff6ff' : '#f8fafc',
+              color: count === 0 ? '#16a34a' : count <= 2 ? '#2563eb' : '#64748b',
+              borderColor: count === 0 ? '#bbf7d0' : count <= 2 ? '#bfdbfe' : '#e2e8f0',
             }}>
               {count === 0 ? 'No applicants yet' : `${count} interested`}
             </span>
@@ -395,8 +401,8 @@ function PostingCard({
             <button
               onClick={(e) => { e.stopPropagation(); loadCount(); }}
               style={{
-                fontSize: 11, background: '#2a2a3e', color: '#94a3b8',
-                border: 'none', borderRadius: 4, padding: '1px 6px', cursor: 'pointer',
+                fontSize: 11, background: '#f8fafc', color: '#64748b',
+                border: '1px solid #e2e8f0', borderRadius: 4, padding: '2px 7px', cursor: 'pointer',
               }}
             >
               {loadingCount ? 'Loading...' : 'Check applicants'}
@@ -406,20 +412,21 @@ function PostingCard({
       </div>
 
       {expanded && (
-        <div style={{ padding: '0 14px 14px', borderTop: '1px solid #2a2a3e' }}>
+        <div style={{ padding: '10px 14px 14px', borderTop: '1px solid #f1f5f9', background: '#f8fafc' }}>
           {posting.description && (
-            <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 10, lineHeight: 1.6 }}>
+            <p style={{ fontSize: 12, color: '#64748b', marginTop: 0, marginBottom: 10, lineHeight: 1.6 }}>
               {posting.description.slice(0, 400)}{posting.description.length > 400 ? '...' : ''}
             </p>
           )}
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <div style={{ display: 'flex', gap: 8 }}>
             <a
               href={posting.url}
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                fontSize: 12, color: '#3b82f6', textDecoration: 'none',
-                border: '1px solid #3b82f6', borderRadius: 6, padding: '4px 10px',
+                fontSize: 12, color: '#2563eb', textDecoration: 'none',
+                border: '1px solid #bfdbfe', borderRadius: 6, padding: '5px 12px',
+                background: '#eff6ff', fontWeight: 500,
               }}
             >
               View on APC ↗
@@ -427,8 +434,8 @@ function PostingCard({
             <button
               onClick={() => onAddToPipeline(posting)}
               style={{
-                fontSize: 12, color: '#10b981', background: 'none',
-                border: '1px solid #10b981', borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
+                fontSize: 12, color: '#fff', background: '#000',
+                border: 'none', borderRadius: 6, padding: '5px 12px', cursor: 'pointer', fontWeight: 600,
               }}
             >
               + Add to Pipeline
@@ -465,22 +472,32 @@ function PipelineBoard({ leads, onChange }: { leads: PipelineLead[]; onChange: (
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16, alignItems: 'center' }}>
-        <div style={{ fontSize: 13, color: '#94a3b8' }}>
-          {leads.filter((l) => l.stage !== 'lost').length} active leads
+      {/* Stats row */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 140 }}>
+          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Active Leads</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{leads.filter(l => l.stage !== 'lost').length}</div>
         </div>
-        <div style={{ fontSize: 13, color: '#10b981', fontWeight: 600 }}>
-          Pipeline value: ${totalValue.toLocaleString()}
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 140 }}>
+          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Pipeline Value</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#16a34a' }}>${totalValue.toLocaleString()}</div>
         </div>
+        {STAGES.filter(s => s.key !== 'lost').map(s => (
+          <div key={s.key} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 100 }}>
+            <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{s.label}</div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{leads.filter(l => l.stage === s.key).length}</div>
+          </div>
+        ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
+      {/* Kanban board */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
         {STAGES.map((stage) => {
           const stageLeads = leads.filter((l) => l.stage === stage.key);
           return (
-            <div key={stage.key} style={{ background: '#1e1e2e', borderRadius: 10, padding: 12 }}>
+            <div key={stage.key} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 12 }}>
               <div style={{
-                fontWeight: 700, fontSize: 12, color: stage.color,
+                fontWeight: 700, fontSize: 11, color: stage.color,
                 borderBottom: `2px solid ${stage.color}`, paddingBottom: 6, marginBottom: 10,
                 textTransform: 'uppercase', letterSpacing: 1,
               }}>
@@ -488,22 +505,27 @@ function PipelineBoard({ leads, onChange }: { leads: PipelineLead[]; onChange: (
               </div>
 
               {stageLeads.length === 0 && (
-                <div style={{ fontSize: 12, color: '#4b5563', textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ fontSize: 12, color: '#cbd5e1', textAlign: 'center', padding: '20px 0' }}>
                   No leads
                 </div>
               )}
 
               {stageLeads.map((lead) => (
                 <div key={lead.id} style={{
-                  background: '#13131f', border: '1px solid #2a2a3e',
+                  background: '#fff', border: '1px solid #e2e8f0',
                   borderRadius: 8, padding: 10, marginBottom: 8,
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                 }}>
-                  <div style={{ fontWeight: 600, fontSize: 12, color: '#e2e8f0', lineHeight: 1.4 }}>
+                  <div style={{ fontWeight: 600, fontSize: 12, color: '#0f172a', lineHeight: 1.4 }}>
                     {lead.title}
                   </div>
-                  <div style={{ fontSize: 11, color: '#64748b', marginTop: 3 }}>{lead.org}</div>
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>{lead.org}</div>
                   {lead.closingDate && (
-                    <div style={{ fontSize: 11, color: '#f59e0b', marginTop: 3 }}>
+                    <div style={{
+                      fontSize: 11, marginTop: 4,
+                      color: '#d97706', background: '#fffbeb',
+                      borderRadius: 4, padding: '1px 6px', display: 'inline-block',
+                    }}>
                       {daysLeft(lead.closingDate)}
                     </div>
                   )}
@@ -515,41 +537,41 @@ function PipelineBoard({ leads, onChange }: { leads: PipelineLead[]; onChange: (
                         onChange={(e) => setEditNotes(e.target.value)}
                         placeholder="Notes..."
                         style={{
-                          width: '100%', background: '#1e1e2e', color: '#e2e8f0',
-                          border: '1px solid #3b82f6', borderRadius: 4, padding: 6,
+                          width: '100%', background: '#fff', color: '#0f172a',
+                          border: '1px solid #94a3b8', borderRadius: 4, padding: 6,
                           fontSize: 11, resize: 'vertical', minHeight: 60,
                           boxSizing: 'border-box',
                         }}
                       />
                       <button onClick={() => saveNotes(lead.id)} style={{
-                        marginTop: 4, fontSize: 11, background: '#3b82f6', color: '#fff',
-                        border: 'none', borderRadius: 4, padding: '3px 8px', cursor: 'pointer',
+                        marginTop: 4, fontSize: 11, background: '#000', color: '#fff',
+                        border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontWeight: 600,
                       }}>
                         Save
                       </button>
                     </div>
                   ) : (
                     lead.notes && (
-                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 6, fontStyle: 'italic' }}>
+                      <div style={{ fontSize: 11, color: '#64748b', marginTop: 6, fontStyle: 'italic', lineHeight: 1.4 }}>
                         {lead.notes}
                       </div>
                     )
                   )}
 
-                  <div style={{ display: 'flex', gap: 4, marginTop: 8, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
                     <a href={lead.url} target="_blank" rel="noopener noreferrer"
-                      style={{ fontSize: 10, color: '#3b82f6', textDecoration: 'none' }}>
+                      style={{ fontSize: 11, color: '#2563eb', textDecoration: 'none', fontWeight: 500 }}>
                       APC ↗
                     </a>
                     <button
                       onClick={() => { setEditingId(lead.id); setEditNotes(lead.notes); }}
-                      style={{ fontSize: 10, color: '#94a3b8', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                      style={{ fontSize: 11, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                     >
-                      Edit note
+                      Note
                     </button>
                     <button
                       onClick={() => removeLead(lead.id)}
-                      style={{ fontSize: 10, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                      style={{ fontSize: 11, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                     >
                       Remove
                     </button>
@@ -559,8 +581,8 @@ function PipelineBoard({ leads, onChange }: { leads: PipelineLead[]; onChange: (
                     value={lead.stage}
                     onChange={(e) => moveStage(lead.id, e.target.value as PipelineLead['stage'])}
                     style={{
-                      marginTop: 8, width: '100%', background: '#2a2a3e', color: '#e2e8f0',
-                      border: '1px solid #3b3b4e', borderRadius: 4, padding: '3px 6px', fontSize: 11,
+                      marginTop: 8, width: '100%', background: '#fff', color: '#0f172a',
+                      border: '1px solid #e2e8f0', borderRadius: 4, padding: '4px 6px', fontSize: 11,
                     }}
                   >
                     {STAGES.map((s) => (
@@ -680,260 +702,261 @@ export default function DashboardPage() {
       d.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
   }
 
+  const NAV_ICONS: Record<MainTab, string> = {
+    pipeline: '📊', culturemedia: '✨', consulting: '💼',
+    easymoney: '💰', china: '🇨🇳', zero: '🎯', all: '📋',
+  };
+
+  const getTabCount = (key: MainTab) => {
+    const active = postings.filter(isActive);
+    if (key === 'pipeline') return pipeline.filter(l => l.stage !== 'lost').length;
+    if (key === 'all') return active.length;
+    if (key === 'zero') return active.filter(p => p.interestedCount === 0).length;
+    return active.filter(p => p.tab === key).length;
+  };
+
+  const currentTabConfig = TAB_CONFIG.find(t => t.key === activeTab);
+
   return (
-    <div style={{
-      minHeight: '100vh', background: '#0f0f1a', color: '#e2e8f0',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    }}>
-      {/* Header */}
+    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+
+      {/* ── SIDEBAR ── */}
       <div style={{
-        background: '#13131f', borderBottom: '1px solid #2a2a3e',
-        padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        width: 220, background: '#111', color: '#fff', flexShrink: 0,
+        display: 'flex', flexDirection: 'column',
+        position: 'fixed', top: 0, bottom: 0, left: 0, zIndex: 100, overflowY: 'auto',
       }}>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 18, color: '#fff' }}>Culture Media</div>
-          <div style={{ fontSize: 12, color: '#64748b' }}>Sales Dashboard · APC Lead Scanner</div>
+        {/* Brand */}
+        <div style={{ padding: '22px 18px 14px' }}>
+          <div style={{ fontWeight: 800, fontSize: 15, color: '#fff', letterSpacing: -0.3 }}>Culture Media</div>
+          <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>Sales Dashboard</div>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {pipeline.filter((l) => l.stage !== 'lost').length > 0 && (
-            <div style={{ fontSize: 12, color: '#10b981', background: '#065f46', borderRadius: 6, padding: '4px 10px' }}>
-              {pipeline.filter((l) => l.stage !== 'lost').length} active deals
+
+        <div style={{ height: 1, background: '#222', margin: '0 14px' }} />
+
+        {/* Pipeline section */}
+        <div style={{ padding: '10px 8px 4px' }}>
+          <div style={{ fontSize: 10, color: '#444', textTransform: 'uppercase', letterSpacing: 1, padding: '4px 10px 6px' }}>Pipeline</div>
+          {TAB_CONFIG.filter(t => t.key === 'pipeline').map(tab => {
+            const n = getTabCount(tab.key);
+            const on = activeTab === tab.key;
+            return (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                width: '100%', padding: '8px 10px', marginBottom: 2,
+                background: on ? '#fff' : 'transparent',
+                color: on ? '#000' : '#aaa',
+                border: 'none', borderRadius: 7, cursor: 'pointer',
+                fontSize: 13, fontWeight: on ? 700 : 400, textAlign: 'left',
+              }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>{NAV_ICONS[tab.key]}</span>{tab.label}
+                </span>
+                {n > 0 && <span style={{ fontSize: 10, background: on ? '#000' : '#333', color: on ? '#fff' : '#888', borderRadius: 9999, padding: '1px 6px' }}>{n}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* APC Leads section */}
+        <div style={{ padding: '4px 8px' }}>
+          <div style={{ fontSize: 10, color: '#444', textTransform: 'uppercase', letterSpacing: 1, padding: '4px 10px 6px' }}>APC Leads</div>
+          {TAB_CONFIG.filter(t => t.key !== 'pipeline').map(tab => {
+            const n = getTabCount(tab.key);
+            const on = activeTab === tab.key;
+            return (
+              <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                width: '100%', padding: '8px 10px', marginBottom: 2,
+                background: on ? '#fff' : 'transparent',
+                color: on ? '#000' : '#aaa',
+                border: 'none', borderRadius: 7, cursor: 'pointer',
+                fontSize: 13, fontWeight: on ? 700 : 400, textAlign: 'left',
+              }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>{NAV_ICONS[tab.key]}</span>{tab.label}
+                </span>
+                {n > 0 && (
+                  <span style={{
+                    fontSize: 10, borderRadius: 9999, padding: '1px 6px',
+                    background: on ? (tab.key === 'zero' ? '#16a34a' : '#000') : '#333',
+                    color: on ? '#fff' : (tab.key === 'zero' ? '#4ade80' : '#888'),
+                  }}>{n}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Sync */}
+        <div style={{ padding: '4px 8px' }}>
+          <div style={{ height: 1, background: '#222', margin: '8px 6px 10px' }} />
+          <a href="/dashboard/setup" style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
+            background: hasData ? 'transparent' : '#1d4ed8',
+            color: hasData ? '#aaa' : '#fff',
+            borderRadius: 7, textDecoration: 'none', fontSize: 13, marginBottom: 2,
+          }}>
+            <span>⚡</span>{hasData ? 'Re-sync APC' : 'Sync APC'}
+          </a>
+          {syncedAt && (
+            <div style={{ fontSize: 10, color: '#444', padding: '2px 10px 6px', lineHeight: 1.5 }}>
+              {fmtSyncTime(syncedAt)}<br />{postings.length} total listings
             </div>
           )}
-          <a href="/" style={{ fontSize: 12, color: '#64748b', textDecoration: 'none' }}>← Site</a>
+        </div>
+
+        {/* Bottom */}
+        <div style={{ marginTop: 'auto', padding: '8px 8px 16px', borderTop: '1px solid #222' }}>
+          <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', color: '#666', textDecoration: 'none', fontSize: 13, borderRadius: 7 }}>
+            ← View Site
+          </a>
           <button
-            onClick={async () => {
-              await fetch('/api/dashboard-auth', { method: 'DELETE' });
-              window.location.href = '/dashboard/login';
-            }}
-            style={{
-              fontSize: 12, color: '#94a3b8', background: '#1e1e2e',
-              border: '1px solid #2a2a3e', borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
-            }}
+            onClick={async () => { await fetch('/api/dashboard-auth', { method: 'DELETE' }); window.location.href = '/dashboard/login'; }}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px', color: '#666', background: 'none', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 13, textAlign: 'left' }}
           >
             Sign out
           </button>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div style={{
-        display: 'flex', gap: 4, padding: '12px 24px',
-        borderBottom: '1px solid #2a2a3e', background: '#13131f',
-        overflowX: 'auto',
-      }}>
-        {TAB_CONFIG.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            style={{
-              padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
-              background: activeTab === tab.key ? '#3b82f6' : '#1e1e2e',
-              color: activeTab === tab.key ? '#fff' : '#94a3b8',
-              fontWeight: activeTab === tab.key ? 700 : 400,
-              fontSize: 13, whiteSpace: 'nowrap',
-            }}
-          >
-            {tab.label}
-            {tab.key !== 'pipeline' && (() => {
-              const active = postings.filter(isActive);
-              const n = tab.key === 'all' ? active.length
-                : tab.key === 'zero' ? active.filter(p => p.interestedCount === 0).length
-                : active.filter(p => p.tab === tab.key).length;
-              return n > 0 ? (
-                <span style={{
-                  marginLeft: 6, fontSize: 10, background: tab.key === 'zero' ? '#065f46' : 'rgba(255,255,255,0.2)',
-                  borderRadius: 9999, padding: '1px 6px',
-                }}>
-                  {n}
-                </span>
-              ) : null;
-            })()}
-          </button>
-        ))}
-      </div>
+      {/* ── MAIN ── */}
+      <div style={{ marginLeft: 220, flex: 1, background: '#f8fafc', minHeight: '100vh' }}>
 
-      {/* Content */}
-      <div style={{ padding: '20px 24px', maxWidth: 1400, margin: '0 auto' }}>
-
-        {/* Pipeline Tab */}
-        {activeTab === 'pipeline' && (
-          <PipelineBoard leads={pipeline} onChange={handlePipelineChange} />
-        )}
-
-        {/* APC Tabs */}
-        {activeTab !== 'pipeline' && (
+        {/* Top bar */}
+        <div style={{
+          background: '#fff', borderBottom: '1px solid #e2e8f0',
+          padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        }}>
           <div>
-            {/* Toolbar */}
-            <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-              <a
-                href="/dashboard/setup"
-                style={{
-                  background: hasData ? '#1e1e2e' : '#3b82f6',
-                  color: hasData ? '#94a3b8' : '#fff',
-                  border: hasData ? '1px solid #2a2a3e' : 'none',
-                  borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
-                  fontSize: 13, textDecoration: 'none', fontWeight: hasData ? 400 : 700,
-                }}
-              >
-                {hasData ? '↻ Re-sync APC' : '⚡ Sync APC Listings'}
-              </a>
-              {hasData && (
-                <button
-                  onClick={reloadFromStorage}
-                  style={{
-                    background: '#1e1e2e', color: '#64748b', border: '1px solid #2a2a3e',
-                    borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 12,
-                  }}
-                >
-                  Reload
-                </button>
-              )}
-              {syncedAt && (
-                <span style={{ fontSize: 12, color: '#4b5563' }}>
-                  Last synced: {fmtSyncTime(syncedAt)} · {postings.length} listings
-                </span>
-              )}
-
-              <input
-                type="text"
-                placeholder="Search by title or org..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                style={{
-                  background: '#1e1e2e', color: '#e2e8f0', border: '1px solid #2a2a3e',
-                  borderRadius: 8, padding: '6px 12px', fontSize: 13, flex: 1, minWidth: 200,
-                }}
-              />
-
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                style={{
-                  background: '#1e1e2e', color: '#e2e8f0', border: '1px solid #2a2a3e',
-                  borderRadius: 8, padding: '6px 10px', fontSize: 13,
-                }}
-              >
-                <option value="score">Sort: Best match</option>
-                <option value="closing">Sort: Closing soon</option>
-                <option value="newest">Sort: Newest</option>
-                <option value="applicants">Sort: Fewest applicants</option>
-              </select>
-
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#94a3b8', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={filterLowComp}
-                  onChange={(e) => setFilterLowComp(e.target.checked)}
-                  style={{ accentColor: '#3b82f6' }}
-                />
-                Low competition only (0–2 applicants)
-              </label>
-            </div>
-
-            {/* Tab description */}
-            {activeTab === 'culturemedia' && (
-              <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
-                Marketing, social media, branding, design, video, communications, and digital contracts. These match Culture Media&apos;s core services.
-              </p>
-            )}
-            {activeTab === 'consulting' && (
-              <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
-                Strategy, business cases, feasibility studies, program reviews, stakeholder engagement. Winnable with a registered consulting firm.
-              </p>
-            )}
-            {activeTab === 'easymoney' && (
-              <div style={{
-                background: '#13131f', border: '1px solid #2a2a3e',
-                borderRadius: 10, padding: '12px 16px', marginBottom: 16,
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              {currentTabConfig?.label}
+            </h1>
+            <p style={{ fontSize: 13, color: '#64748b', margin: '2px 0 0' }}>
+              {activeTab !== 'pipeline'
+                ? `${tabPostings.length} active listing${tabPostings.length !== 1 ? 's' : ''} · ${currentTabConfig?.desc}`
+                : `${pipeline.filter(l => l.stage !== 'lost').length} active deals · Welcome back, Adam`
+              }
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {hasData && activeTab !== 'pipeline' && (
+              <button onClick={reloadFromStorage} style={{
+                fontSize: 13, color: '#64748b', background: '#fff',
+                border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 16px', cursor: 'pointer',
               }}>
-                <div style={{ fontWeight: 700, fontSize: 13, color: '#10b981', marginBottom: 6 }}>
-                  Easy Money — Service Contracts
-                </div>
-                <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.6 }}>
-                  Cleaning, grounds, catering, security, staffing, training, printing, translation, and events.
-                  Register a company + get WCB + liability insurance (~$800–2K/yr) and you can bid.
-                  Low barrier, often ignored by big nationals.{' '}
-                  <strong style={{ color: '#e2e8f0' }}>Sort by &ldquo;Fewest applicants&rdquo; to find the lowest competition ones.</strong>
-                </p>
-              </div>
+                Refresh
+              </button>
             )}
-            {activeTab === 'china' && (
-              <div style={{
-                background: 'linear-gradient(135deg, #1a2744 0%, #13131f 100%)',
-                border: '1px solid #f59e0b',
-                borderRadius: 10, padding: '12px 16px', marginBottom: 16,
-                display: 'flex', gap: 12, alignItems: 'flex-start',
+            {pipeline.filter(l => l.stage !== 'lost').length > 0 && activeTab !== 'pipeline' && (
+              <button onClick={() => setActiveTab('pipeline')} style={{
+                fontSize: 13, color: '#fff', background: '#000',
+                border: 'none', borderRadius: 8, padding: '7px 16px', cursor: 'pointer', fontWeight: 700,
               }}>
-                <div style={{ fontSize: 24, flexShrink: 0 }}>🇨🇳</div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 13, color: '#fbbf24', marginBottom: 6 }}>
-                    China Connection — Supply &amp; Product Contracts
-                  </div>
-                  <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.6 }}>
-                    Furniture, equipment, uniforms, office supplies, electronics, and goods contracts —
-                    your China supplier gives you a <strong style={{ color: '#e2e8f0' }}>real cost advantage</strong> over local competitors.
-                    Source at wholesale, mark up 30–50% on landed cost.{' '}
-                    <strong style={{ color: '#e2e8f0' }}>Steps:</strong> incorporate a supply company,
-                    get CRA business number + import account, quote the municipality, deliver.
+                View Pipeline ({pipeline.filter(l => l.stage !== 'lost').length})
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Page content */}
+        <div style={{ padding: '24px 32px' }}>
+
+          {/* ── Pipeline ── */}
+          {activeTab === 'pipeline' && (
+            <PipelineBoard leads={pipeline} onChange={handlePipelineChange} />
+          )}
+
+          {/* ── APC Lead tabs ── */}
+          {activeTab !== 'pipeline' && (
+            <div>
+              {/* Info banners */}
+              {activeTab === 'easymoney' && (
+                <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 16px', marginBottom: 16, borderLeft: '4px solid #16a34a' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#15803d', marginBottom: 4 }}>Easy Money — Service Contracts</div>
+                  <p style={{ fontSize: 12, color: '#64748b', margin: 0, lineHeight: 1.6 }}>
+                    Cleaning, grounds, catering, security, staffing, training, printing, and events. Register a company + WCB + liability insurance (~$800–2K/yr) and you can bid. <strong style={{ color: '#0f172a' }}>Sort by &ldquo;Fewest applicants&rdquo;</strong> to find the easiest wins.
                   </p>
                 </div>
-              </div>
-            )}
-            {activeTab === 'zero' && (
-              <div style={{
-                background: '#13131f', border: '1px solid #065f46',
-                borderRadius: 10, padding: '12px 16px', marginBottom: 16,
-              }}>
-                <div style={{ fontWeight: 700, fontSize: 13, color: '#10b981', marginBottom: 6 }}>
-                  0 Competition — No Applicants Yet
+              )}
+              {activeTab === 'china' && (
+                <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 10, padding: '12px 16px', marginBottom: 16, display: 'flex', gap: 12 }}>
+                  <div style={{ fontSize: 22, flexShrink: 0 }}>🇨🇳</div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#92400e', marginBottom: 4 }}>China Connection — Supply &amp; Product Contracts</div>
+                    <p style={{ fontSize: 12, color: '#78350f', margin: 0, lineHeight: 1.6 }}>
+                      Furniture, equipment, uniforms, electronics, and goods — your supplier gives you a <strong>real cost advantage</strong>. Source at wholesale, mark up 30–50% on landed cost. Steps: incorporate a supply company, get CRA business number + import account, quote the municipality, deliver.
+                    </p>
+                  </div>
                 </div>
-                <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.6 }}>
-                  These listings have been checked and currently show <strong style={{ color: '#e2e8f0' }}>zero interested suppliers</strong>.
-                  You would be the first to bid — highest chance of winning.
-                  Click &ldquo;Check applicants&rdquo; on any listing in other tabs to populate this list.
-                </p>
-              </div>
-            )}
-
-            {/* Listings */}
-            {!hasData && (
-              <div style={{
-                textAlign: 'center', padding: '60px 24px',
-                background: '#13131f', borderRadius: 12, border: '1px dashed #2a2a3e',
-              }}>
-                <div style={{ fontSize: 40, marginBottom: 16 }}>📋</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: '#e2e8f0', marginBottom: 8 }}>
-                  No listings yet
+              )}
+              {activeTab === 'zero' && (
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#15803d', marginBottom: 4 }}>0 Competition — No Applicants Yet</div>
+                  <p style={{ fontSize: 12, color: '#166534', margin: 0, lineHeight: 1.6 }}>
+                    These listings have <strong>zero interested suppliers</strong> — you would be the only bidder. Click &ldquo;Check applicants&rdquo; on any card in other tabs to populate this list.
+                  </p>
                 </div>
-                <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24, maxWidth: 400, margin: '0 auto 24px' }}>
-                  Sync APC listings from your browser using the one-click bookmarklet. Takes about 30 seconds and finds 300–500+ open contracts.
-                </p>
-                <a href="/dashboard/setup" style={{
-                  display: 'inline-block', background: '#3b82f6', color: '#fff',
-                  borderRadius: 8, padding: '10px 24px', fontWeight: 700,
-                  fontSize: 14, textDecoration: 'none',
-                }}>
-                  Set up APC Sync →
-                </a>
-              </div>
-            )}
+              )}
 
-            {hasData && tabPostings.length === 0 && (
-              <div style={{ textAlign: 'center', padding: '40px 0', color: '#4b5563' }}>
-                No listings in this category
+              {/* Toolbar */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  placeholder="Search listings..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  style={{
+                    background: '#fff', color: '#0f172a', border: '1px solid #e2e8f0',
+                    borderRadius: 8, padding: '7px 12px', fontSize: 13, flex: 1, minWidth: 200,
+                  }}
+                />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  style={{ background: '#fff', color: '#0f172a', border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 10px', fontSize: 13 }}
+                >
+                  <option value="score">Best match</option>
+                  <option value="closing">Closing soon</option>
+                  <option value="newest">Newest</option>
+                  <option value="applicants">Fewest applicants</option>
+                </select>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#64748b', cursor: 'pointer', background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 12px' }}>
+                  <input type="checkbox" checked={filterLowComp} onChange={(e) => setFilterLowComp(e.target.checked)} style={{ accentColor: '#000' }} />
+                  Low competition only
+                </label>
               </div>
-            )}
 
-            <div style={{ columns: '2 400px', gap: 12 }}>
-              {tabPostings.map((p) => (
-                <div key={p.referenceNumber} style={{ breakInside: 'avoid', marginBottom: 0 }}>
-                  <PostingCard posting={p} onAddToPipeline={addToPipeline} />
+              {/* No data state */}
+              {!hasData && (
+                <div style={{ textAlign: 'center', padding: '60px 24px', background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0' }}>
+                  <div style={{ fontSize: 40, marginBottom: 16 }}>📋</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>No listings yet</div>
+                  <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24, maxWidth: 400, margin: '0 auto 24px' }}>
+                    Sync APC listings using the one-click bookmarklet. Finds 300–500+ open government contracts in ~30 seconds.
+                  </p>
+                  <a href="/dashboard/setup" style={{ display: 'inline-block', background: '#000', color: '#fff', borderRadius: 8, padding: '10px 24px', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+                    Set up APC Sync →
+                  </a>
                 </div>
-              ))}
+              )}
+
+              {hasData && tabPostings.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '40px', background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', color: '#94a3b8' }}>
+                  No listings in this category{activeTab === 'zero' ? ' — check applicants on other listings first' : ''}
+                </div>
+              )}
+
+              <div style={{ columns: '2 420px', gap: 10 }}>
+                {tabPostings.map((p) => (
+                  <div key={p.referenceNumber} style={{ breakInside: 'avoid', marginBottom: 0 }}>
+                    <PostingCard posting={p} onAddToPipeline={addToPipeline} />
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
