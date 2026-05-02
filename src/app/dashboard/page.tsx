@@ -46,11 +46,22 @@ const STAGES: { key: PipelineLead['stage']; label: string; color: string }[] = [
 
 // Keywords that classify a posting into a tab
 const CULTURE_MEDIA_KW = [
-  'marketing', 'social media', 'advertising', 'creative', 'branding', 'brand',
-  'design', 'graphic', 'video', 'photography', 'photo', 'content', 'digital',
-  'communications', 'public relations', 'pr ', 'media buy', 'campaign',
-  'website', 'web design', 'copywriting', 'newsletter', 'email marketing',
-  'paid media', 'seo', 'ppc', 'influencer', 'storytelling',
+  // Core creative services
+  'photography', 'videography', 'video production', 'photo', 'video',
+  // Digital & social
+  'digital marketing', 'social media', 'social media management', 'online marketing',
+  // Marketing & advertising
+  'marketing', 'advertising', 'media buy', 'paid media', 'media placement',
+  'media relations', 'media campaign', 'media services',
+  // Communications
+  'communications', 'communications plan', 'communications strategy', 'communications services',
+  'public relations', 'pr services', 'media relations',
+  // Content & creative
+  'content creation', 'content strategy', 'content development', 'copywriting',
+  'brand', 'branding', 'creative services', 'creative direction',
+  // Campaigns & channels
+  'campaign', 'email marketing', 'newsletter', 'seo', 'ppc', 'digital strategy',
+  'influencer', 'storytelling', 'graphic design',
 ];
 
 const CONSULTING_KW = [
@@ -173,6 +184,25 @@ function generateInsight(posting: Posting): string {
   const org = (posting.organization || '').toLowerCase();
   const tips: string[] = [];
 
+  // ── Culture Media specific matches ──
+  if (posting.tab === 'culturemedia') {
+    if (/\bvideography\b|\bvideo production\b/.test(t)) {
+      tips.push('Video production contract — direct match for Culture Media\'s capabilities');
+    } else if (/\bphotography\b|\bphoto\b/.test(t)) {
+      tips.push('Photography contract — Culture Media can deliver professional creative content');
+    } else if (/\bdigital marketing\b|\bsocial media\b/.test(t)) {
+      tips.push('Digital/social marketing — aligns with Culture Media\'s core expertise');
+    } else if (/\bcommunications\b/.test(t)) {
+      tips.push('Communications contract — Culture Media delivers strategic messaging & content');
+    } else if (/\bmedia buy\b|\bpaid media\b|\badvertising\b/.test(t)) {
+      tips.push('Paid media contract — Culture Media can plan & execute the campaign');
+    } else if (/\bbranding\b|\bbrand\b/.test(t)) {
+      tips.push('Branding contract — creative identity work in Culture Media\'s wheelhouse');
+    } else if (/\bmarketing\b/.test(t)) {
+      tips.push('Marketing contract — a natural fit for Culture Media\'s services');
+    }
+  }
+
   // Contract format
   if (/\brfq\b|request for quote|request for quotation/.test(t)) {
     tips.push('RFQ format — just submit a price, no full proposal needed');
@@ -182,17 +212,19 @@ function generateInsight(posting: Posting): string {
     tips.push('ACAN — supplier likely pre-selected, low chance of winning');
   }
 
-  // Work type
-  if (/\bsupply of\b|\bpurchase of\b|\bprovision of\b/.test(t)) {
-    tips.push('Supply/purchase contract — source the product and deliver');
-  } else if (/\bcleaning\b|\bjanitorial\b|\bcustodial\b/.test(t)) {
-    tips.push('Cleaning contract — company + WCB + insurance = you can bid');
-  } else if (/\btraining\b|\bworkshop\b/.test(t)) {
-    tips.push('Training contract — deliver content, no complex deliverables');
-  } else if (/\btranslation\b|\binterpretation\b/.test(t)) {
-    tips.push('Translation contract — subcontract to certified translators easily');
-  } else if (/\bprinting\b|\bsignage\b/.test(t)) {
-    tips.push('Print/signage — broker it, you don\'t need to own equipment');
+  // Work type (non-culture-media)
+  if (posting.tab !== 'culturemedia') {
+    if (/\bsupply of\b|\bpurchase of\b|\bprovision of\b/.test(t)) {
+      tips.push('Supply/purchase contract — source the product and deliver');
+    } else if (/\bcleaning\b|\bjanitorial\b|\bcustodial\b/.test(t)) {
+      tips.push('Cleaning contract — company + WCB + insurance = you can bid');
+    } else if (/\btraining\b|\bworkshop\b/.test(t)) {
+      tips.push('Training contract — deliver content, no complex deliverables');
+    } else if (/\btranslation\b|\binterpretation\b/.test(t)) {
+      tips.push('Translation contract — subcontract to certified translators easily');
+    } else if (/\bprinting\b|\bsignage\b/.test(t)) {
+      tips.push('Print/signage — broker it, you don\'t need to own equipment');
+    }
   }
 
   // Org size
@@ -352,49 +384,69 @@ function PostingCard({
 
   const urgency = daysLeft(posting.closingDate);
   const urgent = urgency !== 'Closed' && parseInt(urgency) <= 7;
+  const scoreColor = posting.score >= 75 ? '#10b981' : posting.score >= 55 ? '#f59e0b' : '#ef4444';
 
   const insight = generateInsight(posting);
   return (
     <div style={{
-      background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10,
-      marginBottom: 8, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+      background: '#fff',
+      border: '1px solid #e2e8f0',
+      borderLeft: `4px solid ${scoreColor}`,
+      borderRadius: 10,
+      overflow: 'hidden',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+      display: 'flex',
+      flexDirection: 'column',
     }}>
       <div
-        style={{ padding: '12px 14px', cursor: 'pointer' }}
+        style={{ padding: '14px 16px', cursor: 'pointer', flex: 1 }}
         onClick={() => { setExpanded(!expanded); if (!expanded) loadCount(); }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 600, fontSize: 13, color: '#0f172a', lineHeight: 1.4 }}>
+        {/* Header row: title + score badge */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 13.5, color: '#0f172a', lineHeight: 1.4 }}>
               {posting.title}
             </div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 3, fontWeight: 500 }}>
               {posting.organization}
             </div>
-            {insight && (
-              <div style={{ fontSize: 11, color: '#059669', marginTop: 4, lineHeight: 1.5 }}>
-                💡 {insight}
-              </div>
-            )}
           </div>
           <ScoreBadge score={posting.score} />
         </div>
-        <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{
-            fontSize: 11, color: urgent ? '#dc2626' : '#94a3b8',
-            background: urgent ? '#fef2f2' : '#f8fafc',
-            borderRadius: 4, padding: '2px 7px', border: `1px solid ${urgent ? '#fecaca' : '#e2e8f0'}`,
+
+        {/* Insight line */}
+        {insight && (
+          <div style={{
+            fontSize: 12, color: '#059669', marginTop: 8,
+            background: '#f0fdf4', borderRadius: 6,
+            padding: '5px 9px', lineHeight: 1.5,
+            borderLeft: '3px solid #10b981',
           }}>
-            {urgency !== 'Closed' ? `Closes ${fmtDate(posting.closingDate)} · ` : ''}{urgency}
+            💡 {insight}
+          </div>
+        )}
+
+        {/* Meta row: closing date + competition */}
+        <div style={{ display: 'flex', gap: 6, marginTop: 9, flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{
+            fontSize: 11, color: urgent ? '#dc2626' : '#64748b',
+            background: urgent ? '#fef2f2' : '#f1f5f9',
+            borderRadius: 5, padding: '3px 8px',
+            border: `1px solid ${urgent ? '#fecaca' : '#e2e8f0'}`,
+            fontWeight: urgent ? 600 : 400,
+          }}>
+            📅 {urgency !== 'Closed' ? `${fmtDate(posting.closingDate)} · ` : ''}{urgency}
           </span>
           {count !== null && (
             <span style={{
-              fontSize: 11, borderRadius: 4, padding: '2px 7px', border: '1px solid',
+              fontSize: 11, borderRadius: 5, padding: '3px 8px', border: '1px solid',
               background: count === 0 ? '#f0fdf4' : count <= 2 ? '#eff6ff' : '#f8fafc',
               color: count === 0 ? '#16a34a' : count <= 2 ? '#2563eb' : '#64748b',
               borderColor: count === 0 ? '#bbf7d0' : count <= 2 ? '#bfdbfe' : '#e2e8f0',
+              fontWeight: count === 0 ? 600 : 400,
             }}>
-              {count === 0 ? 'No applicants yet' : `${count} interested`}
+              {count === 0 ? '🏆 No applicants yet' : `👥 ${count} interested`}
             </span>
           )}
           {count === null && (
@@ -402,10 +454,10 @@ function PostingCard({
               onClick={(e) => { e.stopPropagation(); loadCount(); }}
               style={{
                 fontSize: 11, background: '#f8fafc', color: '#64748b',
-                border: '1px solid #e2e8f0', borderRadius: 4, padding: '2px 7px', cursor: 'pointer',
+                border: '1px solid #e2e8f0', borderRadius: 5, padding: '3px 8px', cursor: 'pointer',
               }}
             >
-              {loadingCount ? 'Loading...' : 'Check applicants'}
+              {loadingCount ? '⏳ Loading...' : 'Check applicants'}
             </button>
           )}
         </div>
@@ -947,11 +999,9 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              <div style={{ columns: '2 420px', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: 10 }}>
                 {tabPostings.map((p) => (
-                  <div key={p.referenceNumber} style={{ breakInside: 'avoid', marginBottom: 0 }}>
-                    <PostingCard posting={p} onAddToPipeline={addToPipeline} />
-                  </div>
+                  <PostingCard key={p.referenceNumber} posting={p} onAddToPipeline={addToPipeline} />
                 ))}
               </div>
             </div>
