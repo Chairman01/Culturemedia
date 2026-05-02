@@ -16,7 +16,7 @@ interface Posting {
   interestedCount?: number | null; // null = not loaded yet
   description?: string;
   url: string;
-  tab: 'culturemedia' | 'consulting' | 'easymoney' | 'all';
+  tab: 'culturemedia' | 'consulting' | 'easymoney' | 'china' | 'all';
   score: number;
 }
 
@@ -60,18 +60,25 @@ const CONSULTING_KW = [
   'stakeholder', 'engagement', 'facilitation', 'workshop',
 ];
 
+// Service contracts — low barrier, no special license
 const EASY_MONEY_KW = [
   'cleaning', 'janitorial', 'custodial', 'grounds', 'landscaping', 'lawn',
   'snow removal', 'catering', 'coffee', 'food service', 'vending',
   'security guard', 'security service', 'staffing', 'recruitment',
   'training', 'professional development', 'printing', 'courier',
   'translation', 'interpretation', 'survey', 'data entry', 'administrative',
-  'photography service', 'event', 'signage',
-  // Product/supply contracts (China connection relevant)
+  'photography service', 'event', 'signage', 'waste', 'pest control',
+  'moving', 'shredding', 'laundry', 'window cleaning',
+];
+
+// Product/supply contracts — China supplier connection relevant
+const CHINA_KW = [
   'furniture', 'office furniture', 'equipment', 'supplies', 'office supplies',
   'uniform', 'apparel', 'workwear', 'clothing', 'protective equipment',
   'ppe', 'hardware', 'tools', 'storage', 'shelving', 'flooring',
   'appliance', 'electronics', 'computers', 'laptops', 'monitors',
+  'toner', 'cartridge', 'consumables', 'materials', 'goods',
+  'purchase of', 'supply of', 'provision of', 'procurement of',
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -92,7 +99,17 @@ function classifyPosting(title: string, desc: string): Posting['tab'] {
   if (CULTURE_MEDIA_KW.some((k) => text.includes(k))) return 'culturemedia';
   if (CONSULTING_KW.some((k) => text.includes(k))) return 'consulting';
   if (EASY_MONEY_KW.some((k) => text.includes(k))) return 'easymoney';
+  if (CHINA_KW.some((k) => text.includes(k))) return 'china';
   return 'all';
+}
+
+/** Only show listings that are still open and not expired */
+function isActive(p: Posting): boolean {
+  const status = (p.status || '').toUpperCase();
+  if (['CLOSED', 'AWARDED', 'CANCELLED', 'EXPIRED', 'AWARDED/CLOSED'].includes(status)) return false;
+  const closeDate = parseApcDate(p.closingDate);
+  if (closeDate && closeDate.getTime() < Date.now()) return false;
+  return true;
 }
 
 function scorePosting(posting: Posting): number {
@@ -453,14 +470,16 @@ function PipelineBoard({ leads, onChange }: { leads: PipelineLead[]; onChange: (
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-type MainTab = 'pipeline' | 'culturemedia' | 'consulting' | 'easymoney' | 'all';
+type MainTab = 'pipeline' | 'culturemedia' | 'consulting' | 'easymoney' | 'china' | 'zero' | 'all';
 
 const TAB_CONFIG: { key: MainTab; label: string; desc: string }[] = [
   { key: 'pipeline', label: 'Sales Pipeline', desc: 'Track your deals' },
   { key: 'culturemedia', label: 'Culture Media', desc: 'Marketing & creative' },
   { key: 'consulting', label: 'Consulting', desc: 'Strategy & advisory' },
-  { key: 'easymoney', label: 'Easy Money', desc: 'Start a company & win' },
-  { key: 'all', label: 'All Listings', desc: 'Everything on APC' },
+  { key: 'easymoney', label: 'Easy Money', desc: 'Service contracts' },
+  { key: 'china', label: 'China Connection', desc: 'Supply & product contracts' },
+  { key: 'zero', label: '0 Competition', desc: 'No applicants yet' },
+  { key: 'all', label: 'All Active', desc: 'All open listings' },
 ];
 
 
@@ -513,7 +532,13 @@ export default function DashboardPage() {
   };
 
   const filteredPostings = (tab: MainTab) => {
-    let list = tab === 'all' ? postings : postings.filter((p) => p.tab === tab);
+    // Always start with active-only listings
+    let list = postings.filter(isActive);
+    if (tab === 'zero') {
+      list = list.filter((p) => p.interestedCount === 0);
+    } else if (tab !== 'all') {
+      list = list.filter((p) => p.tab === tab);
+    }
     if (search) {
       const s = search.toLowerCase();
       list = list.filter(
@@ -601,14 +626,20 @@ export default function DashboardPage() {
             }}
           >
             {tab.label}
-            {tab.key !== 'pipeline' && postings.filter((p) => tab.key === 'all' || p.tab === tab.key).length > 0 && (
-              <span style={{
-                marginLeft: 6, fontSize: 10, background: 'rgba(255,255,255,0.2)',
-                borderRadius: 9999, padding: '1px 6px',
-              }}>
-                {tab.key === 'all' ? postings.length : postings.filter((p) => p.tab === tab.key).length}
-              </span>
-            )}
+            {tab.key !== 'pipeline' && (() => {
+              const active = postings.filter(isActive);
+              const n = tab.key === 'all' ? active.length
+                : tab.key === 'zero' ? active.filter(p => p.interestedCount === 0).length
+                : active.filter(p => p.tab === tab.key).length;
+              return n > 0 ? (
+                <span style={{
+                  marginLeft: 6, fontSize: 10, background: tab.key === 'zero' ? '#065f46' : 'rgba(255,255,255,0.2)',
+                  borderRadius: 9999, padding: '1px 6px',
+                }}>
+                  {n}
+                </span>
+              ) : null;
+            })()}
           </button>
         ))}
       </div>
@@ -699,36 +730,60 @@ export default function DashboardPage() {
             )}
             {activeTab === 'consulting' && (
               <p style={{ fontSize: 13, color: '#64748b', marginBottom: 16 }}>
-                Strategy, business cases, feasibility studies, program reviews, stakeholder engagement. Winnable with an MBA and a registered consulting firm.
+                Strategy, business cases, feasibility studies, program reviews, stakeholder engagement. Winnable with a registered consulting firm.
               </p>
             )}
             {activeTab === 'easymoney' && (
-              <div style={{ marginBottom: 20 }}>
-                <p style={{ fontSize: 13, color: '#64748b', marginBottom: 14 }}>
-                  Contracts you could win by starting a new company — cleaning, grounds, catering, security, training, printing, and similar. Low barrier to entry, often low competition from large nationals.
-                </p>
-                {/* China Connection banner */}
-                <div style={{
-                  background: 'linear-gradient(135deg, #1a2744 0%, #1e1e2e 100%)',
-                  border: '1px solid #f59e0b',
-                  borderRadius: 10, padding: '14px 18px',
-                  display: 'flex', gap: 14, alignItems: 'flex-start',
-                }}>
-                  <div style={{ fontSize: 26, flexShrink: 0 }}>🇨🇳</div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#fbbf24', marginBottom: 6 }}>
-                      China Connection — Supply Advantage
-                    </div>
-                    <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.6 }}>
-                      For contracts involving <strong style={{ color: '#e2e8f0' }}>furniture, equipment, uniforms, office supplies, signage, or goods</strong> — your China supplier connection is a real competitive edge.
-                      You can source product at wholesale cost and bid below local competitors.{' '}
-                      <strong style={{ color: '#e2e8f0' }}>Steps:</strong> register a Canadian import/supply company,
-                      get a business number + import account from CRA, quote the municipality directly,
-                      mark up 30–50% on landed cost, and deliver.
-                      Search &ldquo;furniture&rdquo;, &ldquo;equipment&rdquo;, &ldquo;supplies&rdquo;, or &ldquo;uniforms&rdquo; in the search bar above to find these contracts.
-                    </p>
-                  </div>
+              <div style={{
+                background: '#13131f', border: '1px solid #2a2a3e',
+                borderRadius: 10, padding: '12px 16px', marginBottom: 16,
+              }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: '#10b981', marginBottom: 6 }}>
+                  Easy Money — Service Contracts
                 </div>
+                <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.6 }}>
+                  Cleaning, grounds, catering, security, staffing, training, printing, translation, and events.
+                  Register a company + get WCB + liability insurance (~$800–2K/yr) and you can bid.
+                  Low barrier, often ignored by big nationals.{' '}
+                  <strong style={{ color: '#e2e8f0' }}>Sort by &ldquo;Fewest applicants&rdquo; to find the lowest competition ones.</strong>
+                </p>
+              </div>
+            )}
+            {activeTab === 'china' && (
+              <div style={{
+                background: 'linear-gradient(135deg, #1a2744 0%, #13131f 100%)',
+                border: '1px solid #f59e0b',
+                borderRadius: 10, padding: '12px 16px', marginBottom: 16,
+                display: 'flex', gap: 12, alignItems: 'flex-start',
+              }}>
+                <div style={{ fontSize: 24, flexShrink: 0 }}>🇨🇳</div>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#fbbf24', marginBottom: 6 }}>
+                    China Connection — Supply &amp; Product Contracts
+                  </div>
+                  <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.6 }}>
+                    Furniture, equipment, uniforms, office supplies, electronics, and goods contracts —
+                    your China supplier gives you a <strong style={{ color: '#e2e8f0' }}>real cost advantage</strong> over local competitors.
+                    Source at wholesale, mark up 30–50% on landed cost.{' '}
+                    <strong style={{ color: '#e2e8f0' }}>Steps:</strong> incorporate a supply company,
+                    get CRA business number + import account, quote the municipality, deliver.
+                  </p>
+                </div>
+              </div>
+            )}
+            {activeTab === 'zero' && (
+              <div style={{
+                background: '#13131f', border: '1px solid #065f46',
+                borderRadius: 10, padding: '12px 16px', marginBottom: 16,
+              }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: '#10b981', marginBottom: 6 }}>
+                  0 Competition — No Applicants Yet
+                </div>
+                <p style={{ fontSize: 12, color: '#94a3b8', margin: 0, lineHeight: 1.6 }}>
+                  These listings have been checked and currently show <strong style={{ color: '#e2e8f0' }}>zero interested suppliers</strong>.
+                  You would be the first to bid — highest chance of winning.
+                  Click &ldquo;Check applicants&rdquo; on any listing in other tabs to populate this list.
+                </p>
               </div>
             )}
 
