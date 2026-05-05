@@ -120,10 +120,11 @@ function isActive(p: Posting): boolean {
   if (['CLOSED', 'AWARDED', 'CANCELLED', 'EXPIRED', 'AWARDED/CLOSED', 'CLOSED TO SUBMISSIONS', 'AWARD'].includes(status)) return false;
   const closeDate = parseApcDate(p.closingDate);
   if (closeDate && closeDate.getTime() < Date.now()) return false;
-  // No closing date — fall back to post date: hide listings posted >120 days ago
+  // No closing date — fall back to post date
   if (!closeDate) {
     const postDate = parseApcDate(p.postDate);
-    if (postDate && postDate.getTime() < Date.now() - 120 * 86400000) return false;
+    if (!postDate) return false; // no date info at all — can't verify active, hide it
+    if (postDate.getTime() < Date.now() - 90 * 86400000) return false; // posted >90 days ago
   }
   return true;
 }

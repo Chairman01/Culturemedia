@@ -51,13 +51,16 @@ var iSt=(item.status||'').toString().toUpperCase();
 if(['CLOSED','AWARDED','CANCELLED','EXPIRED','AWARDED/CLOSED'].indexOf(iSt)>=0)return;
 var cd=item.closingDate||item.closing_date||item.closingDateTime||item.closingDateTimeUTC||'';
 if(cd){var nm=cd.match(/\/Date\((-?\d+)/);var ct=nm?parseInt(nm[1]):new Date(cd).getTime();if(!isNaN(ct)&&ct<Date.now())return;}
+var pd=item.postDate||item.post_date||item.postDateTime||'';
+if(!cd&&!pd)return;
+if(!cd&&pd){var pnm=pd.match(/\/Date\((-?\d+)/);var pt=pnm?parseInt(pnm[1]):new Date(pd).getTime();if(!isNaN(pt)&&pt<Date.now()-90*86400000)return;}
 seen[ref]=1;
 all.push({
 ref:ref,
 title:item.title||item.opportunityTitle||item.name||'',
 org:item.organization||item.buyerOrganization||item.orgName||'',
 closingDate:cd,
-postDate:item.postDate||item.post_date||item.postDateTime||'',
+postDate:pd,
 status:iSt||'OPEN',
 description:(item.description||item.summary||'').slice(0,400)
 });
