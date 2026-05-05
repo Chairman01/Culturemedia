@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 
-// GET /api/zoho/debug — diagnose Zoho connection without exposing secrets
 export async function GET() {
   const clientId = process.env.ZOHO_CLIENT_ID;
   const clientSecret = process.env.ZOHO_CLIENT_SECRET;
@@ -18,9 +17,10 @@ export async function GET() {
     return NextResponse.json({ ok: false, step: 'env_check', envCheck });
   }
 
-  // Try to get an access token
+  // Step 1: Get access token
   let accessToken: string | null = null;
-  let tokenError: string | null = null;
+  let tokenError: unknown = null;
+  let tokenResponse: unknown = null;
 
   try {
     const res = await fetch('https://accounts.zoho.com/oauth/v2/token', {
@@ -34,29 +34,42 @@ export async function GET() {
       }),
     });
     const data = await res.json();
+    tokenResponse = data;
     if (data.access_token) {
-      accessToken = `obtained (${(data.access_token as string).slice(0, 10)}...)`;
+      accessToken = data.access_token;
     } else {
-      tokenError = JSON.stringify(data);
+      tokenError = data;
     }
   } catch (e) {
     tokenError = String(e);
   }
 
   if (!accessToken) {
-    return NextResponse.json({ ok: false, step: 'token_refresh', envCheck, tokenError });
+    return NextResponse.json({ ok: false, step: 'token_refresh_failed', envCheck, tokenError, tokenResponse });
   }
 
-  // Try to hit Zoho Mail accounts API
-  let mailCheck: string | null = null;
+  // Step 2: Call Zoho Mail accounts API with the FULL token
+  let accountsStatus: number | null = null;
+  let accountsBody: unknown = null;
+
   try {
     const res = await fetch('https://mail.zoho.com/api/accounts', {
-      headers: { Authorization: `Zoho-oauthtoken ${accessToken.split('(')[1]?.split('...')[0] || ''}` },
+      headers: { Authorization: `Zoho-oauthtoken ${accessToken}` },
     });
-    mailCheck = `status ${res.status}`;
+    accountsStatus = res.status;
+    accountsBody = await res.json();
   } catch (e) {
-    mailCheck = `error: ${e}`;
+    accountsBody = String(e);
   }
 
-  return NextResponse.json({ ok: true, step: 'all_good', envCheck, accessToken, mailCheck });
+  const tokenPreview = `${accessToken.slice(0, 12)}...`;
+
+  return NextResponse.json({
+    ok: accountsStatus === 200,
+    step: accountsStatus === 200 ? 'all_good' : 'mail_api_failed',
+    envCheck,
+    tokenObtained: tokenPreview,
+    accountsStatus,
+    accountsBody,
+  });
 }
