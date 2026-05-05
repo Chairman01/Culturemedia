@@ -20,21 +20,47 @@ interface Posting {
   score: number;
 }
 
+interface LeadActivity {
+  action: string;
+  date: string; // ISO
+}
+
 interface PipelineLead {
   id: string;
   title: string;
   org: string;
   stage: 'reviewing' | 'pitched' | 'active' | 'won' | 'lost';
   value: string;
+  contractType?: 'onetime' | 'retainer';
   notes: string;
   url: string;
   addedAt: string;
   closingDate?: string;
+  lastContact?: string;
+  activities?: LeadActivity[];
+}
+
+interface ManualLead {
+  id: string;
+  company: string;
+  contact?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  source?: string;
+  stage: 'reviewing' | 'pitched' | 'active' | 'won' | 'lost';
+  value: string;
+  contractType?: 'onetime' | 'retainer';
+  notes: string;
+  addedAt: string;
+  lastContact?: string;
+  activities?: LeadActivity[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PIPELINE_KEY = 'cm_pipeline_v2';
+const MANUAL_LEADS_KEY = 'cm_manual_leads_v1';
 
 const STAGES: { key: PipelineLead['stage']; label: string; color: string }[] = [
   { key: 'reviewing', label: 'Reviewing', color: '#3b82f6' },
@@ -357,6 +383,18 @@ function savePipeline(leads: PipelineLead[]) {
   localStorage.setItem(PIPELINE_KEY, JSON.stringify(leads));
 }
 
+function loadManualLeads(): ManualLead[] {
+  try {
+    return JSON.parse(localStorage.getItem(MANUAL_LEADS_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveManualLeads(leads: ManualLead[]) {
+  localStorage.setItem(MANUAL_LEADS_KEY, JSON.stringify(leads));
+}
+
 // ─── Components ───────────────────────────────────────────────────────────────
 
 function ScoreBadge({ score }: { score: number }) {
@@ -511,13 +549,146 @@ function PostingCard({
   );
 }
 
-function PipelineBoard({ leads, onChange }: { leads: PipelineLead[]; onChange: (l: PipelineLead[]) => void }) {
+// ─── Activity helpers ─────────────────────────────────────────────────────────
+
+function timeSince(iso: string): string {
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (d === 0) return 'Today';
+  if (d === 1) return '1 day ago';
+  if (d < 7) return `${d} days ago`;
+  if (d < 30) return `${Math.floor(d / 7)}w ago`;
+  return `${Math.floor(d / 30)}mo ago`;
+}
+
+const QUICK_ACTIONS: { label: string; icon: string; color: string; advanceTo?: PipelineLead['stage'] }[] = [
+  { label: 'Emailed',  icon: '📧', color: '#2563eb', advanceTo: 'pitched' },
+  { label: 'Called',   icon: '📞', color: '#7c3aed' },
+  { label: 'Replied',  icon: '💬', color: '#059669' },
+  { label: 'Proposal', icon: '📄', color: '#d97706', advanceTo: 'pitched' },
+  { label: 'Meeting',  icon: '🤝', color: '#0891b2', advanceTo: 'active' },
+];
+
+function QuickActions({
+  stage,
+  onLog,
+}: {
+  stage: PipelineLead['stage'];
+  onLog: (action: string, advanceTo?: PipelineLead['stage']) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (!expanded) {
+    return (
+      <button
+        onClick={() => setExpanded(true)}
+        style={{
+          marginTop: 8, width: '100%', background: '#f8fafc', border: '1px dashed #cbd5e1',
+          borderRadius: 6, padding: '5px 0', fontSize: 11, color: '#64748b', cursor: 'pointer',
+          textAlign: 'center',
+        }}
+      >
+        + Log activity
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 5, fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>Log activity</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+        {QUICK_ACTIONS.map((a) => (
+          <button
+            key={a.label}
+            onClick={() => { onLog(a.label, a.advanceTo); setExpanded(false); }}
+            style={{
+              fontSize: 11, padding: '4px 8px', borderRadius: 5, cursor: 'pointer',
+              border: `1px solid ${a.color}20`, background: `${a.color}10`, color: a.color,
+              fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3,
+            }}
+          >
+            {a.icon} {a.label}
+          </button>
+        ))}
+        <button
+          onClick={() => { onLog('Won ✅', 'won'); setExpanded(false); }}
+          style={{ fontSize: 11, padding: '4px 8px', borderRadius: 5, cursor: 'pointer', border: '1px solid #10b98120', background: '#10b98110', color: '#059669', fontWeight: 600 }}
+        >
+          ✅ Won
+        </button>
+        <button
+          onClick={() => { onLog('Lost ❌', 'lost'); setExpanded(false); }}
+          style={{ fontSize: 11, padding: '4px 8px', borderRadius: 5, cursor: 'pointer', border: '1px solid #ef444420', background: '#ef444410', color: '#dc2626', fontWeight: 600 }}
+        >
+          ❌ Lost
+        </button>
+        <button
+          onClick={() => setExpanded(false)}
+          style={{ fontSize: 11, padding: '4px 8px', borderRadius: 5, cursor: 'pointer', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#94a3b8', marginLeft: 'auto' }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ActivityFeed({ activities }: { activities?: LeadActivity[] }) {
+  if (!activities || activities.length === 0) return null;
+  const recent = activities.slice(-3).reverse();
+  return (
+    <div style={{ marginTop: 6, borderTop: '1px solid #f1f5f9', paddingTop: 6 }}>
+      {recent.map((a, i) => (
+        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#94a3b8', marginBottom: 2 }}>
+          <span>{a.action}</span>
+          <span>{timeSince(a.date)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── OutreachBoard ────────────────────────────────────────────────────────────
+
+const OUTREACH_STAGE_LABELS: Record<ManualLead['stage'], string> = {
+  reviewing: 'Researching',
+  pitched: 'Pitched',
+  active: 'Active Work',
+  won: 'Won',
+  lost: 'Lost',
+};
+
+function OutreachBoard({ leads, onChange }: { leads: ManualLead[]; onChange: (l: ManualLead[]) => void }) {
+  const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNotes, setEditNotes] = useState('');
+  const [editingValueId, setEditingValueId] = useState<string | null>(null);
+  const [editValueText, setEditValueText] = useState('');
+  const emptyForm = { company: '', contact: '', email: '', phone: '', website: '', source: '', value: '', notes: '', contractType: '' as '' | 'onetime' | 'retainer' };
+  const [form, setForm] = useState(emptyForm);
 
-  const moveStage = (id: string, stage: PipelineLead['stage']) => {
-    const updated = leads.map((l) => l.id === id ? { ...l, stage } : l);
-    onChange(updated);
+  const addLead = () => {
+    if (!form.company.trim()) return;
+    const lead: ManualLead = {
+      id: `manual_${Date.now()}`,
+      company: form.company.trim(),
+      contact: form.contact.trim() || undefined,
+      email: form.email.trim() || undefined,
+      phone: form.phone.trim() || undefined,
+      website: form.website.trim() || undefined,
+      source: form.source.trim() || undefined,
+      stage: 'reviewing',
+      value: form.value.trim(),
+      contractType: form.contractType || undefined,
+      notes: form.notes.trim(),
+      addedAt: new Date().toISOString(),
+    };
+    onChange([lead, ...leads]);
+    setForm(emptyForm);
+    setShowForm(false);
+  };
+
+  const moveStage = (id: string, stage: ManualLead['stage']) => {
+    onChange(leads.map((l) => l.id === id ? { ...l, stage } : l));
   };
 
   const removeLead = (id: string) => {
@@ -525,8 +696,7 @@ function PipelineBoard({ leads, onChange }: { leads: PipelineLead[]; onChange: (
   };
 
   const saveNotes = (id: string) => {
-    const updated = leads.map((l) => l.id === id ? { ...l, notes: editNotes } : l);
-    onChange(updated);
+    onChange(leads.map((l) => l.id === id ? { ...l, notes: editNotes } : l));
     setEditingId(null);
   };
 
@@ -534,30 +704,108 @@ function PipelineBoard({ leads, onChange }: { leads: PipelineLead[]; onChange: (
     .filter((l) => l.stage !== 'lost')
     .reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
 
+  const inputStyle: React.CSSProperties = {
+    background: '#fff', color: '#0f172a', border: '1px solid #e2e8f0',
+    borderRadius: 7, padding: '8px 12px', fontSize: 13, width: '100%',
+    boxSizing: 'border-box',
+  };
+
   return (
     <div>
-      {/* Stats row */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 140 }}>
-          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Active Leads</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{leads.filter(l => l.stage !== 'lost').length}</div>
-        </div>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 140 }}>
-          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Pipeline Value</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#16a34a' }}>${totalValue.toLocaleString()}</div>
-        </div>
-        {STAGES.filter(s => s.key !== 'lost').map(s => (
-          <div key={s.key} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 100 }}>
-            <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{s.label}</div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{leads.filter(l => l.stage === s.key).length}</div>
+      {/* Header + Add button */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 130 }}>
+            <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Active Leads</div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{leads.filter(l => l.stage !== 'lost').length}</div>
           </div>
-        ))}
+          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 130 }}>
+            <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Pipeline Value</div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#16a34a' }}>${totalValue.toLocaleString()}</div>
+          </div>
+        </div>
+        <button
+          onClick={() => setShowForm(!showForm)}
+          style={{
+            background: '#000', color: '#fff', border: 'none', borderRadius: 8,
+            padding: '9px 18px', fontSize: 13, fontWeight: 700, cursor: 'pointer',
+          }}
+        >
+          {showForm ? '✕ Cancel' : '+ Add Lead'}
+        </button>
       </div>
+
+      {/* Add Lead Form */}
+      {showForm && (
+        <div style={{
+          background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12,
+          padding: 20, marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+        }}>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a', marginBottom: 14 }}>New Lead</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 600 }}>Company *</div>
+              <input style={inputStyle} placeholder="Acme Corp" value={form.company} onChange={e => setForm({ ...form, company: e.target.value })} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 600 }}>Contact Name</div>
+              <input style={inputStyle} placeholder="Jane Smith" value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 600 }}>Email</div>
+              <input style={inputStyle} placeholder="jane@acme.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 600 }}>Phone</div>
+              <input style={inputStyle} placeholder="780-555-0100" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 600 }}>Website</div>
+              <input style={inputStyle} placeholder="acme.com" value={form.website} onChange={e => setForm({ ...form, website: e.target.value })} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 600 }}>Est. Value ($)</div>
+              <input style={inputStyle} placeholder="5000" value={form.value} onChange={e => setForm({ ...form, value: e.target.value })} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 600 }}>Contract Type</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {(['onetime', 'retainer'] as const).map(ct => (
+                  <button key={ct} onClick={() => setForm({ ...form, contractType: form.contractType === ct ? '' : ct })}
+                    style={{
+                      flex: 1, padding: '7px 0', fontSize: 12, fontWeight: 600, borderRadius: 7, cursor: 'pointer',
+                      border: `1px solid ${form.contractType === ct ? (ct === 'retainer' ? '#7c3aed' : '#0369a1') : '#e2e8f0'}`,
+                      background: form.contractType === ct ? (ct === 'retainer' ? '#f5f3ff' : '#eff6ff') : '#fff',
+                      color: form.contractType === ct ? (ct === 'retainer' ? '#7c3aed' : '#0369a1') : '#64748b',
+                    }}>
+                    {ct === 'onetime' ? 'One-time' : 'Retainer'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 600 }}>Source</div>
+              <input style={inputStyle} placeholder="LinkedIn, referral, cold..." value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} />
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: 600 }}>Notes</div>
+              <input style={inputStyle} placeholder="First meeting booked..." value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
+            </div>
+          </div>
+          <button
+            onClick={addLead}
+            style={{ marginTop: 14, background: '#000', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 24px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Add Lead →
+          </button>
+        </div>
+      )}
 
       {/* Kanban board */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
         {STAGES.map((stage) => {
           const stageLeads = leads.filter((l) => l.stage === stage.key);
+          const stageLabel = OUTREACH_STAGE_LABELS[stage.key];
           return (
             <div key={stage.key} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 12 }}>
               <div style={{
@@ -565,33 +813,62 @@ function PipelineBoard({ leads, onChange }: { leads: PipelineLead[]; onChange: (
                 borderBottom: `2px solid ${stage.color}`, paddingBottom: 6, marginBottom: 10,
                 textTransform: 'uppercase', letterSpacing: 1,
               }}>
-                {stage.label} ({stageLeads.length})
+                {stageLabel} ({stageLeads.length})
               </div>
 
               {stageLeads.length === 0 && (
-                <div style={{ fontSize: 12, color: '#cbd5e1', textAlign: 'center', padding: '20px 0' }}>
-                  No leads
-                </div>
+                <div style={{ fontSize: 12, color: '#cbd5e1', textAlign: 'center', padding: '20px 0' }}>No leads</div>
               )}
 
               {stageLeads.map((lead) => (
                 <div key={lead.id} style={{
-                  background: '#fff', border: '1px solid #e2e8f0',
+                  background: '#fff', border: '1px solid #e2e8f0', borderLeft: '3px solid #a78bfa',
                   borderRadius: 8, padding: 10, marginBottom: 8,
                   boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                 }}>
-                  <div style={{ fontWeight: 600, fontSize: 12, color: '#0f172a', lineHeight: 1.4 }}>
-                    {lead.title}
+                  <div style={{ fontWeight: 700, fontSize: 12, color: '#0f172a', lineHeight: 1.4 }}>{lead.company}</div>
+                  {lead.contact && <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{lead.contact}</div>}
+                  {lead.email && (
+                    <a href={`mailto:${lead.email}`} style={{ fontSize: 11, color: '#2563eb', textDecoration: 'none', display: 'block', marginTop: 2 }}>
+                      {lead.email}
+                    </a>
+                  )}
+                  {/* Value + contract type */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                    {editingValueId === lead.id ? (
+                      <input
+                        autoFocus
+                        value={editValueText}
+                        onChange={e => setEditValueText(e.target.value)}
+                        onBlur={() => { onChange(leads.map(l => l.id === lead.id ? { ...l, value: editValueText } : l)); setEditingValueId(null); }}
+                        onKeyDown={e => { if (e.key === 'Enter') { onChange(leads.map(l => l.id === lead.id ? { ...l, value: editValueText } : l)); setEditingValueId(null); } }}
+                        placeholder="e.g. 3000"
+                        style={{ fontSize: 11, color: '#16a34a', fontWeight: 600, border: '1px solid #16a34a', borderRadius: 4, padding: '2px 6px', width: 80, background: '#fff' }}
+                      />
+                    ) : (
+                      <button onClick={() => { setEditingValueId(lead.id); setEditValueText(lead.value); }}
+                        style={{ fontSize: 11, color: lead.value ? '#16a34a' : '#94a3b8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: lead.value ? 'none' : 'underline dotted' }}>
+                        {lead.value ? `$${parseFloat(lead.value).toLocaleString()}` : '+ Add value'}
+                      </button>
+                    )}
+                    {/* Contract type toggle */}
+                    {(['onetime', 'retainer'] as const).map(ct => (
+                      <button key={ct} onClick={() => onChange(leads.map(l => l.id === lead.id ? { ...l, contractType: l.contractType === ct ? undefined : ct } : l))}
+                        style={{
+                          fontSize: 10, fontWeight: 600, borderRadius: 4, cursor: 'pointer', padding: '2px 6px',
+                          border: `1px solid ${lead.contractType === ct ? (ct === 'retainer' ? '#7c3aed' : '#0369a1') : '#e2e8f0'}`,
+                          background: lead.contractType === ct ? (ct === 'retainer' ? '#f5f3ff' : '#eff6ff') : 'transparent',
+                          color: lead.contractType === ct ? (ct === 'retainer' ? '#7c3aed' : '#0369a1') : '#94a3b8',
+                        }}>
+                        {ct === 'onetime' ? 'One-time' : 'Retainer'}
+                      </button>
+                    ))}
                   </div>
-                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 3 }}>{lead.org}</div>
-                  {lead.closingDate && (
-                    <div style={{
-                      fontSize: 11, marginTop: 4,
-                      color: '#d97706', background: '#fffbeb',
-                      borderRadius: 4, padding: '1px 6px', display: 'inline-block',
-                    }}>
-                      {daysLeft(lead.closingDate)}
-                    </div>
+                  {lead.source && (
+                    <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 3 }}>via {lead.source}</div>
+                  )}
+                  {lead.lastContact && (
+                    <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 3 }}>Last contact: {timeSince(lead.lastContact)}</div>
                   )}
 
                   {editingId === lead.id ? (
@@ -600,33 +877,25 @@ function PipelineBoard({ leads, onChange }: { leads: PipelineLead[]; onChange: (
                         value={editNotes}
                         onChange={(e) => setEditNotes(e.target.value)}
                         placeholder="Notes..."
-                        style={{
-                          width: '100%', background: '#fff', color: '#0f172a',
-                          border: '1px solid #94a3b8', borderRadius: 4, padding: 6,
-                          fontSize: 11, resize: 'vertical', minHeight: 60,
-                          boxSizing: 'border-box',
-                        }}
+                        style={{ width: '100%', background: '#fff', color: '#0f172a', border: '1px solid #94a3b8', borderRadius: 4, padding: 6, fontSize: 11, resize: 'vertical', minHeight: 60, boxSizing: 'border-box' }}
                       />
-                      <button onClick={() => saveNotes(lead.id)} style={{
-                        marginTop: 4, fontSize: 11, background: '#000', color: '#fff',
-                        border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontWeight: 600,
-                      }}>
+                      <button onClick={() => saveNotes(lead.id)} style={{ marginTop: 4, fontSize: 11, background: '#000', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>
                         Save
                       </button>
                     </div>
                   ) : (
                     lead.notes && (
-                      <div style={{ fontSize: 11, color: '#64748b', marginTop: 6, fontStyle: 'italic', lineHeight: 1.4 }}>
-                        {lead.notes}
-                      </div>
+                      <div style={{ fontSize: 11, color: '#64748b', marginTop: 6, fontStyle: 'italic', lineHeight: 1.4 }}>{lead.notes}</div>
                     )
                   )}
 
                   <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
-                    <a href={lead.url} target="_blank" rel="noopener noreferrer"
-                      style={{ fontSize: 11, color: '#2563eb', textDecoration: 'none', fontWeight: 500 }}>
-                      APC ↗
-                    </a>
+                    {lead.website && (
+                      <a href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" rel="noopener noreferrer"
+                        style={{ fontSize: 11, color: '#2563eb', textDecoration: 'none', fontWeight: 500 }}>
+                        Site ↗
+                      </a>
+                    )}
                     <button
                       onClick={() => { setEditingId(lead.id); setEditNotes(lead.notes); }}
                       style={{ fontSize: 11, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
@@ -643,16 +912,315 @@ function PipelineBoard({ leads, onChange }: { leads: PipelineLead[]; onChange: (
 
                   <select
                     value={lead.stage}
-                    onChange={(e) => moveStage(lead.id, e.target.value as PipelineLead['stage'])}
-                    style={{
-                      marginTop: 8, width: '100%', background: '#fff', color: '#0f172a',
-                      border: '1px solid #e2e8f0', borderRadius: 4, padding: '4px 6px', fontSize: 11,
-                    }}
+                    onChange={(e) => moveStage(lead.id, e.target.value as ManualLead['stage'])}
+                    style={{ marginTop: 8, width: '100%', background: '#fff', color: '#0f172a', border: '1px solid #e2e8f0', borderRadius: 4, padding: '4px 6px', fontSize: 11 }}
                   >
                     {STAGES.map((s) => (
-                      <option key={s.key} value={s.key}>{s.label}</option>
+                      <option key={s.key} value={s.key}>{OUTREACH_STAGE_LABELS[s.key]}</option>
                     ))}
                   </select>
+                  <QuickActions
+                    stage={lead.stage}
+                    onLog={(action, advanceTo) => {
+                      const now = new Date().toISOString();
+                      const activity: LeadActivity = { action, date: now };
+                      onChange(leads.map(l => l.id === lead.id ? {
+                        ...l,
+                        lastContact: now,
+                        activities: [...(l.activities || []), activity],
+                        stage: advanceTo && l.stage !== 'won' && l.stage !== 'lost' ? advanceTo : l.stage,
+                      } : l));
+                    }}
+                  />
+                  <ActivityFeed activities={lead.activities} />
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── PipelineBoard ────────────────────────────────────────────────────────────
+
+function PipelineBoard({
+  leads, manualLeads = [], onChange, onManualChange,
+}: {
+  leads: PipelineLead[];
+  manualLeads?: ManualLead[];
+  onChange: (l: PipelineLead[]) => void;
+  onManualChange?: (l: ManualLead[]) => void;
+}) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editNotes, setEditNotes] = useState('');
+  const [editingValueId, setEditingValueId] = useState<string | null>(null);
+  const [editValueText, setEditValueText] = useState('');
+
+  // Check by presence in manualLeads array (handles manual_, zoho-, and any future prefix)
+  const isManual = (id: string) => manualLeads.some(l => l.id === id);
+
+  const moveStage = (id: string, stage: PipelineLead['stage']) => {
+    if (isManual(id) && onManualChange) {
+      onManualChange(manualLeads.map(l => l.id === id ? { ...l, stage } : l));
+    } else {
+      onChange(leads.map((l) => l.id === id ? { ...l, stage } : l));
+    }
+  };
+
+  const removeLead = (id: string) => {
+    if (isManual(id) && onManualChange) {
+      onManualChange(manualLeads.filter(l => l.id !== id));
+    } else {
+      onChange(leads.filter((l) => l.id !== id));
+    }
+  };
+
+  const saveNotes = (id: string) => {
+    if (isManual(id) && onManualChange) {
+      onManualChange(manualLeads.map(l => l.id === id ? { ...l, notes: editNotes } : l));
+    } else {
+      onChange(leads.map((l) => l.id === id ? { ...l, notes: editNotes } : l));
+    }
+    setEditingId(null);
+  };
+
+  const saveValue = (id: string, value: string) => {
+    if (isManual(id) && onManualChange) {
+      onManualChange(manualLeads.map(l => l.id === id ? { ...l, value } : l));
+    } else {
+      onChange(leads.map(l => l.id === id ? { ...l, value } : l));
+    }
+    setEditingValueId(null);
+  };
+
+  const toggleContractType = (id: string, ct: 'onetime' | 'retainer') => {
+    if (isManual(id) && onManualChange) {
+      onManualChange(manualLeads.map(l => l.id === id ? { ...l, contractType: l.contractType === ct ? undefined : ct } : l));
+    } else {
+      onChange(leads.map(l => l.id === id ? { ...l, contractType: l.contractType === ct ? undefined : ct } : l));
+    }
+  };
+
+  const allActive = [
+    ...leads.filter(l => l.stage !== 'lost'),
+    ...manualLeads.filter(l => l.stage !== 'lost'),
+  ];
+
+  const totalValue = allActive.reduce((sum, l) => sum + (parseFloat(l.value) || 0), 0);
+
+  return (
+    <div>
+      {/* Stats row */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 140 }}>
+          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Active Leads</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{allActive.length}</div>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 140 }}>
+          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Pipeline Value</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#16a34a' }}>${totalValue.toLocaleString()}</div>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 100 }}>
+          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>APC Deals</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{leads.filter(l => l.stage !== 'lost').length}</div>
+        </div>
+        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 100 }}>
+          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>My Outreach</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#7c3aed' }}>{manualLeads.filter(l => l.stage !== 'lost').length}</div>
+        </div>
+        {STAGES.filter(s => s.key !== 'lost').map(s => (
+          <div key={s.key} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 100 }}>
+            <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{s.label}</div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>
+              {leads.filter(l => l.stage === s.key).length + manualLeads.filter(l => l.stage === s.key).length}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Kanban board */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12 }}>
+        {STAGES.map((stage) => {
+          const stageApc = leads.filter((l) => l.stage === stage.key);
+          const stageManual = manualLeads.filter((l) => l.stage === stage.key);
+          const total = stageApc.length + stageManual.length;
+          return (
+            <div key={stage.key} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: 12 }}>
+              <div style={{
+                fontWeight: 700, fontSize: 11, color: stage.color,
+                borderBottom: `2px solid ${stage.color}`, paddingBottom: 6, marginBottom: 10,
+                textTransform: 'uppercase', letterSpacing: 1,
+              }}>
+                {stage.label} ({total})
+              </div>
+
+              {total === 0 && (
+                <div style={{ fontSize: 12, color: '#cbd5e1', textAlign: 'center', padding: '20px 0' }}>
+                  No leads
+                </div>
+              )}
+
+              {/* APC leads */}
+              {stageApc.map((lead) => (
+                <div key={lead.id} style={{
+                  background: '#fff', border: '1px solid #e2e8f0', borderLeft: '3px solid #3b82f6',
+                  borderRadius: 8, padding: 10, marginBottom: 8,
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 4, marginBottom: 2 }}>
+                    <div style={{ fontWeight: 600, fontSize: 12, color: '#0f172a', lineHeight: 1.4, flex: 1 }}>
+                      {lead.title}
+                    </div>
+                    <span style={{ fontSize: 9, background: '#eff6ff', color: '#2563eb', borderRadius: 4, padding: '1px 5px', flexShrink: 0, fontWeight: 700 }}>APC</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{lead.org}</div>
+                  {lead.closingDate && (
+                    <div style={{ fontSize: 11, marginTop: 4, color: '#d97706', background: '#fffbeb', borderRadius: 4, padding: '1px 6px', display: 'inline-block' }}>
+                      {daysLeft(lead.closingDate)}
+                    </div>
+                  )}
+                  {/* Value + contract type */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                    {editingValueId === lead.id ? (
+                      <input autoFocus value={editValueText} onChange={e => setEditValueText(e.target.value)}
+                        onBlur={() => saveValue(lead.id, editValueText)}
+                        onKeyDown={e => { if (e.key === 'Enter') saveValue(lead.id, editValueText); }}
+                        placeholder="e.g. 5000"
+                        style={{ fontSize: 11, color: '#16a34a', fontWeight: 600, border: '1px solid #16a34a', borderRadius: 4, padding: '2px 6px', width: 80, background: '#fff' }} />
+                    ) : (
+                      <button onClick={() => { setEditingValueId(lead.id); setEditValueText(lead.value); }}
+                        style={{ fontSize: 11, color: lead.value ? '#16a34a' : '#94a3b8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: lead.value ? 'none' : 'underline dotted' }}>
+                        {lead.value ? `$${parseFloat(lead.value).toLocaleString()}` : '+ Add value'}
+                      </button>
+                    )}
+                    {(['onetime', 'retainer'] as const).map(ct => (
+                      <button key={ct} onClick={() => toggleContractType(lead.id, ct)}
+                        style={{ fontSize: 10, fontWeight: 600, borderRadius: 4, cursor: 'pointer', padding: '2px 6px',
+                          border: `1px solid ${lead.contractType === ct ? (ct === 'retainer' ? '#7c3aed' : '#0369a1') : '#e2e8f0'}`,
+                          background: lead.contractType === ct ? (ct === 'retainer' ? '#f5f3ff' : '#eff6ff') : 'transparent',
+                          color: lead.contractType === ct ? (ct === 'retainer' ? '#7c3aed' : '#0369a1') : '#94a3b8',
+                        }}>
+                        {ct === 'onetime' ? 'One-time' : 'Retainer'}
+                      </button>
+                    ))}
+                  </div>
+                  {editingId === lead.id ? (
+                    <div style={{ marginTop: 8 }}>
+                      <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} placeholder="Notes..."
+                        style={{ width: '100%', background: '#fff', color: '#0f172a', border: '1px solid #94a3b8', borderRadius: 4, padding: 6, fontSize: 11, resize: 'vertical', minHeight: 60, boxSizing: 'border-box' }} />
+                      <button onClick={() => saveNotes(lead.id)} style={{ marginTop: 4, fontSize: 11, background: '#000', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>Save</button>
+                    </div>
+                  ) : (
+                    lead.notes && <div style={{ fontSize: 11, color: '#64748b', marginTop: 6, fontStyle: 'italic', lineHeight: 1.4 }}>{lead.notes}</div>
+                  )}
+                  {lead.lastContact && (
+                    <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>Last contact: {timeSince(lead.lastContact)}</div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+                    <a href={lead.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#2563eb', textDecoration: 'none', fontWeight: 500 }}>APC ↗</a>
+                    <button onClick={() => { setEditingId(lead.id); setEditNotes(lead.notes); }} style={{ fontSize: 11, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Note</button>
+                    <button onClick={() => removeLead(lead.id)} style={{ fontSize: 11, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Remove</button>
+                  </div>
+                  <select value={lead.stage} onChange={(e) => moveStage(lead.id, e.target.value as PipelineLead['stage'])}
+                    style={{ marginTop: 8, width: '100%', background: '#fff', color: '#0f172a', border: '1px solid #e2e8f0', borderRadius: 4, padding: '4px 6px', fontSize: 11 }}>
+                    {STAGES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+                  </select>
+                  <QuickActions
+                    stage={lead.stage}
+                    onLog={(action, advanceTo) => {
+                      const now = new Date().toISOString();
+                      const activity: LeadActivity = { action, date: now };
+                      const updated = leads.map(l => l.id === lead.id ? {
+                        ...l,
+                        lastContact: now,
+                        activities: [...(l.activities || []), activity],
+                        stage: advanceTo && l.stage !== 'won' && l.stage !== 'lost' ? advanceTo : l.stage,
+                      } : l);
+                      onChange(updated);
+                    }}
+                  />
+                  <ActivityFeed activities={lead.activities} />
+                </div>
+              ))}
+
+              {/* Manual / outreach leads */}
+              {stageManual.map((lead) => (
+                <div key={lead.id} style={{
+                  background: '#fff', border: '1px solid #e2e8f0', borderLeft: '3px solid #a78bfa',
+                  borderRadius: 8, padding: 10, marginBottom: 8,
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 4, marginBottom: 2 }}>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: '#0f172a', lineHeight: 1.4, flex: 1 }}>{lead.company}</div>
+                    <span style={{ fontSize: 9, background: '#f5f3ff', color: '#7c3aed', borderRadius: 4, padding: '1px 5px', flexShrink: 0, fontWeight: 700 }}>Outreach</span>
+                  </div>
+                  {lead.contact && <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{lead.contact}</div>}
+                  {lead.email && <a href={`mailto:${lead.email}`} style={{ fontSize: 11, color: '#2563eb', textDecoration: 'none', display: 'block', marginTop: 2 }}>{lead.email}</a>}
+                  {/* Value + contract type */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                    {editingValueId === lead.id ? (
+                      <input autoFocus value={editValueText} onChange={e => setEditValueText(e.target.value)}
+                        onBlur={() => saveValue(lead.id, editValueText)}
+                        onKeyDown={e => { if (e.key === 'Enter') saveValue(lead.id, editValueText); }}
+                        placeholder="e.g. 3000"
+                        style={{ fontSize: 11, color: '#16a34a', fontWeight: 600, border: '1px solid #16a34a', borderRadius: 4, padding: '2px 6px', width: 80, background: '#fff' }} />
+                    ) : (
+                      <button onClick={() => { setEditingValueId(lead.id); setEditValueText(lead.value); }}
+                        style={{ fontSize: 11, color: lead.value ? '#16a34a' : '#94a3b8', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: lead.value ? 'none' : 'underline dotted' }}>
+                        {lead.value ? `$${parseFloat(lead.value).toLocaleString()}` : '+ Add value'}
+                      </button>
+                    )}
+                    {(['onetime', 'retainer'] as const).map(ct => (
+                      <button key={ct} onClick={() => toggleContractType(lead.id, ct)}
+                        style={{ fontSize: 10, fontWeight: 600, borderRadius: 4, cursor: 'pointer', padding: '2px 6px',
+                          border: `1px solid ${lead.contractType === ct ? (ct === 'retainer' ? '#7c3aed' : '#0369a1') : '#e2e8f0'}`,
+                          background: lead.contractType === ct ? (ct === 'retainer' ? '#f5f3ff' : '#eff6ff') : 'transparent',
+                          color: lead.contractType === ct ? (ct === 'retainer' ? '#7c3aed' : '#0369a1') : '#94a3b8',
+                        }}>
+                        {ct === 'onetime' ? 'One-time' : 'Retainer'}
+                      </button>
+                    ))}
+                  </div>
+                  {lead.source && <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2 }}>via {lead.source}</div>}
+                  {lead.lastContact && (
+                    <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 4 }}>Last contact: {timeSince(lead.lastContact)}</div>
+                  )}
+                  {editingId === lead.id ? (
+                    <div style={{ marginTop: 8 }}>
+                      <textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} placeholder="Notes..."
+                        style={{ width: '100%', background: '#fff', color: '#0f172a', border: '1px solid #94a3b8', borderRadius: 4, padding: 6, fontSize: 11, resize: 'vertical', minHeight: 60, boxSizing: 'border-box' }} />
+                      <button onClick={() => saveNotes(lead.id)} style={{ marginTop: 4, fontSize: 11, background: '#000', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontWeight: 600 }}>Save</button>
+                    </div>
+                  ) : (
+                    lead.notes && <div style={{ fontSize: 11, color: '#64748b', marginTop: 6, fontStyle: 'italic', lineHeight: 1.4 }}>{lead.notes}</div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+                    {lead.website && <a href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#2563eb', textDecoration: 'none', fontWeight: 500 }}>Site ↗</a>}
+                    <button onClick={() => { setEditingId(lead.id); setEditNotes(lead.notes); }} style={{ fontSize: 11, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Note</button>
+                    <button onClick={() => removeLead(lead.id)} style={{ fontSize: 11, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Remove</button>
+                  </div>
+                  <select value={lead.stage} onChange={(e) => moveStage(lead.id, e.target.value as ManualLead['stage'])}
+                    style={{ marginTop: 8, width: '100%', background: '#fff', color: '#0f172a', border: '1px solid #e2e8f0', borderRadius: 4, padding: '4px 6px', fontSize: 11 }}>
+                    {STAGES.map((s) => <option key={s.key} value={s.key}>{OUTREACH_STAGE_LABELS[s.key]}</option>)}
+                  </select>
+                  <QuickActions
+                    stage={lead.stage}
+                    onLog={(action, advanceTo) => {
+                      const now = new Date().toISOString();
+                      const activity: LeadActivity = { action, date: now };
+                      if (onManualChange) {
+                        onManualChange(manualLeads.map(l => l.id === lead.id ? {
+                          ...l,
+                          lastContact: now,
+                          activities: [...(l.activities || []), activity],
+                          stage: advanceTo && l.stage !== 'won' && l.stage !== 'lost' ? advanceTo : l.stage,
+                        } : l));
+                      }
+                    }}
+                  />
+                  <ActivityFeed activities={lead.activities} />
                 </div>
               ))}
             </div>
@@ -665,10 +1233,11 @@ function PipelineBoard({ leads, onChange }: { leads: PipelineLead[]; onChange: (
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
-type MainTab = 'pipeline' | 'culturemedia' | 'consulting' | 'easymoney' | 'china' | 'zero' | 'all';
+type MainTab = 'pipeline' | 'outreach' | 'culturemedia' | 'consulting' | 'easymoney' | 'china' | 'zero' | 'all';
 
 const TAB_CONFIG: { key: MainTab; label: string; desc: string }[] = [
-  { key: 'pipeline', label: 'Sales Pipeline', desc: 'Track your deals' },
+  { key: 'pipeline', label: 'Sales Pipeline', desc: 'All deals consolidated' },
+  { key: 'outreach', label: 'My Leads', desc: 'Your own outreach' },
   { key: 'culturemedia', label: 'Culture Media', desc: 'Marketing & creative' },
   { key: 'consulting', label: 'Consulting', desc: 'Strategy & advisory' },
   { key: 'easymoney', label: 'Easy Money', desc: 'Service contracts' },
@@ -683,20 +1252,134 @@ export default function DashboardPage() {
   const [postings, setPostings] = useState<Posting[]>([]);
   const [syncedAt, setSyncedAt] = useState<string | null>(null);
   const [pipeline, setPipeline] = useState<PipelineLead[]>([]);
+  const [manualLeads, setManualLeads] = useState<ManualLead[]>([]);
+  const [apcExpanded, setApcExpanded] = useState(true);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'score' | 'closing' | 'newest' | 'applicants'>('score');
   const [filterLowComp, setFilterLowComp] = useState(false);
+  const [zohoConnected, setZohoConnected] = useState<boolean | null>(null);
+  const [zohoSyncing, setZohoSyncing] = useState(false);
+  const [zohoToast, setZohoToast] = useState<string | null>(null);
 
   useEffect(() => {
     setPipeline(loadPipeline());
+    setManualLeads(loadManualLeads());
     const { postings: stored, syncedAt: sa } = loadPostingsFromStorage();
     setPostings(stored);
     setSyncedAt(sa);
+
+    // Check Zoho connection status
+    fetch('/api/zoho/mail')
+      .then(r => r.json())
+      .then(d => setZohoConnected(d.connected))
+      .catch(() => setZohoConnected(false));
+
+    // Show toast if redirected back from Zoho OAuth
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('zoho_connected') === '1') {
+      setZohoConnected(true);
+      setZohoToast('Zoho Mail connected!');
+      window.history.replaceState({}, '', '/dashboard');
+      setTimeout(() => setZohoToast(null), 4000);
+    } else if (params.get('zoho_error')) {
+      setZohoToast(`Zoho error: ${params.get('zoho_error')}`);
+      window.history.replaceState({}, '', '/dashboard');
+      setTimeout(() => setZohoToast(null), 6000);
+    }
   }, []);
+
+  const syncFromZoho = async () => {
+    setZohoSyncing(true);
+    try {
+      const allLeads = [
+        ...pipeline.map(l => ({ id: l.id, company: l.org, email: undefined as string | undefined, stage: l.stage, type: 'apc' as const })),
+        ...manualLeads.map(l => ({ id: l.id, company: l.company, email: l.email, stage: l.stage, type: 'manual' as const })),
+      ];
+
+      const res = await fetch('/api/zoho/mail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leads: allLeads }),
+      });
+      const data = await res.json();
+
+      if (!data.connected) {
+        setZohoToast('Not connected to Zoho. Click "Connect Zoho Mail" first.');
+        setTimeout(() => setZohoToast(null), 5000);
+        return;
+      }
+
+      const updates: Array<{ leadId: string; newStage: string | null; lastContact: string; activity: string }> = data.updates || [];
+      const newLeadsFromEmail: Array<{ email: string; company: string; contact: string; subject: string; date: string }> = data.newLeads || [];
+
+      // Apply updates to pipeline leads
+      const newPipeline = pipeline.map(l => {
+        const u = updates.find(x => x.leadId === l.id);
+        if (!u) return l;
+        const act: LeadActivity = { action: u.activity, date: u.lastContact };
+        return {
+          ...l,
+          lastContact: u.lastContact,
+          activities: [...(l.activities || []), act],
+          stage: (u.newStage && l.stage !== 'won' && l.stage !== 'lost' ? u.newStage : l.stage) as PipelineLead['stage'],
+        };
+      });
+
+      // Apply updates to manual leads
+      const updatedManual = manualLeads.map(l => {
+        const u = updates.find(x => x.leadId === l.id);
+        if (!u) return l;
+        const act: LeadActivity = { action: u.activity, date: u.lastContact };
+        return {
+          ...l,
+          lastContact: u.lastContact,
+          activities: [...(l.activities || []), act],
+          stage: (u.newStage && l.stage !== 'won' && l.stage !== 'lost' ? u.newStage : l.stage) as ManualLead['stage'],
+        };
+      });
+
+      // Auto-create new leads from sent emails that had no match
+      const autoCreated: ManualLead[] = newLeadsFromEmail.map(nl => ({
+        id: `zoho-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        company: nl.company,
+        contact: nl.contact || undefined,
+        email: nl.email,
+        stage: 'pitched' as const,
+        value: '',
+        notes: `Auto-added from email: "${nl.subject}"`,
+        addedAt: new Date().toISOString(),
+        lastContact: nl.date,
+        source: 'Email',
+        activities: [{ action: 'Emailed', date: nl.date }],
+      }));
+
+      const newManual = [...autoCreated, ...updatedManual];
+
+      handlePipelineChange(newPipeline);
+      handleManualLeadsChange(newManual);
+
+      const parts: string[] = [];
+      if (autoCreated.length > 0) parts.push(`${autoCreated.length} new lead${autoCreated.length !== 1 ? 's' : ''} added`);
+      if (updates.length > 0) parts.push(`${updates.length} updated`);
+      if (parts.length === 0) parts.push('No new activity found');
+      setZohoToast(parts.join(' · '));
+      setTimeout(() => setZohoToast(null), 5000);
+    } catch {
+      setZohoToast('Zoho sync failed. Try again.');
+      setTimeout(() => setZohoToast(null), 5000);
+    } finally {
+      setZohoSyncing(false);
+    }
+  };
 
   const handlePipelineChange = (leads: PipelineLead[]) => {
     setPipeline(leads);
     savePipeline(leads);
+  };
+
+  const handleManualLeadsChange = (leads: ManualLead[]) => {
+    setManualLeads(leads);
+    saveManualLeads(leads);
   };
 
   const addToPipeline = (posting: Posting) => {
@@ -767,13 +1450,14 @@ export default function DashboardPage() {
   }
 
   const NAV_ICONS: Record<MainTab, string> = {
-    pipeline: '📊', culturemedia: '✨', consulting: '💼',
+    pipeline: '📊', outreach: '📧', culturemedia: '✨', consulting: '💼',
     easymoney: '💰', china: '🇨🇳', zero: '🎯', all: '📋',
   };
 
   const getTabCount = (key: MainTab) => {
     const active = postings.filter(isActive);
-    if (key === 'pipeline') return pipeline.filter(l => l.stage !== 'lost').length;
+    if (key === 'pipeline') return pipeline.filter(l => l.stage !== 'lost').length + manualLeads.filter(l => l.stage !== 'lost').length;
+    if (key === 'outreach') return manualLeads.filter(l => l.stage !== 'lost').length;
     if (key === 'all') return active.length;
     if (key === 'zero') return active.filter(p => p.interestedCount === 0).length;
     return active.filter(p => p.tab === key).length;
@@ -783,6 +1467,20 @@ export default function DashboardPage() {
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+
+      {/* Toast notification */}
+      {zohoToast && (
+        <div style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+          background: zohoToast.startsWith('Zoho error') || zohoToast.includes('failed') ? '#7f1d1d' : '#052e16',
+          color: zohoToast.startsWith('Zoho error') || zohoToast.includes('failed') ? '#fca5a5' : '#4ade80',
+          border: `1px solid ${zohoToast.startsWith('Zoho error') || zohoToast.includes('failed') ? '#991b1b' : '#166534'}`,
+          borderRadius: 10, padding: '12px 18px', fontSize: 13, fontWeight: 600,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+        }}>
+          {zohoToast}
+        </div>
+      )}
 
       {/* ── SIDEBAR ── */}
       <div style={{
@@ -800,32 +1498,69 @@ export default function DashboardPage() {
 
         {/* Pipeline section */}
         <div style={{ padding: '10px 8px 4px' }}>
-          <div style={{ fontSize: 10, color: '#444', textTransform: 'uppercase', letterSpacing: 1, padding: '4px 10px 6px' }}>Pipeline</div>
-          {TAB_CONFIG.filter(t => t.key === 'pipeline').map(tab => {
-            const n = getTabCount(tab.key);
-            const on = activeTab === tab.key;
+          <div style={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: 1, padding: '4px 10px 6px' }}>Pipeline</div>
+          {(['pipeline'] as MainTab[]).map(key => {
+            const tab = TAB_CONFIG.find(t => t.key === key)!;
+            const n = getTabCount(key);
+            const on = activeTab === key;
             return (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+              <button key={key} onClick={() => setActiveTab(key)} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 width: '100%', padding: '8px 10px', marginBottom: 2,
                 background: on ? '#fff' : 'transparent',
-                color: on ? '#000' : '#aaa',
+                color: on ? '#000' : '#ccc',
                 border: 'none', borderRadius: 7, cursor: 'pointer',
                 fontSize: 13, fontWeight: on ? 700 : 400, textAlign: 'left',
               }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span>{NAV_ICONS[tab.key]}</span>{tab.label}
+                  <span>{NAV_ICONS[key]}</span>{tab.label}
                 </span>
-                {n > 0 && <span style={{ fontSize: 10, background: on ? '#000' : '#333', color: on ? '#fff' : '#888', borderRadius: 9999, padding: '1px 6px' }}>{n}</span>}
+                {n > 0 && <span style={{ fontSize: 10, background: on ? '#000' : '#2a2a2a', color: on ? '#fff' : '#bbb', borderRadius: 9999, padding: '1px 6px' }}>{n}</span>}
               </button>
             );
           })}
         </div>
 
-        {/* APC Leads section */}
+        {/* My Leads section */}
         <div style={{ padding: '4px 8px' }}>
-          <div style={{ fontSize: 10, color: '#444', textTransform: 'uppercase', letterSpacing: 1, padding: '4px 10px 6px' }}>APC Leads</div>
-          {TAB_CONFIG.filter(t => t.key !== 'pipeline').map(tab => {
+          <div style={{ fontSize: 10, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: 1, padding: '4px 10px 6px', fontWeight: 700 }}>My Outreach</div>
+          {(['outreach'] as MainTab[]).map(key => {
+            const tab = TAB_CONFIG.find(t => t.key === key)!;
+            const n = getTabCount(key);
+            const on = activeTab === key;
+            return (
+              <button key={key} onClick={() => setActiveTab(key)} style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                width: '100%', padding: '8px 10px', marginBottom: 2,
+                background: on ? '#fff' : 'transparent',
+                color: on ? '#000' : '#ccc',
+                border: 'none', borderRadius: 7, cursor: 'pointer',
+                fontSize: 13, fontWeight: on ? 700 : 400, textAlign: 'left',
+              }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>{NAV_ICONS[key]}</span>{tab.label}
+                </span>
+                {n > 0 && <span style={{ fontSize: 10, background: on ? '#7c3aed' : '#2a2a2a', color: '#fff', borderRadius: 9999, padding: '1px 6px' }}>{n}</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* APC Leads section — collapsible */}
+        <div style={{ padding: '4px 8px' }}>
+          <button
+            onClick={() => setApcExpanded(!apcExpanded)}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 10, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: 1,
+              padding: '4px 10px 6px', borderRadius: 4, fontWeight: 700,
+            }}
+          >
+            <span>APC Leads</span>
+            <span style={{ fontSize: 12, opacity: 0.8 }}>{apcExpanded ? '▾' : '▸'}</span>
+          </button>
+          {apcExpanded && TAB_CONFIG.filter(t => !['pipeline', 'outreach'].includes(t.key)).map(tab => {
             const n = getTabCount(tab.key);
             const on = activeTab === tab.key;
             return (
@@ -833,7 +1568,7 @@ export default function DashboardPage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 width: '100%', padding: '8px 10px', marginBottom: 2,
                 background: on ? '#fff' : 'transparent',
-                color: on ? '#000' : '#aaa',
+                color: on ? '#000' : '#ccc',
                 border: 'none', borderRadius: 7, cursor: 'pointer',
                 fontSize: 13, fontWeight: on ? 700 : 400, textAlign: 'left',
               }}>
@@ -843,8 +1578,8 @@ export default function DashboardPage() {
                 {n > 0 && (
                   <span style={{
                     fontSize: 10, borderRadius: 9999, padding: '1px 6px',
-                    background: on ? (tab.key === 'zero' ? '#16a34a' : '#000') : '#333',
-                    color: on ? '#fff' : (tab.key === 'zero' ? '#4ade80' : '#888'),
+                    background: on ? (tab.key === 'zero' ? '#16a34a' : '#000') : '#2a2a2a',
+                    color: on ? '#fff' : (tab.key === 'zero' ? '#4ade80' : '#bbb'),
                   }}>{n}</span>
                 )}
               </button>
@@ -872,6 +1607,39 @@ export default function DashboardPage() {
 
         {/* Bottom */}
         <div style={{ marginTop: 'auto', padding: '8px 8px 16px', borderTop: '1px solid #222' }}>
+          {/* Zoho Mail connection */}
+          <div style={{ padding: '6px 10px 10px' }}>
+            <div style={{ fontSize: 10, color: '#555', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Email Sync</div>
+            {zohoConnected ? (
+              <button
+                onClick={syncFromZoho}
+                disabled={zohoSyncing}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+                  padding: '7px 10px', background: '#052e16', color: '#4ade80',
+                  border: '1px solid #166534', borderRadius: 7, cursor: zohoSyncing ? 'not-allowed' : 'pointer',
+                  fontSize: 12, fontWeight: 600,
+                }}
+              >
+                <span>{zohoSyncing ? '⏳' : '✅'}</span>
+                {zohoSyncing ? 'Syncing...' : 'Zoho Connected — Sync'}
+              </button>
+            ) : (
+              <a
+                href="/api/zoho/connect"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6, width: '100%',
+                  padding: '7px 10px', background: '#1e1b4b', color: '#818cf8',
+                  border: '1px solid #3730a3', borderRadius: 7,
+                  fontSize: 12, fontWeight: 600, textDecoration: 'none',
+                }}
+              >
+                <span>📧</span>
+                {zohoConnected === null ? 'Checking...' : 'Connect Zoho Mail'}
+              </a>
+            )}
+          </div>
+
           <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', color: '#666', textDecoration: 'none', fontSize: 13, borderRadius: 7 }}>
             ← View Site
           </a>
@@ -897,9 +1665,11 @@ export default function DashboardPage() {
               {currentTabConfig?.label}
             </h1>
             <p style={{ fontSize: 13, color: '#64748b', margin: '2px 0 0' }}>
-              {activeTab !== 'pipeline'
-                ? `${tabPostings.length} active listing${tabPostings.length !== 1 ? 's' : ''} · ${currentTabConfig?.desc}`
-                : `${pipeline.filter(l => l.stage !== 'lost').length} active deals · Welcome back, Adam`
+              {activeTab === 'pipeline'
+                ? `${pipeline.filter(l => l.stage !== 'lost').length + manualLeads.filter(l => l.stage !== 'lost').length} active deals · Welcome back, Adam`
+                : activeTab === 'outreach'
+                ? `${manualLeads.filter(l => l.stage !== 'lost').length} active leads · ${currentTabConfig?.desc}`
+                : `${tabPostings.length} active listing${tabPostings.length !== 1 ? 's' : ''} · ${currentTabConfig?.desc}`
               }
             </p>
           </div>
@@ -912,12 +1682,12 @@ export default function DashboardPage() {
                 Refresh
               </button>
             )}
-            {pipeline.filter(l => l.stage !== 'lost').length > 0 && activeTab !== 'pipeline' && (
+            {(pipeline.filter(l => l.stage !== 'lost').length + manualLeads.filter(l => l.stage !== 'lost').length) > 0 && activeTab !== 'pipeline' && activeTab !== 'outreach' && (
               <button onClick={() => setActiveTab('pipeline')} style={{
                 fontSize: 13, color: '#fff', background: '#000',
                 border: 'none', borderRadius: 8, padding: '7px 16px', cursor: 'pointer', fontWeight: 700,
               }}>
-                View Pipeline ({pipeline.filter(l => l.stage !== 'lost').length})
+                View Pipeline ({pipeline.filter(l => l.stage !== 'lost').length + manualLeads.filter(l => l.stage !== 'lost').length})
               </button>
             )}
           </div>
@@ -926,13 +1696,18 @@ export default function DashboardPage() {
         {/* Page content */}
         <div style={{ padding: '24px 32px' }}>
 
-          {/* ── Pipeline ── */}
+          {/* ── Sales Pipeline (consolidated) ── */}
           {activeTab === 'pipeline' && (
-            <PipelineBoard leads={pipeline} onChange={handlePipelineChange} />
+            <PipelineBoard leads={pipeline} manualLeads={manualLeads} onChange={handlePipelineChange} onManualChange={handleManualLeadsChange} />
+          )}
+
+          {/* ── My Outreach ── */}
+          {activeTab === 'outreach' && (
+            <OutreachBoard leads={manualLeads} onChange={handleManualLeadsChange} />
           )}
 
           {/* ── APC Lead tabs ── */}
-          {activeTab !== 'pipeline' && (
+          {activeTab !== 'pipeline' && activeTab !== 'outreach' && (
             <div>
               {/* Info banners */}
               {activeTab === 'easymoney' && (

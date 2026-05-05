@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# Zoho OAuth tokens (auto-generated, do not commit)
+.zoho-tokens.json
+
 # vercel
 .vercel
 
