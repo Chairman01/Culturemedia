@@ -120,6 +120,11 @@ function isActive(p: Posting): boolean {
   if (['CLOSED', 'AWARDED', 'CANCELLED', 'EXPIRED', 'AWARDED/CLOSED', 'CLOSED TO SUBMISSIONS', 'AWARD'].includes(status)) return false;
   const closeDate = parseApcDate(p.closingDate);
   if (closeDate && closeDate.getTime() < Date.now()) return false;
+  // No closing date — fall back to post date: hide listings posted >120 days ago
+  if (!closeDate) {
+    const postDate = parseApcDate(p.postDate);
+    if (postDate && postDate.getTime() < Date.now() - 120 * 86400000) return false;
+  }
   return true;
 }
 
@@ -315,9 +320,15 @@ function loadPostingsFromStorage(): { postings: Posting[]; syncedAt: string | nu
     const syncedAt = localStorage.getItem(APC_SYNCED_AT_KEY);
     if (!raw) return { postings: [], syncedAt: null };
     const items = JSON.parse(raw);
+    const seen = new Set<string>();
     const postings = items
       .map(mapStoredPosting)
-      .filter((p: Posting) => p.referenceNumber && p.title);
+      .filter((p: Posting) => {
+        if (!p.referenceNumber || !p.title) return false;
+        if (seen.has(p.referenceNumber)) return false;
+        seen.add(p.referenceNumber);
+        return true;
+      });
     return { postings, syncedAt };
   } catch {
     return { postings: [], syncedAt: null };
