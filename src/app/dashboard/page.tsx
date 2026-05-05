@@ -116,8 +116,8 @@ function classifyPosting(title: string, desc: string): Posting['tab'] {
 
 /** Only show listings that are still open and not expired */
 function isActive(p: Posting): boolean {
-  const status = (p.status || '').toUpperCase();
-  if (['CLOSED', 'AWARDED', 'CANCELLED', 'EXPIRED', 'AWARDED/CLOSED'].includes(status)) return false;
+  const status = String(p.status || '').toUpperCase();
+  if (['CLOSED', 'AWARDED', 'CANCELLED', 'EXPIRED', 'AWARDED/CLOSED', 'CLOSED TO SUBMISSIONS', 'AWARD'].includes(status)) return false;
   const closeDate = parseApcDate(p.closingDate);
   if (closeDate && closeDate.getTime() < Date.now()) return false;
   return true;
@@ -298,7 +298,7 @@ function mapStoredPosting(item: any): Posting {
     organization: item.org || item.organization || item.buyerOrganization || '',
     closingDate: item.closingDate || item.closing_date || '',
     postDate: item.postDate || item.post_date || '',
-    status: item.status || 'OPEN',
+    status: String(item.status || 'OPEN'),
     interestedCount: null,
     description: desc,
     url: `https://purchasing.alberta.ca/posting/${ref}`,
