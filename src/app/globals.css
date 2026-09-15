@@ -4,7 +4,7 @@
   --color-background: #ffffff;
   --color-foreground: #0a0a0a;
 
-  --color-primary: #3b82f6;
+  --color-primary: #2563eb;
   --color-primary-foreground: #ffffff;
 
   --color-secondary: #8b5cf6;
@@ -19,6 +19,8 @@
   --color-muted: #f5f5f5;
   --color-muted-foreground: #737373;
 
+  --color-brand: #808080;
+
   --radius-lg: 0.5rem;
   --radius-md: calc(0.5rem - 2px);
   --radius-sm: calc(0.5rem - 4px);
@@ -30,12 +32,31 @@
 :root {
   --background: var(--color-background);
   --foreground: var(--color-foreground);
+  /* Height of the fixed navbar. Anchored sections offset by this so their
+     headings are not hidden underneath it when jumped to. */
+  --nav-height: 5rem;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--nav-height);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: var(--font-sans);
+}
+
+/* Anchor targets sit under the fixed navbar without scroll-padding support. */
+[id] {
+  scroll-margin-top: var(--nav-height);
 }
 
 @utility glass-card {
@@ -51,3 +72,29 @@ body {
   color: transparent;
   background-image: linear-gradient(to right, #2563eb, #7c3aed, #db2777);
 }
+
+/* Small uppercase label that opens every section. */
+@utility eyebrow {
+  display: inline-block;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #2563eb;
+}
+
+/*MV iphone 5 fix*/
+@media only screen and (max-width: 425px) {
+  .prose.article-content-wrapper {
+    word-break: break-all !important;
+  }
+}
+
+@media only screen and (max-width: 359px) {
+  main > div > div > .container.mx-auto {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
+/*MV iphone 5 fix - END*/

@@ -1,7 +1,9 @@
 "use client";
 
-import { X } from "lucide-react";
+import { useEffect } from "react";
+import { X, MapPin, Phone, Mail, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { CONTACT } from "@/lib/contact";
 
 interface ContactModalProps {
     isOpen: boolean;
@@ -9,6 +11,23 @@ interface ContactModalProps {
 }
 
 export function ContactModal({ isOpen, onClose }: ContactModalProps) {
+    // Close on Escape and stop the page behind the modal from scrolling.
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") onClose();
+        };
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        window.addEventListener("keydown", onKeyDown);
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            window.removeEventListener("keydown", onKeyDown);
+        };
+    }, [isOpen, onClose]);
 
     return (
         <AnimatePresence>
@@ -20,85 +39,91 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+                        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
                     />
 
                     {/* Modal */}
-                    <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="contact-modal-title"
+                            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                            className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto overscroll-contain rounded-2xl bg-white shadow-2xl"
                         >
-                            <div className="grid md:grid-cols-2 gap-0">
-                                {/* Left Column - Info */}
-                                <div className="bg-black text-white p-8 md:p-10 rounded-l-2xl">
-                                    <div className="mb-6">
-                                        <div className="inline-block bg-white text-black px-4 py-2 rounded-full text-sm font-bold mb-4">
-                                            Partner With Us
-                                        </div>
-                                    </div>
+                            {/* Anchored to the modal itself so it stays top-right whether the
+                                two columns sit side by side or stack on narrow screens. */}
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                aria-label="Close contact form"
+                                className="absolute right-4 top-4 z-10 rounded-full bg-white/90 p-2 text-gray-600 shadow-sm backdrop-blur transition-colors hover:bg-white hover:text-gray-900"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
 
-                                    <h2 className="text-3xl md:text-4xl font-bold mb-4">
-                                        Let's create something amazing together!
+                            <div className="grid md:grid-cols-2">
+                                {/* Left — info */}
+                                <div className="bg-black p-8 text-white md:p-10">
+                                    <span className="inline-block rounded-full bg-white px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-black">
+                                        Partner With Us
+                                    </span>
+
+                                    <h2 id="contact-modal-title" className="mt-6 text-3xl font-bold leading-tight md:text-4xl">
+                                        Let&apos;s create something amazing together
                                     </h2>
 
-                                    <p className="text-gray-300 mb-8">
-                                        Ready to take your brand to the next level? Contact us today to discuss how we can help you reach Alberta's most engaged audience.
+                                    <p className="mt-4 leading-relaxed text-gray-300">
+                                        Ready to take your brand to the next level? Contact us today to discuss how we can
+                                        help you reach Alberta&apos;s most engaged audience.
                                     </p>
 
-                                    <div className="space-y-6">
+                                    <div className="mt-8 space-y-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="bg-white/10 p-2 rounded">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                </svg>
-                                            </div>
-                                            <span className="text-gray-200">Calgary, AB</span>
+                                            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white/10">
+                                                <MapPin className="h-4 w-4" />
+                                            </span>
+                                            <span className="text-sm text-gray-200">{CONTACT.locationLine}</span>
                                         </div>
 
-                                        <div className="flex items-center gap-3">
-                                            <div className="bg-white/10 p-2 rounded">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                                                </svg>
-                                            </div>
-                                            <span className="text-gray-200">587 897 9347</span>
-                                        </div>
+                                        <a href={`tel:${CONTACT.phoneHref}`} className="flex items-center gap-3 transition-colors hover:text-white">
+                                            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white/10">
+                                                <Phone className="h-4 w-4" />
+                                            </span>
+                                            <span className="text-sm text-gray-200">{CONTACT.phoneDisplay}</span>
+                                        </a>
 
-                                        <div className="flex items-center gap-3">
-                                            <div className="bg-white/10 p-2 rounded">
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                                </svg>
-                                            </div>
-                                            <span className="text-gray-200">culturemedia101@gmail.com</span>
-                                        </div>
+                                        <a href={`mailto:${CONTACT.email}`} className="flex items-center gap-3 transition-colors hover:text-white">
+                                            <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-white/10">
+                                                <Mail className="h-4 w-4" />
+                                            </span>
+                                            <span className="break-all text-sm text-gray-200">{CONTACT.email}</span>
+                                        </a>
                                     </div>
                                 </div>
 
-                                {/* Right Column - Form */}
-                                <div className="p-8 md:p-10 relative">
-                                    <button
-                                        onClick={onClose}
-                                        className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                {/* Right — form */}
+                                <div className="p-8 md:p-10">
+                                    <h3 className="text-2xl font-bold text-foreground">Send us a message</h3>
+                                    <p className="mt-1.5 text-sm text-muted-foreground">
+                                        We usually reply within one business day.
+                                    </p>
+
+                                    <form
+                                        action={`https://formsubmit.co/${CONTACT.email}`}
+                                        method="POST"
+                                        className="mt-6 space-y-4"
                                     >
-                                        <X className="w-5 h-5" />
-                                    </button>
-
-                                    <h3 className="text-2xl font-bold mb-2">Send us a message</h3>
-
-                                    <form action="https://formsubmit.co/culturemedia101@gmail.com" method="POST" className="space-y-4 mt-6">
-                                        {/* FormSubmit Configuration */}
+                                        {/* FormSubmit configuration */}
                                         <input type="hidden" name="_subject" value="New Partnership Inquiry from Culture Media Website" />
                                         <input type="hidden" name="_captcha" value="false" />
                                         <input type="hidden" name="_template" value="table" />
 
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                             <div>
-                                                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor="firstName" className="mb-1.5 block text-sm font-medium text-gray-700">
                                                     First name
                                                 </label>
                                                 <input
@@ -106,12 +131,13 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                                                     id="firstName"
                                                     name="First_Name"
                                                     placeholder="John"
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+                                                    autoComplete="given-name"
+                                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition-shadow focus:border-transparent focus:ring-2 focus:ring-primary"
                                                     required
                                                 />
                                             </div>
                                             <div>
-                                                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor="lastName" className="mb-1.5 block text-sm font-medium text-gray-700">
                                                     Last name
                                                 </label>
                                                 <input
@@ -119,14 +145,15 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                                                     id="lastName"
                                                     name="Last_Name"
                                                     placeholder="Doe"
-                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+                                                    autoComplete="family-name"
+                                                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition-shadow focus:border-transparent focus:ring-2 focus:ring-primary"
                                                     required
                                                 />
                                             </div>
                                         </div>
 
                                         <div>
-                                            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">
                                                 Email
                                             </label>
                                             <input
@@ -134,13 +161,14 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                                                 id="email"
                                                 name="Email"
                                                 placeholder="john@company.com"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+                                                autoComplete="email"
+                                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition-shadow focus:border-transparent focus:ring-2 focus:ring-primary"
                                                 required
                                             />
                                         </div>
 
                                         <div>
-                                            <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="company" className="mb-1.5 block text-sm font-medium text-gray-700">
                                                 Company
                                             </label>
                                             <input
@@ -148,12 +176,13 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                                                 id="company"
                                                 name="Company"
                                                 placeholder="Your company name"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none"
+                                                autoComplete="organization"
+                                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition-shadow focus:border-transparent focus:ring-2 focus:ring-primary"
                                             />
                                         </div>
 
                                         <div>
-                                            <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor="message" className="mb-1.5 block text-sm font-medium text-gray-700">
                                                 Message
                                             </label>
                                             <textarea
@@ -161,12 +190,15 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                                                 name="Message"
                                                 placeholder="Tell us about your brand and what you're looking for..."
                                                 rows={4}
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent outline-none resize-none"
+                                                className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2.5 outline-none transition-shadow focus:border-transparent focus:ring-2 focus:ring-primary"
                                                 required
                                             />
                                         </div>
 
-                                        <button type="submit" className="w-full bg-black text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
+                                        <button
+                                            type="submit"
+                                            className="flex w-full items-center justify-center gap-2 rounded-lg bg-black px-6 py-3 font-medium text-white transition-colors hover:bg-gray-800"
+                                        >
                                             Send Message
                                             <ArrowRight className="h-4 w-4" />
                                         </button>
@@ -178,13 +210,5 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
                 </>
             )}
         </AnimatePresence>
-    );
-}
-
-function ArrowRight({ className }: { className?: string }) {
-    return (
-        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-        </svg>
     );
 }
