@@ -1,0 +1,958 @@
+/* Admin shell — ported from the Claude scorecard page, with this site's Inter
+   and blue accent in place of its own type and colour. Everything is scoped
+   under .adm so it never touches the marketing pages. */
+
+.adm {
+  --ground: #f6f6f3;
+  --surface: #ffffff;
+  --sunken: #efefea;
+  --ink: #16181c;
+  --ink-2: #3e434c;
+  --muted: #6b7280;
+  --rule: #e1e1db;
+  --rule-hard: #c4c4bb;
+  --s2: #2563eb;
+  --s2-soft: #dbeafe;
+  --crit: #a8321a;
+  --crit-bg: #f7e9e5;
+  --warn: #8a5a12;
+  --warn-bg: #f7f0e2;
+  --ok: #1f6b45;
+  --ok-bg: #e7f1eb;
+
+  background: var(--ground);
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+}
+
+@media (prefers-color-scheme: dark) {
+  .adm:not([data-theme='light']) {
+    --ground: #0f1318;
+    --surface: #171c24;
+    --sunken: #1e242e;
+    --ink: #edeff2;
+    --ink-2: #c2c8d2;
+    --muted: #8a93a1;
+    --rule: #2a313c;
+    --rule-hard: #3c4552;
+    --s2: #60a5fa;
+    --s2-soft: #1e3a5f;
+    --crit: #f0846a;
+    --crit-bg: #2c1c19;
+    --warn: #d9a445;
+    --warn-bg: #2a2318;
+    --ok: #5fbf8d;
+    --ok-bg: #16261e;
+  }
+}
+
+.adm *,
+.adm *::before,
+.adm *::after {
+  box-sizing: border-box;
+}
+
+.adm .wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-inline: 18px;
+  padding-block: 26px 56px;
+}
+
+.adm .mono,
+.adm .v,
+.adm .num {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px 20px;
+  margin-bottom: 14px;
+}
+
+.adm .eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 4px;
+}
+
+.adm h1 {
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  margin: 0;
+}
+
+.adm .hright {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.adm .fresh {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--muted);
+  margin: 0;
+  max-width: 62ch;
+}
+
+.adm .fresh .old {
+  color: var(--warn);
+  font-weight: 700;
+}
+
+.adm button {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border: 1px solid var(--rule-hard);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.adm button:hover {
+  background: var(--sunken);
+}
+
+.adm button:focus-visible {
+  outline: 2px solid var(--s2);
+  outline-offset: 2px;
+}
+
+.adm button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.adm .banner {
+  font-size: 12.5px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 0 0 14px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  color: var(--ink-2);
+}
+
+.adm .banner[data-tone='warn'] {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-color: transparent;
+}
+
+.adm .banner[data-tone='crit'] {
+  background: var(--crit-bg);
+  color: var(--crit);
+  border-color: transparent;
+}
+
+.adm .card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+
+.adm .card h2 {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.adm .card h2 small {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 400;
+}
+
+/* ── KPI tiles ─────────────────────────────────────────────────────────────── */
+
+.adm .tiles {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.adm .tile {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 12px 14px 10px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto auto;
+  column-gap: 8px;
+  min-width: 0;
+}
+
+.adm .tile .l {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm .tile .v {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  align-self: end;
+}
+
+.adm .tile .sp {
+  align-self: end;
+  justify-self: end;
+}
+
+.adm .tile .foot {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.adm .delta {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.adm .delta.up {
+  color: var(--ok);
+}
+
+.adm .delta.down {
+  color: var(--crit);
+}
+
+.adm .delta.flat {
+  color: var(--muted);
+}
+
+.adm .chip {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.adm .chip.ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.adm .chip.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.adm .chip.crit {
+  background: var(--crit-bg);
+  color: var(--crit);
+}
+
+.adm .chip.none {
+  background: var(--sunken);
+  color: var(--muted);
+}
+
+/* ── trends ────────────────────────────────────────────────────────────────── */
+
+.adm .grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.adm .tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 8px;
+}
+
+.adm .tabs button {
+  font-size: 11.5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border-color: var(--rule);
+  color: var(--ink-2);
+}
+
+.adm .tabs button[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--surface);
+  border-color: var(--ink);
+}
+
+.adm .chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.adm .chart .empty {
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+.adm .cnote {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+
+.adm .chead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 10px;
+  flex-wrap: wrap;
+  margin: 0 0 10px;
+}
+
+.adm .chead h2 {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.adm .seg {
+  display: inline-flex;
+  border: 1px solid var(--rule-hard);
+  border-radius: 6px;
+  overflow: hidden;
+  flex: none;
+}
+
+.adm .seg button {
+  font-size: 11px;
+  padding: 3px 10px;
+  border: 0;
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--ink-2);
+}
+
+.adm .seg button + button {
+  border-left: 1px solid var(--rule-hard);
+}
+
+.adm .seg button[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+/* ── insights + priorities ─────────────────────────────────────────────────── */
+
+.adm .ins {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.adm .ins li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.adm .ins li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.adm .ins .chip {
+  grid-row: 1 / 3;
+  align-self: start;
+  margin-top: 2px;
+  min-width: 52px;
+  text-align: center;
+}
+
+.adm .ins b {
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.adm .ins span {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.adm .ins em {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--muted);
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+}
+
+.adm .acts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.adm .acts li {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: 2px 10px;
+  align-items: start;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.adm .acts li:last-child {
+  border-bottom: 0;
+}
+
+.adm .acts .n {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  padding-top: 1px;
+}
+
+.adm .acts .t {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.35;
+}
+
+.adm .acts .m {
+  grid-column: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.adm .acts .due.over {
+  color: var(--crit);
+  font-weight: 700;
+}
+
+.adm .acts button {
+  grid-row: 1 / 3;
+  grid-column: 3;
+  align-self: center;
+  font-size: 11.5px;
+  padding: 4px 9px;
+}
+
+.adm .owner {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--sunken);
+  color: var(--ink-2);
+}
+
+.adm .owner.you {
+  background: var(--s2-soft);
+  color: var(--ink);
+}
+
+.adm .progress {
+  height: 6px;
+  background: var(--sunken);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 2px 0 10px;
+}
+
+.adm .progress i {
+  display: block;
+  height: 100%;
+  background: var(--ok);
+  border-radius: 999px;
+}
+
+.adm .done {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 20px;
+}
+
+.adm .done li {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--rule);
+}
+
+.adm .done li .d {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--ok);
+  font-weight: 600;
+}
+
+/* ── tables + disclosure ───────────────────────────────────────────────────── */
+
+.adm details {
+  margin-top: 8px;
+}
+
+.adm summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.adm summary:focus-visible {
+  outline: 2px solid var(--s2);
+  outline-offset: 2px;
+}
+
+.adm .tw {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+.adm table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 12px;
+  min-width: 560px;
+}
+
+.adm th,
+.adm td {
+  padding: 6px 10px;
+  text-align: right;
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.adm th:first-child,
+.adm td:first-child {
+  text-align: left;
+  font-family: inherit;
+}
+
+.adm thead th {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--rule-hard);
+}
+
+.adm tbody tr + tr td {
+  border-top: 1px solid var(--rule);
+}
+
+.adm td.grp {
+  font-family: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--sunken);
+}
+
+.adm .links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 14px;
+  font-size: 12.5px;
+}
+
+.adm .links a {
+  color: var(--s2);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.adm .links a:hover {
+  text-decoration: underline;
+}
+
+.adm .links span {
+  color: var(--muted);
+}
+
+.adm .muted {
+  color: var(--muted);
+}
+
+/* ── page switcher ─────────────────────────────────────────────────────────── */
+
+.adm .views {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  background: var(--sunken);
+  border-radius: 8px;
+  margin: 0 0 14px;
+}
+
+.adm .views a {
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.adm .views a[aria-current='page'] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
+/* ── sales rows + form ─────────────────────────────────────────────────────── */
+
+.adm .srows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+
+.adm .srows li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+}
+
+.adm .srows li:last-child {
+  border-bottom: 0;
+}
+
+.adm .srows b {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.adm .srows b.soft {
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.adm .srows .warn {
+  color: var(--warn);
+}
+
+.adm .srows .crit {
+  color: var(--crit);
+}
+
+.adm .srows .ok {
+  color: var(--ok);
+}
+
+.adm .srows .sub-line {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.adm .sub {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ink-2);
+  margin: 14px 0 4px;
+}
+
+.adm .form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.adm .form label {
+  display: grid;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  min-width: 0;
+}
+
+.adm .form .wide {
+  grid-column: 1 / -1;
+}
+
+.adm .form input,
+.adm .form select,
+.adm .form textarea {
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--rule-hard);
+  border-radius: 6px;
+  padding: 7px 9px;
+  width: 100%;
+  min-width: 0;
+}
+
+.adm .form textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.adm .form input:focus-visible,
+.adm .form select:focus-visible,
+.adm .form textarea:focus-visible {
+  outline: 2px solid var(--s2);
+  outline-offset: 1px;
+}
+
+.adm .form .actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.adm .form .actions button {
+  background: var(--ink);
+  color: var(--surface);
+  border-color: var(--ink);
+}
+
+.adm .form .actions button:hover {
+  background: var(--ink-2);
+}
+
+.adm .form .hint {
+  font-size: 11.5px;
+  color: var(--muted);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.adm .form .hint a {
+  color: var(--s2);
+  font-weight: 600;
+}
+
+.adm .fmsg {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.adm .fmsg.ok {
+  color: var(--ok);
+}
+
+.adm .fmsg.crit {
+  color: var(--crit);
+}
+
+.adm .pill {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--sunken);
+  color: var(--ink-2);
+}
+
+.adm .pill.won {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.adm .pill.proposal,
+.adm .pill.engaged {
+  background: var(--s2-soft);
+  color: var(--ink);
+}
+
+.adm .pill.lost,
+.adm .pill.declined {
+  color: var(--muted);
+}
+
+.adm .flag {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--warn);
+  white-space: nowrap;
+}
+
+.adm td.co {
+  font-family: inherit;
+  text-align: left;
+  white-space: normal;
+  min-width: 160px;
+}
+
+.adm td.co b {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink);
+}
+
+.adm td.co span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.adm td.l {
+  text-align: left;
+  font-family: inherit;
+}
+
+.adm .empty-note {
+  font-size: 12.5px;
+  color: var(--muted);
+  padding: 8px 0;
+}
+
+/* ── index ─────────────────────────────────────────────────────────────────── */
+
+.adm .home {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.adm .home a.card {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.adm .home a.card:hover {
+  border-color: var(--s2);
+}
+
+.adm .home a.card b {
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.adm .home a.card span {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .adm .form {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .adm .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .adm .grid2,
+  .adm .home {
+    grid-template-columns: 1fr;
+  }
+
+  .adm .done {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 440px) {
+  .adm .tile .v {
+    font-size: 20px;
+  }
+
+  .adm .tile .sp {
+    display: none;
+  }
+
+  .adm h1 {
+    font-size: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adm * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
