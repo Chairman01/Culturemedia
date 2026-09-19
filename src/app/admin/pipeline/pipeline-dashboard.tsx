@@ -1247,7 +1247,7 @@ const TAB_CONFIG: { key: MainTab; label: string; desc: string }[] = [
 ];
 
 
-export default function DashboardPage() {
+export default function PipelineDashboard() {
   const [activeTab, setActiveTab] = useState<MainTab>('pipeline');
   const [postings, setPostings] = useState<Posting[]>([]);
   const [syncedAt, setSyncedAt] = useState<string | null>(null);
@@ -1279,11 +1279,11 @@ export default function DashboardPage() {
     if (params.get('zoho_connected') === '1') {
       setZohoConnected(true);
       setZohoToast('Zoho Mail connected!');
-      window.history.replaceState({}, '', '/dashboard');
+      window.history.replaceState({}, '', '/admin/pipeline');
       setTimeout(() => setZohoToast(null), 4000);
     } else if (params.get('zoho_error')) {
       setZohoToast(`Zoho error: ${params.get('zoho_error')}`);
-      window.history.replaceState({}, '', '/dashboard');
+      window.history.replaceState({}, '', '/admin/pipeline');
       setTimeout(() => setZohoToast(null), 6000);
     }
   }, []);
@@ -1491,7 +1491,7 @@ export default function DashboardPage() {
         {/* Brand */}
         <div style={{ padding: '22px 18px 14px' }}>
           <div style={{ fontWeight: 800, fontSize: 15, color: '#fff', letterSpacing: -0.3 }}>Culture Media</div>
-          <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>Sales Dashboard</div>
+          <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>APC pipeline</div>
         </div>
 
         <div style={{ height: 1, background: '#222', margin: '0 14px' }} />
@@ -1590,7 +1590,7 @@ export default function DashboardPage() {
         {/* Sync */}
         <div style={{ padding: '4px 8px' }}>
           <div style={{ height: 1, background: '#222', margin: '8px 6px 10px' }} />
-          <a href="/dashboard/setup" style={{
+          <a href="/admin/setup" style={{
             display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
             background: hasData ? 'transparent' : '#1d4ed8',
             color: hasData ? '#aaa' : '#fff',
@@ -1603,6 +1603,20 @@ export default function DashboardPage() {
               {fmtSyncTime(syncedAt)}<br />{postings.length} total listings
             </div>
           )}
+        </div>
+
+        {/* Culture Alberta — the Supabase-backed pages under /admin */}
+        <div style={{ padding: '4px 8px' }}>
+          <div style={{ height: 1, background: '#222', margin: '8px 6px 10px' }} />
+          <div style={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: 1, padding: '4px 10px 6px' }}>Culture Alberta</div>
+          {([['/admin/scorecard', '📊', 'Scorecard'], ['/admin/sales', '🤝', 'Sales']] as const).map(([href, icon, label]) => (
+            <a key={href} href={href} style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', marginBottom: 2,
+              color: '#ccc', textDecoration: 'none', fontSize: 13, borderRadius: 7,
+            }}>
+              <span>{icon}</span>{label}
+            </a>
+          ))}
         </div>
 
         {/* Bottom */}
@@ -1640,11 +1654,14 @@ export default function DashboardPage() {
             )}
           </div>
 
+          <a href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', color: '#666', textDecoration: 'none', fontSize: 13, borderRadius: 7 }}>
+            ← Admin home
+          </a>
           <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', color: '#666', textDecoration: 'none', fontSize: 13, borderRadius: 7 }}>
             ← View Site
           </a>
           <button
-            onClick={async () => { await fetch('/api/dashboard-auth', { method: 'DELETE' }); window.location.href = '/dashboard/login'; }}
+            onClick={async () => { await fetch('/api/dashboard-auth', { method: 'DELETE' }); window.location.href = '/admin/login'; }}
             style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px', color: '#666', background: 'none', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 13, textAlign: 'left' }}
           >
             Sign out
@@ -1774,7 +1791,7 @@ export default function DashboardPage() {
                   <p style={{ fontSize: 14, color: '#64748b', marginBottom: 24, maxWidth: 400, margin: '0 auto 24px' }}>
                     Sync APC listings using the one-click bookmarklet. Finds 300–500+ open government contracts in ~30 seconds.
                   </p>
-                  <a href="/dashboard/setup" style={{ display: 'inline-block', background: '#000', color: '#fff', borderRadius: 8, padding: '10px 24px', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+                  <a href="/admin/setup" style={{ display: 'inline-block', background: '#000', color: '#fff', borderRadius: 8, padding: '10px 24px', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
                     Set up APC Sync →
                   </a>
                 </div>

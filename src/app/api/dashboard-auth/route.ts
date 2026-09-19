@@ -1,25 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-function makeToken(password: string): string {
-  return Buffer.from(`dashboard:${password}:auth`).toString('base64');
-}
+import {
+  AUTH_NOT_CONFIGURED,
+  DASHBOARD_COOKIE,
+  dashboardCredentials,
+  makeToken,
+} from '@/lib/dashboard-token';
 
 // POST /api/dashboard-auth — login
 export async function POST(request: NextRequest) {
   try {
     const { username, password } = await request.json();
 
-    const validUser = process.env.DASHBOARD_USER || 'adam';
-    const validPass = process.env.DASHBOARD_PASSWORD || 'culturemedia2026';
+    // No credentials configured means nobody signs in. The dashboard and the
+    // /admin pages expose revenue and client data, so a deploy that is missing
+    // DASHBOARD_USER / DASHBOARD_PASSWORD must lock everyone out instead of
+    // accepting a default password.
+    const creds = dashboardCredentials();
+    if (!creds) {
+      console.error('[dashboard-auth] DASHBOARD_USER / DASHBOARD_PASSWORD are not set');
+      return NextResponse.json({ error: AUTH_NOT_CONFIGURED }, { status: 503 });
+    }
 
-    if (username !== validUser || password !== validPass) {
+    if (username !== creds.user || password !== creds.password) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
-    const token = makeToken(validPass);
     const response = NextResponse.json({ ok: true });
 
-    response.cookies.set('cm_dashboard_auth', token, {
+    response.cookies.set(DASHBOARD_COOKIE, makeToken(creds.password), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
@@ -35,7 +44,7 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/dashboard-auth — logout
 export async function DELETE() {
-  const response = NextResponse.redirect('/dashboard/login');
-  response.cookies.delete('cm_dashboard_auth');
+  const response = NextResponse.json({ ok: true });
+  response.cookies.delete(DASHBOARD_COOKIE);
   return response;
 }
