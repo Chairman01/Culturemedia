@@ -1,75 +1,52 @@
-import Link from 'next/link';
-
 import { requireAdminPage } from '@/lib/admin-auth';
+import { awaitingReply, isOpen, needsOf } from '@/lib/crm';
+import { listLeads, listPendingDrafts, outreachWeek } from '@/lib/crm-admin';
+import { edmontonToday, fetchSales } from '@/lib/supabase-admin';
 
-import { AdminShell } from './_components/ui';
+import TodayView from './today-view';
 
 export const dynamic = 'force-dynamic';
 
-// The admin hub: everything Culture Media runs from one place.
-export default async function AdminIndex() {
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+// /admin — the page a working day starts on: what is waiting, what to send,
+// who to add, and whether the week is on track.
+export default async function TodayPage() {
   await requireAdminPage();
 
+  const today = edmontonToday();
+  const [sales, leads, drafts, week] = await Promise.all([
+    fetchSales(),
+    listLeads(),
+    listPendingDrafts(),
+    outreachWeek(today),
+  ]);
+
+  const [y, m, d] = today.split('-').map(Number);
+  const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  const all = leads.data ?? [];
+
   return (
-    <AdminShell>
-      <header>
-        <div>
-          <p className="eyebrow">Culture Media</p>
-          <h1>Admin</h1>
-        </div>
-        <div className="hright">
-          <SignOut />
-        </div>
-      </header>
-
-      <div className="home">
-        <Link href="/admin/scorecard" className="card">
-          <b>Scorecard</b>
-          <span>
-            The eight Culture Alberta KPIs against target, weekly and monthly trends, this week&apos;s
-            insights and priorities. Ad revenue in USD or CAD. Check Mondays.
-          </span>
-        </Link>
-        <Link href="/admin/sales" className="card">
-          <b>Sales</b>
-          <span>
-            Culture Alberta partnerships: pipeline, retainer MRR, what the daily automation is
-            waiting on, and the form for adding a lead or a signed client.
-          </span>
-        </Link>
-        <Link href="/admin/pipeline" className="card">
-          <b>APC pipeline</b>
-          <span>
-            Alberta Purchasing Connection listings, your outreach leads and Zoho Mail sync — the
-            agency&apos;s own deals. Re-sync from the <em>Sync APC</em> button in its sidebar.
-          </span>
-        </Link>
-        <Link href="/admin/setup" className="card">
-          <b>APC sync setup</b>
-          <span>
-            Install the one-click bookmarklet that pulls listings in from purchasing.alberta.ca.
-            Only needed once per browser.
-          </span>
-        </Link>
-      </div>
-
-      <p className="links">
-        <Link href="/">← culturemedia.ca</Link>
-        <span>
-          Scorecard and Sales read the Culture Alberta Supabase project live;
-          the APC pipeline keeps its data in this browser.
-        </span>
-      </p>
-    </AdminShell>
-  );
-}
-
-// A plain form so this stays a server component: the button posts to the
-// logout route, which clears the cookie.
-function SignOut() {
-  return (
-    <form action="/api/dashboard-auth/logout" method="post">
-      <button type="submit">Sign out</button>
-    </form>
+    <TodayView
+      today={today}
+      todayLabel={`${WEEKDAYS[weekday]}, ${MONTHS[m - 1]} ${d}`}
+      isWeekend={weekday === 0 || weekday === 6}
+      totals={sales.data?.totals ?? null}
+      setup={(sales.data?.setup ?? []).filter((a) => a.status !== 'done')}
+      replies={all.filter(awaitingReply).length}
+      drafts={(drafts.data ?? []).length}
+      blocked={all.filter((l) => needsOf(l).length > 0).length}
+      due={all
+        .filter((l) => isOpen(l) && l.next_action_on && l.next_action_on <= today)
+        .sort((a, b) => String(a.next_action_on).localeCompare(String(b.next_action_on)))
+        .slice(0, 8)
+        .map((l) => ({ id: l.id, company: l.company, on: String(l.next_action_on), stage: l.stage }))}
+      week={week.data ?? []}
+      error={sales.error || leads.error || week.error}
+    />
   );
 }
