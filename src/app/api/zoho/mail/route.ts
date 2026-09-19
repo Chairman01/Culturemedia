@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { requireAdminApi } from '@/lib/admin-auth';
+
 import { loadTokens, saveTokens } from '../callback/route';
 
 interface ZohoMessage {
@@ -87,7 +89,11 @@ async function getValidToken(): Promise<string | null> {
 }
 
 // GET /api/zoho/mail — returns { connected, emails }
+// Signed-in only: this is 30 days of the mailbox's subjects and addresses.
 export async function GET() {
+  const denied = await requireAdminApi();
+  if (denied) return denied;
+
   const token = await getValidToken();
   if (!token) {
     return NextResponse.json({ connected: false, emails: [] });
@@ -148,6 +154,9 @@ export async function GET() {
 //   newLeads: Array<{email, company, contact, subject, date}>    ← auto-create these
 // }
 export async function POST(request: Request) {
+  const denied = await requireAdminApi();
+  if (denied) return denied;
+
   const token = await getValidToken();
   if (!token) {
     return NextResponse.json({ connected: false, updates: [], newLeads: [] });
@@ -158,7 +167,10 @@ export async function POST(request: Request) {
     Array.isArray(leads) ? leads : [];
 
   try {
-    const mailRes = await fetch(`${new URL(request.url).origin}/api/zoho/mail`);
+    // Our own GET is behind sign-in too, so pass the caller's session along.
+    const mailRes = await fetch(`${new URL(request.url).origin}/api/zoho/mail`, {
+      headers: { cookie: request.headers.get('cookie') ?? '' },
+    });
     const mailData = await mailRes.json();
 
     if (!mailData.connected) {
