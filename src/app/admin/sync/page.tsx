@@ -35,7 +35,7 @@ export default function SyncPage() {
           localStorage.setItem('apc_listings', JSON.stringify(listings));
           localStorage.setItem('apc_synced_at', syncedAt || new Date().toISOString());
           setStatus('done');
-          setTimeout(() => { window.location.href = '/admin/pipeline'; }, 1800);
+          setTimeout(() => { window.location.href = '/admin/bids'; }, 1800);
         } catch {
           setStatus('error');
         }

@@ -5,10 +5,13 @@ const nextConfig: NextConfig = {
     // The admin area used to live at /dashboard. Keep old bookmarks and the
     // already-installed APC bookmarklet (which opens /dashboard/sync) working.
     return [
-      { source: '/dashboard', destination: '/admin/pipeline', permanent: false },
+      { source: '/dashboard', destination: '/admin/bids', permanent: false },
       { source: '/dashboard/login', destination: '/admin/login', permanent: false },
       { source: '/dashboard/setup', destination: '/admin/setup', permanent: false },
       { source: '/dashboard/sync', destination: '/admin/sync', permanent: false },
+      // Earlier names for pages inside /admin.
+      { source: '/admin/pipeline', destination: '/admin/bids', permanent: false },
+      { source: '/admin/sales', destination: '/admin/leads', permanent: false },
     ];
   },
   async rewrites() {

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     return NextResponse.redirect(
-      new URL(`/admin/pipeline?zoho_error=${encodeURIComponent(error)}`, request.url)
+      new URL(`/admin/bids?zoho_error=${encodeURIComponent(error)}`, request.url)
     );
   }
 
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     if (!tokenRes.ok || !data.access_token) {
       console.error('Zoho token exchange failed:', data);
       return NextResponse.redirect(
-        new URL(`/admin/pipeline?zoho_error=${encodeURIComponent(data.error || 'token_exchange_failed')}`, request.url)
+        new URL(`/admin/bids?zoho_error=${encodeURIComponent(data.error || 'token_exchange_failed')}`, request.url)
       );
     }
 
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
       After redeploying, "Sync from Zoho" will work on culturemedia.ca from any device.
     </div>
 
-    <a href="/admin/pipeline?zoho_connected=1">← Back to dashboard</a>
+    <a href="/admin/bids?zoho_connected=1">← Back to dashboard</a>
   </div>
 </body>
 </html>`,
@@ -145,12 +145,12 @@ export async function GET(request: NextRequest) {
 
     // Local dev: token saved to file, just redirect back
     return NextResponse.redirect(
-      new URL('/admin/pipeline?zoho_connected=1', request.url)
+      new URL('/admin/bids?zoho_connected=1', request.url)
     );
   } catch (err) {
     console.error('Zoho callback error:', err);
     return NextResponse.redirect(
-      new URL('/admin/pipeline?zoho_error=server_error', request.url)
+      new URL('/admin/bids?zoho_error=server_error', request.url)
     );
   }
 }

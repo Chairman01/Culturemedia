@@ -1,15 +1,22 @@
 import { NextResponse } from 'next/server';
 
+import { requireAdminApi } from '@/lib/admin-auth';
+
+// GET /api/zoho/debug — connection diagnostic. Signed-in only, and it never
+// echoes any part of a secret or token: "set" / "MISSING" is all it says.
 export async function GET() {
+  const denied = await requireAdminApi();
+  if (denied) return denied;
+
   const clientId = process.env.ZOHO_CLIENT_ID;
   const clientSecret = process.env.ZOHO_CLIENT_SECRET;
   const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
   const redirectUri = process.env.ZOHO_REDIRECT_URI;
 
   const envCheck = {
-    ZOHO_CLIENT_ID: clientId ? `set (${clientId.slice(0, 8)}...)` : 'MISSING',
-    ZOHO_CLIENT_SECRET: clientSecret ? `set (${clientSecret.slice(0, 6)}...)` : 'MISSING',
-    ZOHO_REFRESH_TOKEN: refreshToken ? `set (${refreshToken.slice(0, 12)}...)` : 'MISSING or empty',
+    ZOHO_CLIENT_ID: clientId ? 'set' : 'MISSING',
+    ZOHO_CLIENT_SECRET: clientSecret ? 'set' : 'MISSING',
+    ZOHO_REFRESH_TOKEN: refreshToken ? 'set' : 'MISSING or empty',
     ZOHO_REDIRECT_URI: redirectUri || 'MISSING',
   };
 
@@ -20,7 +27,6 @@ export async function GET() {
   // Step 1: Get access token
   let accessToken: string | null = null;
   let tokenError: unknown = null;
-  let tokenResponse: unknown = null;
 
   try {
     const res = await fetch('https://accounts.zoho.com/oauth/v2/token', {
@@ -34,10 +40,10 @@ export async function GET() {
       }),
     });
     const data = await res.json();
-    tokenResponse = data;
     if (data.access_token) {
       accessToken = data.access_token;
     } else {
+      // Zoho's error body (e.g. { error: 'invalid_code' }) carries no secrets.
       tokenError = data;
     }
   } catch (e) {
@@ -45,7 +51,7 @@ export async function GET() {
   }
 
   if (!accessToken) {
-    return NextResponse.json({ ok: false, step: 'token_refresh_failed', envCheck, tokenError, tokenResponse });
+    return NextResponse.json({ ok: false, step: 'token_refresh_failed', envCheck, tokenError });
   }
 
   // Step 2: Call Zoho Mail accounts API with the FULL token
@@ -62,13 +68,11 @@ export async function GET() {
     accountsBody = String(e);
   }
 
-  const tokenPreview = `${accessToken.slice(0, 12)}...`;
-
   return NextResponse.json({
     ok: accountsStatus === 200,
     step: accountsStatus === 200 ? 'all_good' : 'mail_api_failed',
     envCheck,
-    tokenObtained: tokenPreview,
+    tokenObtained: true,
     accountsStatus,
     accountsBody,
   });

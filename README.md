@@ -44,24 +44,26 @@ The marketing pages need nothing. The signed-in areas need these set in Vercel
 | --- | --- | --- |
 | `DASHBOARD_USER` | `/admin/*`, `/api/admin/*` | Sign-in name. **Required** — with it unset nobody can sign in. |
 | `DASHBOARD_PASSWORD` | same | Sign-in password. **Required** for the same reason. |
-| `SUPABASE_URL` | `/admin/scorecard`, `/admin/sales` | Culture Alberta Supabase project URL. |
+| `SUPABASE_URL` | every `/admin` page except Bids | Culture Alberta Supabase project URL. |
 | `SUPABASE_SERVICE_ROLE_KEY` | same | Service-role key. Server-side only — never prefix it with `NEXT_PUBLIC_`. |
 
 ## Admin area
 
-Everything signed-in lives under `/admin` (sign in at `/admin/login`):
+Everything signed-in lives under `/admin` (sign in at `/admin/login`), in one sidebar layout:
 
 | Page | What it is |
 | --- | --- |
-| `/admin` | Hub linking the pages below |
+| `/admin` | **Today** — replies to answer, emails to approve, add a lead, the week's outreach, the money |
+| `/admin/leads` | Every lead and client; open one to edit it, move its stage, start its emails, log calls |
+| `/admin/inbox` | Replies waiting on you, drafted emails waiting for approval, recent Zoho mail with **Add as lead** |
+| `/admin/packages` | What is for sale (`src/lib/packages.ts`), copy-ready pitches, the selling playbook |
 | `/admin/scorecard` | Culture Alberta KPIs, from `admin_kpi_scorecard()` |
-| `/admin/sales` | Culture Alberta partnerships CRM, from `admin_sales_dashboard()` |
-| `/admin/pipeline` | The agency's APC listings, outreach leads and Zoho sync (data in the browser's localStorage) |
-| `/admin/setup` | Installs the APC sync bookmarklet |
-| `/admin/sync` | Popup the bookmarklet posts listings to — deliberately not behind sign-in |
+| `/admin/bids` | Alberta Purchasing Connection tenders (data in the browser's localStorage) |
+| `/admin/setup` · `/admin/sync` | APC bookmarklet install and the popup it posts to (deliberately not behind sign-in) |
 
-The old `/dashboard/*` URLs redirect to their `/admin/*` equivalents.
+The CRM tables (`leads`, `lead_events`, `lead_drafts`) are shared with the Culture Alberta
+repo, whose engine drafts follow-up emails each morning, sends them through Zoho on **Approve &
+send**, and spots replies. This admin reads and edits leads; it never sends email. The rules in
+`src/lib/crm-admin.ts` mirror that repo's `PATCH /api/admin/leads` — keep them in step.
 
-`SUPABASE_SERVICE_ROLE_KEY` bypasses row-level security. It is read only in
-`src/lib/supabase-admin.ts`, which is marked `server-only`, and the admin pages
-pass Supabase's JSON — never the key — to the browser.
+Old `/dashboard/*`, `/admin/pipeline` and `/admin/sales` URLs redirect to their new homes.

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { requireAdminApi } from '@/lib/admin-auth';
+
+// Both handlers relay requests to purchasing.alberta.ca. They are for the
+// signed-in bids page only — left open, this is a free proxy for anyone.
 const APC_BASE = 'https://purchasing.alberta.ca/api';
 
 const HEADERS = {
@@ -13,6 +17,9 @@ const HEADERS = {
 // POST /api/apc — search APC for opportunities
 // Body: { query: string, offset?: number }
 export async function POST(request: NextRequest) {
+  const denied = await requireAdminApi();
+  if (denied) return denied;
+
   try {
     const body = await request.json();
     const query: string = body.query || '';
@@ -61,6 +68,9 @@ export async function POST(request: NextRequest) {
 
 // GET /api/apc?ref=AB-2026-XXXXX — get detail + interested supplier count
 export async function GET(request: NextRequest) {
+  const denied = await requireAdminApi();
+  if (denied) return denied;
+
   try {
     const ref = new URL(request.url).searchParams.get('ref');
     if (!ref) return NextResponse.json({ error: 'ref required' }, { status: 400 });

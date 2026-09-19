@@ -21,11 +21,9 @@ import {
   type Currency,
   type Unit,
 } from '../_components/format';
+import { AdminShell, PageHead } from '../_components/shell';
 import {
   ActionRow,
-  AdminHeading,
-  AdminNav,
-  AdminShell,
   Banner,
   Chip,
   Seg,
@@ -324,10 +322,11 @@ export default function ScorecardView({
 
   return (
     <AdminShell>
-      <AdminHeading eyebrow="Check Mondays" title="Scorecard">
-        <div className="hright">
-          <Freshness sc={sc} today={today} />
-          <Seg
+      <PageHead
+        title="Scorecard"
+        help="How the business is tracking against its targets. Worth five minutes every Monday."
+      >
+        <Seg
             label="Currency for ad revenue"
             value={currency}
             onChange={pickCurrency}
@@ -336,13 +335,12 @@ export default function ScorecardView({
               { k: 'CAD', label: 'CAD', title: 'Ad revenue and RPM in CAD' },
             ]}
           />
-          <button type="button" onClick={load} disabled={refreshing}>
-            {refreshing ? 'Refreshing…' : 'Refresh'}
-          </button>
-        </div>
-      </AdminHeading>
+        <button type="button" className="btn ghost" onClick={load} disabled={refreshing}>
+          {refreshing ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </PageHead>
 
-      <AdminNav current="scorecard" />
+      <Freshness sc={sc} today={today} />
       <Banner tone={banner.tone}>{banner.text}</Banner>
 
       <div className="tiles">{tiles}</div>
