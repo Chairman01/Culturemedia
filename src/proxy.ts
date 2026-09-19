@@ -7,6 +7,12 @@ function signedIn(request: NextRequest): boolean {
   return tokenIsValid(request.cookies.get(DASHBOARD_COOKIE)?.value);
 }
 
+// Pages under /admin that must stay reachable without a session:
+// - /admin/login is the sign-in page itself
+// - /admin/sync is opened as a popup from purchasing.alberta.ca by the APC
+//   bookmarklet; the sameSite=strict cookie is not sent on that first hop.
+const OPEN_ADMIN_PATHS = ['/admin/login', '/admin/sync'];
+
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -19,14 +25,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Protect /dashboard and /admin, skipping the login page itself.
-  if (
-    (pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) &&
-    !pathname.startsWith('/dashboard/login') &&
-    !pathname.startsWith('/dashboard/sync')
-  ) {
+  if (pathname.startsWith('/admin') && !OPEN_ADMIN_PATHS.some((p) => pathname.startsWith(p))) {
     if (!signedIn(request)) {
-      return NextResponse.redirect(new URL('/dashboard/login', request.url));
+      return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }
 
@@ -34,5 +35,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*', '/api/admin/:path*'],
+  matcher: ['/admin/:path*', '/api/admin/:path*'],
 };

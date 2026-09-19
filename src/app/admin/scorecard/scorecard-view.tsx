@@ -21,7 +21,17 @@ import {
   type Currency,
   type Unit,
 } from '../_components/format';
-import { ActionRow, AdminNav, Banner, Chip, Seg, Tabs, Tile } from '../_components/ui';
+import {
+  ActionRow,
+  AdminHeading,
+  AdminNav,
+  AdminShell,
+  Banner,
+  Chip,
+  Seg,
+  Tabs,
+  Tile,
+} from '../_components/ui';
 
 const TILE_METRICS: [string, string][] = [
   ['revenue', 'Ad revenue'],
@@ -313,12 +323,8 @@ export default function ScorecardView({
   const rest = open.slice(6);
 
   return (
-    <div className="wrap">
-      <header>
-        <div>
-          <p className="eyebrow">Culture Media · Check Mondays</p>
-          <h1>Scorecard</h1>
-        </div>
+    <AdminShell>
+      <AdminHeading eyebrow="Check Mondays" title="Scorecard">
         <div className="hright">
           <Freshness sc={sc} today={today} />
           <Seg
@@ -334,7 +340,7 @@ export default function ScorecardView({
             {refreshing ? 'Refreshing…' : 'Refresh'}
           </button>
         </div>
-      </header>
+      </AdminHeading>
 
       <AdminNav current="scorecard" />
       <Banner tone={banner.tone}>{banner.text}</Banner>
@@ -561,7 +567,7 @@ export default function ScorecardView({
           <code>ops_insights</code>
         </span>
       </p>
-    </div>
+    </AdminShell>
   );
 }
 

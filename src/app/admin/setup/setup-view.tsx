@@ -2,9 +2,9 @@
 
 // The bookmarklet runs on purchasing.alberta.ca, fetches all listings using the APC API
 // (works because it's same-origin with session cookies), then sends data via postMessage
-// to the sync receiver page at culturemedia.ca/dashboard/sync
+// to the sync receiver page at culturemedia.ca/admin/sync
 
-const DASHBOARD_SYNC_URL = 'https://www.culturemedia.ca/dashboard/sync';
+const DASHBOARD_SYNC_URL = 'https://www.culturemedia.ca/admin/sync';
 
 const QUERIES = [
   'marketing', 'communications', 'social media', 'branding', 'design',
@@ -110,7 +110,7 @@ setTimeout(next,1500);
   return 'javascript:' + encodeURIComponent(code);
 }
 
-export default function SetupPage() {
+export default function SetupView() {
   const bookmarkletHref = buildBookmarklet();
 
   return (
@@ -125,7 +125,7 @@ export default function SetupPage() {
 
         {/* Header */}
         <div style={{ marginBottom: 40 }}>
-          <a href="/dashboard" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none' }}>
+          <a href="/admin/pipeline" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none' }}>
             ← Back to dashboard
           </a>
           <h1 style={{ fontSize: 28, fontWeight: 800, marginTop: 16, marginBottom: 8, color: '#fff' }}>
@@ -267,7 +267,7 @@ export default function SetupPage() {
           </div>
         </div>
 
-        <a href="/dashboard" style={{
+        <a href="/admin/pipeline" style={{
           display: 'inline-block', background: '#3b82f6', color: '#fff',
           border: 'none', borderRadius: 8, padding: '12px 24px',
           fontWeight: 700, fontSize: 14, textDecoration: 'none',

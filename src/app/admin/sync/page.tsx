@@ -35,7 +35,7 @@ export default function SyncPage() {
           localStorage.setItem('apc_listings', JSON.stringify(listings));
           localStorage.setItem('apc_synced_at', syncedAt || new Date().toISOString());
           setStatus('done');
-          setTimeout(() => { window.location.href = '/dashboard'; }, 1800);
+          setTimeout(() => { window.location.href = '/admin/pipeline'; }, 1800);
         } catch {
           setStatus('error');
         }
@@ -94,7 +94,7 @@ export default function SyncPage() {
             <p style={{ fontSize: 12, color: '#64748b', marginBottom: 12 }}>
               The APC API may have changed. Try the bookmark again, or contact support.
             </p>
-            <a href="/dashboard/setup" style={{ color: '#3b82f6', fontSize: 13 }}>← Back to setup</a>
+            <a href="/admin/setup" style={{ color: '#3b82f6', fontSize: 13 }}>← Back to setup</a>
           </>
         )}
       </div>

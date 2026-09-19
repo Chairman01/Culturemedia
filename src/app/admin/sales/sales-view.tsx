@@ -9,7 +9,7 @@ import { useCallback, useState, type ReactNode } from 'react';
 
 import type { Lead, SalesDashboard } from '@/lib/admin-types';
 import { ago, day, money, num } from '../_components/format';
-import { ActionRow, AdminNav, Banner, Seg, Tile } from '../_components/ui';
+import { ActionRow, AdminHeading, AdminNav, AdminShell, Banner, Seg, Tile } from '../_components/ui';
 
 const STAGE_LABEL: Record<string, string> = {
   new: 'New',
@@ -123,18 +123,14 @@ export default function SalesView({
   const drafts = sales?.pending_drafts || [];
 
   return (
-    <div className="wrap">
-      <header>
-        <div>
-          <p className="eyebrow">Culture Media · Partnerships</p>
-          <h1>Sales</h1>
-        </div>
+    <AdminShell>
+      <AdminHeading eyebrow="Partnerships" title="Sales">
         <div className="hright">
           <button type="button" onClick={load} disabled={refreshing}>
             {refreshing ? 'Refreshing…' : 'Refresh'}
           </button>
         </div>
-      </header>
+      </AdminHeading>
 
       <AdminNav current="sales" />
       <Banner tone={banner.tone}>{banner.text}</Banner>
@@ -296,7 +292,7 @@ export default function SalesView({
           </ul>
         </section>
       </div>
-    </div>
+    </AdminShell>
   );
 }
 

@@ -1,7 +1,7 @@
 // The one gate for every /admin page and /api/admin/* route.
 //
-// Pages redirect to the existing dashboard login; API routes answer 401. Both
-// read the same cm_dashboard_auth cookie the /dashboard login already sets.
+// Pages redirect to the admin login; API routes answer 401. Both read the same
+// cm_dashboard_auth cookie the login sets.
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -9,7 +9,7 @@ import { NextResponse } from 'next/server';
 
 import { DASHBOARD_COOKIE, tokenIsValid } from './dashboard-token';
 
-export const LOGIN_PATH = '/dashboard/login';
+export const LOGIN_PATH = '/admin/login';
 
 export async function isAdminAuthed(): Promise<boolean> {
   const store = await cookies();

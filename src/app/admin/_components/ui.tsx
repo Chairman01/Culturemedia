@@ -146,7 +146,39 @@ export function ActionRow({
   );
 }
 
-export function AdminNav({ current }: { current: 'scorecard' | 'sales' }) {
+/** The `.adm` design system, opted into per page (the APC pipeline keeps its own look). */
+export function AdminShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="adm">
+      <div className="wrap">{children}</div>
+    </div>
+  );
+}
+
+/** Page title block; the eyebrow is the way back to the admin hub. */
+export function AdminHeading({
+  eyebrow,
+  title,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  children?: ReactNode;
+}) {
+  return (
+    <header>
+      <div>
+        <p className="eyebrow">
+          <Link href="/admin">Culture Media · Admin</Link> · {eyebrow}
+        </p>
+        <h1>{title}</h1>
+      </div>
+      {children}
+    </header>
+  );
+}
+
+export function AdminNav({ current }: { current: 'scorecard' | 'sales' | 'pipeline' }) {
   return (
     <nav className="views" aria-label="Admin pages">
       <Link href="/admin/scorecard" aria-current={current === 'scorecard' ? 'page' : undefined}>
@@ -154,6 +186,9 @@ export function AdminNav({ current }: { current: 'scorecard' | 'sales' }) {
       </Link>
       <Link href="/admin/sales" aria-current={current === 'sales' ? 'page' : undefined}>
         Sales
+      </Link>
+      <Link href="/admin/pipeline" aria-current={current === 'pipeline' ? 'page' : undefined}>
+        APC pipeline
       </Link>
     </nav>
   );

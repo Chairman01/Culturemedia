@@ -87,6 +87,30 @@
   margin: 0 0 4px;
 }
 
+.adm .eyebrow a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.adm .eyebrow a:hover {
+  color: var(--s2);
+}
+
+/* sign-in */
+.adm .login {
+  max-width: 400px;
+  margin: 8vh auto 0;
+}
+
+.adm .login h1 {
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+
+.adm .login .banner {
+  margin: 0;
+}
+
 .adm h1 {
   font-size: 28px;
   line-height: 1.1;
