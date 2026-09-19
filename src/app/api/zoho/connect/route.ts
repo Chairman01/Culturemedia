@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 
+import { requireAdminApi } from '@/lib/admin-auth';
+
 // GET /api/zoho/connect
-// Redirects the user to the Zoho OAuth authorization page
+// Redirects the user to the Zoho OAuth authorization page. Signed-in only:
+// whoever completes this flow decides which mailbox the site reads.
 export async function GET() {
+  const denied = await requireAdminApi();
+  if (denied) return denied;
+
   const clientId = process.env.ZOHO_CLIENT_ID;
   const redirectUri = process.env.ZOHO_REDIRECT_URI;
 
