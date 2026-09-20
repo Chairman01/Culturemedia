@@ -1621,6 +1621,140 @@
   margin: -12px 0 16px;
 }
 
+/* ── today: needs you + priorities ─────────────────────────────────────────── */
+
+.adm .needs {
+  margin-bottom: 12px;
+  border-color: var(--crit);
+  box-shadow: 0 0 0 1px var(--crit);
+}
+
+.adm .need {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0 12px 14px;
+  border-top: 1px solid var(--rule);
+  border-left: 3px solid var(--warn);
+  margin-left: -2px;
+}
+
+.adm .need:first-of-type {
+  border-top: 0;
+}
+
+.adm .need.crit {
+  border-left-color: var(--crit);
+}
+
+.adm .need b {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.adm .need p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--ink-2);
+  max-width: 78ch;
+}
+
+.adm .prio {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.adm .prio li {
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding: 12px 0;
+  border-top: 1px solid var(--rule);
+}
+
+.adm .prio li:first-child {
+  border-top: 0;
+  padding-top: 2px;
+}
+
+.adm .prio .n {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  background: var(--sunken);
+  color: var(--ink-2);
+}
+
+.adm .prio li:first-child .n {
+  background: var(--ink);
+  color: #fff;
+}
+
+.adm .prio b {
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.adm .prio p {
+  margin: 3px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-width: 82ch;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.adm .prio li:first-child p,
+.adm .prio li:hover p {
+  display: block;
+}
+
+.adm .prio .m {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  align-items: center;
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.adm .prio .due.over {
+  color: var(--crit);
+  font-weight: 700;
+}
+
+.adm .card h2 small a {
+  color: var(--s2);
+  text-decoration: none;
+}
+
+@media (max-width: 600px) {
+  .adm .need {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .adm .prio li {
+    grid-template-columns: 30px 1fr;
+  }
+
+  .adm .prio li button {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
 /* ── mailbox status ────────────────────────────────────────────────────────── */
 
 .adm .boxes {
