@@ -7,7 +7,10 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 import type { MetricRow, Scorecard, Target, WeekRow } from '@/lib/admin-types';
+import type { Invoice } from '@/lib/revenue';
 import { Chart, Sparkline, type ChartItem, type ChartKind } from '../_components/chart';
+import { RevenueBand } from '../_components/revenue-band';
+import { useRefreshOnFocus } from '../_components/use-refresh';
 import {
   convert,
   currencyNote,
@@ -89,10 +92,12 @@ const TONE: Record<string, { k: 'ok' | 'warn' | 'crit'; l: string }> = {
 export default function ScorecardView({
   initial,
   initialError,
+  invoices,
   today,
 }: {
   initial: Scorecard | null;
   initialError: string | null;
+  invoices: Invoice[];
   today: string;
 }) {
   const [sc, setSc] = useState<Scorecard | null>(initial);
@@ -198,6 +203,9 @@ export default function ScorecardView({
     },
     [load],
   );
+
+  // Left open all day, the page still shows current numbers.
+  useRefreshOnFocus(load);
 
   // ─── derived ──────────────────────────────────────────────────────────────
 
@@ -342,6 +350,8 @@ export default function ScorecardView({
 
       <Freshness sc={sc} today={today} />
       <Banner tone={banner.tone}>{banner.text}</Banner>
+
+      <RevenueBand sc={sc} invoices={invoices} today={today} />
 
       <div className="tiles">{tiles}</div>
 

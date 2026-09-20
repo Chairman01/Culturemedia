@@ -1,50 +1,80 @@
 'use client';
 
 // The Inbox: everyone waiting on you, in the order to deal with them.
-//   1. Leads who wrote back          — answer these first
-//   2. Emails drafted for approval   — then send today's outreach
-//   3. The recent Zoho inbox         — so an inquiry from a stranger is not missed
-// This page only reads. Sending still happens through Approve & send.
+//   1. Leads who wrote back            — answer these first
+//   2. Emails drafted for approval     — then send today's outreach
+//   3. New people asking about ads     — strangers worth adding as leads
+//   4. Worth a look                    — payments, bounces, "please remove me"
+//   5. Everything else                 — collapsed; spam is included so nothing hides
+// Opening the page checks both mailboxes (Zoho and Gmail: inbox, spam, sent)
+// and records what they prove. It never sends, deletes, moves or marks mail.
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { PARTNERSHIPS_URL, SEQUENCE_LABEL } from '@/lib/crm';
-import type { InboxData, InboxMail } from '@/lib/inbox';
+import type { InboxData } from '@/lib/inbox';
+import type { Classified } from '@/lib/mail';
 import { PREFILL_KEY, type LeadPrefill } from '../_components/add-lead';
 import { day } from '../_components/format';
 import { AdminShell, PageHead } from '../_components/shell';
 import { Banner } from '../_components/ui';
 
-const ZOHO_URL = 'https://mail.zoho.com/';
+const WEBMAIL: Record<string, string> = {
+  zoho: 'https://mail.zoho.com/',
+  gmail: 'https://mail.google.com/',
+};
+const BOX_NAME: Record<string, string> = { zoho: 'Zoho', gmail: 'Gmail' };
 
 export default function InboxView({ initial }: { initial: InboxData }) {
   const [data, setData] = useState<InboxData>(initial);
-  const [refreshing, setRefreshing] = useState(false);
-  const [showKnown, setShowKnown] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const [problem, setProblem] = useState('');
+  const [stopping, setStopping] = useState<string | null>(null);
+  const started = useRef(false);
   const router = useRouter();
 
-  const load = useCallback(async () => {
-    setRefreshing(true);
+  const sync = useCallback(async () => {
+    setSyncing(true);
+    setProblem('');
     try {
-      const res = await fetch('/api/admin/inbox', { cache: 'no-store' });
+      const res = await fetch('/api/admin/inbox/sync', { method: 'POST', cache: 'no-store' });
       const body = await res.json().catch(() => ({}));
-      if (res.ok && body.data) setData(body.data as InboxData);
+      if (!res.ok || !body.data) {
+        setProblem(
+          res.status === 401
+            ? 'Your sign-in expired. Reload the page to sign in again.'
+            : "Couldn't check your mailboxes. Try again in a minute.",
+        );
+        return;
+      }
+      setData(body.data as InboxData);
+      setChecked(true);
+    } catch {
+      setProblem("Couldn't reach the server.");
     } finally {
-      setRefreshing(false);
+      setSyncing(false);
     }
   }, []);
 
+  // Check the mailboxes as soon as the page opens.
+  useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+    void sync();
+  }, [sync]);
+
   // Hand the sender to the add-a-lead form without putting them in a URL.
-  const addAsLead = (m: InboxMail) => {
+  const addAsLead = (m: Classified) => {
     const prefill: LeadPrefill = {
       company: m.companyGuess,
       contact_name: m.fromName,
       email: m.fromAddress,
       consent_basis: 'implied_inquiry',
       sequence_key: '',
-      notes: `Wrote in on ${day(m.receivedAt)}: “${m.subject}”`,
+      notes: `Wrote in on ${day(m.at)} (${BOX_NAME[m.mailbox]}${m.folder === 'spam' ? ', found in spam' : ''}): “${m.subject}”`,
     };
     try {
       sessionStorage.setItem(PREFILL_KEY, JSON.stringify(prefill));
@@ -54,51 +84,108 @@ export default function InboxView({ initial }: { initial: InboxData }) {
     router.push('/admin/leads?add=1');
   };
 
-  const strangers = data.mail.filter((m) => !m.leadId);
-  const mail = showKnown ? data.mail : strangers;
+  const stopEmailing = async (m: Classified) => {
+    if (!m.leadId || stopping) return;
+    setStopping(m.leadId);
+    try {
+      const res = await fetch(`/api/admin/leads/${m.leadId}/unsubscribe`, { method: 'POST' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setProblem(body.error || "Couldn't update that lead.");
+        return;
+      }
+      await sync();
+    } finally {
+      setStopping(null);
+    }
+  };
+
+  const inquiries = data.mail.filter((m) => m.kind === 'inquiry');
+  const look = data.mail.filter((m) => ['money', 'bounce', 'stop'].includes(m.kind));
+  const fromLeads = data.mail.filter((m) => m.kind === 'lead_reply');
+  const rest = data.mail.filter((m) => m.kind === 'other' || m.kind === 'noise');
+  const restPeople = rest.filter((m) => m.kind === 'other');
+  const report = data.report;
+  const changed = report ? report.replies.length + report.contacted.length : 0;
 
   return (
     <AdminShell>
       <PageHead
         title="Inbox"
-        help="Everyone waiting on you. Work down the page: answer replies, approve today's emails, then check nobody new wrote in."
+        help="Everyone waiting on you, from both mailboxes, spam included. Work down the page."
       >
-        <a className="btn ghost" href={ZOHO_URL} target="_blank" rel="noopener noreferrer">
-          Open Zoho Mail
-        </a>
-        <button type="button" className="btn ghost" onClick={load} disabled={refreshing}>
-          {refreshing ? 'Refreshing…' : 'Refresh'}
+        <button type="button" className="btn ghost" onClick={sync} disabled={syncing}>
+          {syncing ? 'Checking mail…' : 'Check mail now'}
         </button>
       </PageHead>
 
-      <Banner tone="crit">{data.error}</Banner>
+      <Banner tone="crit">{problem || data.error}</Banner>
+
+      <div className="boxes" aria-live="polite">
+        {syncing && !checked ? (
+          <span className="box">Checking Zoho and Gmail — inbox, spam and sent…</span>
+        ) : (
+          data.mailboxes.map((b) => (
+            <span key={b.mailbox} className={`box ${b.connected ? (b.note ? 'warn' : 'ok') : 'off'}`}>
+              <b>{BOX_NAME[b.mailbox]}</b>{' '}
+              {b.connected ? `${b.label} · ${b.folders.join(', ')}` : 'not connected — see below'}
+              {b.connected && b.note && <em> — {b.note}</em>}
+            </span>
+          ))
+        )}
+      </div>
+
+      {report && changed > 0 && (
+        <p className="banner" role="status">
+          Updated from your mail:{' '}
+          {[
+            ...report.replies.map(
+              (r) => `${r.company} replied${r.folder === 'spam' ? ' (it was in spam)' : ''}`,
+            ),
+            ...report.contacted.map((c) => `you emailed ${c.company}`),
+          ].join(' · ')}
+          .
+        </p>
+      )}
+      {report && report.errors.length > 0 && <Banner tone="warn">{report.errors.join(' ')}</Banner>}
 
       <section className="card" aria-labelledby="r-h" style={{ marginBottom: 12 }}>
         <h2 id="r-h">
           1 · Replies to answer <small>{data.replies.length || 'none'}</small>
         </h2>
         {data.replies.length ? (
-          data.replies.map((lead) => (
-            <div key={lead.id} className="mail unread">
-              <div className="top">
-                <span className="who">{lead.company}</span>
-                <span className="muted">replied {day(lead.last_reply_at)}</span>
+          data.replies.map((lead) => {
+            const latest = fromLeads.find((m) => m.leadId === lead.id);
+            return (
+              <div key={lead.id} className="mail unread">
+                <div className="top">
+                  <span className="who">{lead.company}</span>
+                  <span className="muted">replied {day(lead.last_reply_at)}</span>
+                </div>
+                <p className="subj">
+                  {latest ? latest.subject : [lead.contact_name, lead.email].filter(Boolean).join(' · ')}
+                </p>
+                {latest?.summary && <p className="sum">{latest.summary}</p>}
+                <p className="acts-row">
+                  <a
+                    className="btn"
+                    href={WEBMAIL[latest?.mailbox || 'zoho']}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Answer in {BOX_NAME[latest?.mailbox || 'zoho']}
+                  </a>
+                  <Link className="btn ghost" href={`/admin/leads/${lead.id}`}>
+                    Open lead
+                  </Link>
+                </p>
               </div>
-              <p className="subj">{[lead.contact_name, lead.email].filter(Boolean).join(' · ')}</p>
-              <p className="acts-row">
-                <a className="btn" href={ZOHO_URL} target="_blank" rel="noopener noreferrer">
-                  Answer in Zoho Mail
-                </a>
-                <Link className="btn ghost" href={`/admin/leads/${lead.id}`}>
-                  Open lead &amp; log it
-                </Link>
-              </p>
-            </div>
-          ))
+            );
+          })
         ) : (
           <p className="empty-note">
-            No one is waiting on a reply. Replies are picked up each morning at 7:15 — for anything
-            newer, look at the Zoho list below.
+            No one is waiting on a reply. When you answer someone from Zoho or Gmail, they clear
+            from here by themselves the next time mail is checked.
           </p>
         )}
       </section>
@@ -114,7 +201,9 @@ export default function InboxView({ initial }: { initial: InboxData }) {
                 <summary>
                   {d.company || '—'} — {d.subject}{' '}
                   <span className={`chip ${d.status === 'failed' ? 'crit' : 'none'}`}>
-                    {d.status === 'failed' ? 'send failed' : `${SEQUENCE_LABEL[d.sequence_key] || d.sequence_key} · step ${d.step + 1}`}
+                    {d.status === 'failed'
+                      ? 'send failed'
+                      : `${SEQUENCE_LABEL[d.sequence_key] || d.sequence_key} · step ${d.step + 1}`}
                   </span>
                 </summary>
                 <p className="sum">To {d.email || 'no address on file'}</p>
@@ -132,67 +221,188 @@ export default function InboxView({ initial }: { initial: InboxData }) {
                 Approve &amp; send these →
               </a>
             </p>
-            <p className="cnote">
-              Read them here; approving, editing, skipping and snoozing happen on the Partnerships
-              page, which is the only place connected to send from your mailbox.
-            </p>
           </>
         ) : (
           <p className="empty-note">
             Nothing to approve. Emails are written at 7:15 each morning for every lead whose
-            follow-up is due — add a lead with follow-up emails today and it shows up here tomorrow.
+            follow-up is due.
           </p>
         )}
       </section>
 
-      <section className="card" aria-labelledby="z-h">
-        <div className="chead">
-          <h2 id="z-h">
-            3 · Recent mail <small>{data.zohoConnected ? `${strangers.length} from people not in your leads` : 'Zoho not connected'}</small>
-          </h2>
-          {data.zohoConnected && (
-            <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12.5 }}>
-              <input type="checkbox" checked={showKnown} onChange={(e) => setShowKnown(e.target.checked)} />
-              Show mail from leads too
-            </label>
-          )}
-        </div>
-        {!data.zohoConnected ? (
-          <>
-            <Banner tone="warn">{data.zohoReason} Until it is, this list stays empty.</Banner>
-            <a className="btn" href="/api/zoho/connect">
-              Connect Zoho Mail
-            </a>
-          </>
-        ) : mail.length ? (
-          mail.map((m) => (
-            <div key={m.id} className={`mail${m.unread ? ' unread' : ''}`}>
-              <div className="top">
-                <span className="who">
-                  {m.fromName || m.fromAddress}
-                  {m.leadCompany && <span className="chip ok" style={{ marginLeft: 8 }}>{m.leadCompany}</span>}
-                </span>
-                <span className="muted">{day(m.receivedAt)}</span>
-              </div>
-              <p className="subj">{m.subject}</p>
-              {m.summary && <p className="sum">{m.summary}</p>}
-              <p className="acts-row">
-                {m.leadId ? (
-                  <Link className="btn ghost" href={`/admin/leads/${m.leadId}`}>
-                    Open lead
-                  </Link>
-                ) : (
-                  <button type="button" onClick={() => addAsLead(m)}>
-                    Add as lead
-                  </button>
-                )}
-              </p>
-            </div>
-          ))
+      <section className="card" aria-labelledby="n-h" style={{ marginBottom: 12 }}>
+        <h2 id="n-h">
+          3 · New people asking about advertising <small>{checked ? inquiries.length || 'none' : '…'}</small>
+        </h2>
+        {inquiries.length ? (
+          inquiries.map((m) => <MailRow key={m.id} m={m} onAdd={() => addAsLead(m)} />)
         ) : (
-          <p className="empty-note">Nothing recent.</p>
+          <p className="empty-note">
+            {checked
+              ? 'Nobody new. This catches strangers who mention advertising, features, rates, sponsorship, events or a collaboration — in either mailbox, including spam.'
+              : 'Checking…'}
+          </p>
         )}
       </section>
+
+      {look.length > 0 && (
+        <section className="card" aria-labelledby="w-h" style={{ marginBottom: 12 }}>
+          <h2 id="w-h">
+            4 · Worth a look <small>{look.length}</small>
+          </h2>
+          {look.map((m) => (
+            <MailRow
+              key={m.id}
+              m={m}
+              onStop={m.kind === 'stop' && m.leadId && !data.stopped.includes(m.leadId) ? () => stopEmailing(m) : undefined}
+              stopped={Boolean(m.leadId && data.stopped.includes(m.leadId))}
+              stopping={stopping === m.leadId}
+            />
+          ))}
+        </section>
+      )}
+
+      {checked && (
+        <details className="card guide">
+          <summary>
+            Everything else — {restPeople.length} from people, {rest.length - restPeople.length} automated
+          </summary>
+          {rest.length ? (
+            rest.map((m) => (
+              <MailRow key={m.id} m={m} onAdd={m.kind === 'other' ? () => addAsLead(m) : undefined} quiet />
+            ))
+          ) : (
+            <p className="empty-note">Nothing else recent.</p>
+          )}
+        </details>
+      )}
+
+      {checked && data.mailboxes.some((b) => !b.connected || b.note) && <ConnectHelp data={data} />}
     </AdminShell>
+  );
+}
+
+const KIND_LABEL: Record<string, { text: string; tone: string }> = {
+  inquiry: { text: 'Asking about ads', tone: 'ok' },
+  money: { text: 'Payment', tone: 'ok' },
+  bounce: { text: 'Bounced', tone: 'crit' },
+  stop: { text: 'Asked to stop', tone: 'crit' },
+  lead_reply: { text: 'From a lead', tone: 'ok' },
+  other: { text: 'Person', tone: 'none' },
+  noise: { text: 'Automated', tone: 'none' },
+};
+
+function MailRow({
+  m,
+  onAdd,
+  onStop,
+  stopped,
+  stopping,
+  quiet,
+}: {
+  m: Classified;
+  onAdd?: () => void;
+  onStop?: () => void;
+  /** Already marked unsubscribed. */
+  stopped?: boolean;
+  stopping?: boolean;
+  quiet?: boolean;
+}) {
+  const label = KIND_LABEL[m.kind];
+  return (
+    <div className={`mail${m.unread && !quiet ? ' unread' : ''}`}>
+      <div className="top">
+        <span className="who">
+          {m.fromName || m.fromAddress}
+          {m.leadCompany && <span className="chip ok" style={{ marginLeft: 8 }}>{m.leadCompany}</span>}
+        </span>
+        <span className="muted">
+          {BOX_NAME[m.mailbox]}
+          {m.folder === 'spam' && <span className="chip warn" style={{ marginLeft: 6 }}>in spam</span>} · {day(m.at)}
+        </span>
+      </div>
+      <p className="subj">{m.subject}</p>
+      {m.summary && !quiet && <p className="sum">{m.summary}</p>}
+      <p className="acts-row">
+        <span className={`chip ${label.tone}`} title={m.why}>
+          {label.text}
+        </span>
+        {m.leadId && (
+          <Link className="btn ghost" href={`/admin/leads/${m.leadId}`}>
+            Open lead
+          </Link>
+        )}
+        {onAdd && (
+          <button type="button" onClick={onAdd}>
+            Add as lead
+          </button>
+        )}
+        {onStop && (
+          <button type="button" onClick={onStop} disabled={stopping}>
+            {stopping ? 'Saving…' : 'Stop emailing them'}
+          </button>
+        )}
+        {stopped && <span className="chip none">Unsubscribed — no more emails</span>}
+        {m.kind === 'money' && (
+          <Link className="btn ghost" href="/admin/revenue">
+            Record it in Revenue
+          </Link>
+        )}
+        <a className="btn ghost" href={WEBMAIL[m.mailbox]} target="_blank" rel="noopener noreferrer">
+          Open {BOX_NAME[m.mailbox]}
+        </a>
+      </p>
+    </div>
+  );
+}
+
+function ConnectHelp({ data }: { data: InboxData }) {
+  const zoho = data.mailboxes.find((b) => b.mailbox === 'zoho');
+  const gmail = data.mailboxes.find((b) => b.mailbox === 'gmail');
+  return (
+    <section className="card" aria-labelledby="c-h" style={{ marginTop: 12 }}>
+      <h2 id="c-h">Finish connecting your mail</h2>
+      <div className="prose">
+        {zoho && (!zoho.connected || zoho.note) && (
+          <>
+            <p>
+              <b>Zoho.</b> {zoho.note} Press the button, approve, then copy the new refresh token it
+              shows into Vercel as <code>ZOHO_REFRESH_TOKEN</code> and redeploy. The new connection
+              can also see Spam and Sent.
+            </p>
+            <p>
+              <a className="btn" href="/api/zoho/connect">
+                {zoho.connected ? 'Reconnect Zoho Mail' : 'Connect Zoho Mail'}
+              </a>
+            </p>
+          </>
+        )}
+        {gmail && !gmail.connected && (
+          <>
+            <p>
+              <b>Gmail.</b> {gmail.note}
+            </p>
+            <ol>
+              <li>
+                In the Gmail account, turn on 2-Step Verification (Google Account → Security).
+              </li>
+              <li>
+                Open <code>myaccount.google.com/apppasswords</code>, make an app password named
+                “Culture Media admin”, and copy the 16 letters.
+              </li>
+              <li>
+                In Vercel → Environment Variables add <code>GMAIL_USER</code> (the full Gmail
+                address) and <code>GMAIL_APP_PASSWORD</code> (the 16 letters). Tick Production and
+                Preview, save, then redeploy.
+              </li>
+            </ol>
+            <p className="cnote">
+              The admin only ever opens Gmail read-only: it cannot send, delete or mark anything.
+              You can revoke the app password at any time from the same Google page.
+            </p>
+          </>
+        )}
+      </div>
+    </section>
   );
 }

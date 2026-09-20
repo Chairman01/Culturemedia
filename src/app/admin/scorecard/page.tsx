@@ -1,4 +1,5 @@
 import { requireAdminPage } from '@/lib/admin-auth';
+import { listInvoices } from '@/lib/revenue-admin';
 import { edmontonToday, fetchScorecard } from '@/lib/supabase-admin';
 
 import ScorecardView from './scorecard-view';
@@ -10,7 +11,15 @@ export default async function ScorecardPage() {
 
   // The service-role key stays here: only the JSON crosses into the client
   // component.
-  const { data, error } = await fetchScorecard();
+  // Invoices ride along so the page can show ALL revenue, not just ads.
+  const [scorecard, invoices] = await Promise.all([fetchScorecard(), listInvoices()]);
 
-  return <ScorecardView initial={data} initialError={error} today={edmontonToday()} />;
+  return (
+    <ScorecardView
+      initial={scorecard.data}
+      initialError={scorecard.error}
+      invoices={invoices.data ?? []}
+      today={edmontonToday()}
+    />
+  );
 }

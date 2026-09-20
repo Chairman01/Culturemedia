@@ -11,6 +11,8 @@ import {
   SEQUENCE_LABEL,
   STAGE_LABEL,
   awaitingReply,
+  goingCold,
+  isCustomer,
   isOpen,
   needsOf,
   type LeadRow,
@@ -20,7 +22,7 @@ import { day, money, num } from '../_components/format';
 import { AdminShell, PageHead } from '../_components/shell';
 import { Banner, Seg } from '../_components/ui';
 
-type Filter = 'open' | 'blocked' | 'won' | 'all';
+type Filter = 'open' | 'blocked' | 'won' | 'cold' | 'all';
 
 export default function LeadsView({
   initial,
@@ -60,10 +62,11 @@ export default function LeadsView({
     () => ({
       open: leads.filter(isOpen).length,
       blocked: leads.filter((l) => needsOf(l).length > 0).length,
-      won: leads.filter((l) => l.stage === 'won').length,
+      won: leads.filter(isCustomer).length,
+      cold: leads.filter((l) => goingCold(l, today)).length,
       all: leads.length,
     }),
-    [leads],
+    [leads, today],
   );
 
   const shown = useMemo(() => {
@@ -73,7 +76,9 @@ export default function LeadsView({
         filter === 'all'
           ? true
           : filter === 'won'
-            ? l.stage === 'won'
+            ? isCustomer(l)
+            : filter === 'cold'
+              ? goingCold(l, today)
             : filter === 'blocked'
               ? needsOf(l).length > 0
               : isOpen(l),
@@ -85,7 +90,7 @@ export default function LeadsView({
             .filter(Boolean)
             .some((v) => String(v).toLowerCase().includes(q)),
       );
-  }, [leads, filter, query]);
+  }, [leads, filter, query, today]);
 
   return (
     <AdminShell>
@@ -125,7 +130,8 @@ export default function LeadsView({
           options={[
             { k: 'open', label: `Open ${counts.open}` },
             { k: 'blocked', label: `Needs fixing ${counts.blocked}`, title: 'Missing an email, a permission or a sequence' },
-            { k: 'won', label: `Clients ${counts.won}` },
+            { k: 'won', label: `Customers ${counts.won}`, title: 'Everyone who has paid you' },
+            { k: 'cold', label: `Going cold ${counts.cold}`, title: 'Customers with no check-in booked and no contact in six months' },
             { k: 'all', label: `All ${counts.all}` },
           ]}
         />
@@ -202,6 +208,8 @@ function Row({ lead, today }: { lead: LeadRow; today: string }) {
       <td className="l">
         {needs.length ? (
           <span className="flag">{needs.join(' · ')}</span>
+        ) : goingCold(lead, today) ? (
+          <span className="flag">a check-in date</span>
         ) : (
           <span className="muted">—</span>
         )}

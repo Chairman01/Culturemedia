@@ -1,9 +1,19 @@
 'use client';
 
 // The one frame every admin page sits in: a white sidebar on the left, the page
-// on the right. Six destinations, in the order a working day uses them.
+// on the right. Seven destinations, in the order a working day uses them.
 
-import { ChartColumn, ExternalLink, Gavel, House, Inbox, LogOut, Package, Users } from 'lucide-react';
+import {
+  ChartColumn,
+  CircleDollarSign,
+  ExternalLink,
+  Gavel,
+  House,
+  Inbox,
+  LogOut,
+  Package,
+  Users,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
@@ -13,6 +23,7 @@ const NAV = [
   { href: '/admin/leads', label: 'Leads', icon: Users },
   { href: '/admin/inbox', label: 'Inbox', icon: Inbox, badge: true },
   { href: '/admin/packages', label: 'Packages', icon: Package },
+  { href: '/admin/revenue', label: 'Revenue', icon: CircleDollarSign },
   { href: '/admin/scorecard', label: 'Scorecard', icon: ChartColumn },
   { href: '/admin/bids', label: 'Bids', icon: Gavel, also: ['/admin/setup'] },
 ] as const;

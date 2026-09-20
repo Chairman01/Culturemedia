@@ -20,7 +20,9 @@ export default async function LeadsPage({
       initialError={error}
       today={edmontonToday()}
       openAdd={params.add === '1'}
-      initialFilter={params.show === 'blocked' ? 'blocked' : 'open'}
+      initialFilter={
+        params.show === 'blocked' ? 'blocked' : params.show === 'cold' ? 'cold' : params.show === 'customers' ? 'won' : 'open'
+      }
     />
   );
 }

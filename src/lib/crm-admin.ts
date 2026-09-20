@@ -19,6 +19,7 @@ import {
   type LeadEventRow,
   type LeadRow,
 } from './crm';
+import type { Invoice } from './revenue';
 import { getClient, NOT_CONFIGURED, type AdminResult } from './supabase-admin';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -26,6 +27,9 @@ export const isLeadId = (id: unknown): id is string => typeof id === 'string' &&
 
 const LEAD_COLUMNS =
   'id, company, contact_name, email, phone, website, city, category, tier, source, stage, deal_type, deal_value, term_months, sequence_key, sequence_step, next_action_on, last_contacted_at, last_reply_at, won_at, renewal_on, consent_basis, consent_note, unsubscribed_at, notes, created_at, updated_at';
+
+const INVOICE_COLUMNS =
+  'id, invoice_number, customer, email, category, invoiced_on, amount, paid_on, amount_paid, status, work_status, currency, notes';
 
 const DRAFT_COLUMNS =
   'id, lead_id, sequence_key, step, subject, body, status, sent_at, send_error, created_at';
@@ -52,6 +56,8 @@ export interface LeadDetail {
   lead: LeadRow;
   events: LeadEventRow[];
   drafts: LeadDraftRow[];
+  /** What they have bought, from the invoice ledger (matched on email, then name). */
+  invoices: Invoice[];
 }
 
 export async function getLeadDetail(id: string): Promise<AdminResult<LeadDetail>> {
@@ -76,9 +82,25 @@ export async function getLeadDetail(id: string): Promise<AdminResult<LeadDetail>
   ]);
   if (lead.error) return fail('getLeadDetail', lead.error);
   if (!lead.data) return { data: null, error: 'That lead no longer exists.' };
+
+  // Two plain lookups rather than one .or(): a company name can hold commas and
+  // brackets, which that filter syntax would choke on.
+  const found = lead.data as LeadRow;
+  const [byEmail, byName] = await Promise.all([
+    found.email
+      ? supabase.from('revenue_invoices').select(INVOICE_COLUMNS).ilike('email', found.email).limit(100)
+      : Promise.resolve({ data: [] as unknown[] }),
+    supabase.from('revenue_invoices').select(INVOICE_COLUMNS).ilike('customer', found.company).limit(100),
+  ]);
+  const seen = new Set<number>();
+  const invoices = ([...(byEmail.data ?? []), ...(byName.data ?? [])] as Invoice[])
+    .filter((i) => (seen.has(i.id) ? false : (seen.add(i.id), true)))
+    .sort((a, b) => b.invoiced_on.localeCompare(a.invoiced_on));
+
   return {
     data: {
-      lead: lead.data as LeadRow,
+      invoices,
+      lead: found,
       events: (events.data ?? []) as LeadEventRow[],
       drafts: (drafts.data ?? []) as LeadDraftRow[],
     },
@@ -257,6 +279,8 @@ export async function logLeadEvent(
   kind: string,
   body: string,
   touched: boolean,
+  /** YYYY-MM-DD to look at them again; becomes the lead's next step. */
+  followUpOn: string | null = null,
 ): Promise<AdminResult<true>> {
   const supabase = getClient();
   if (!supabase) return { data: null, error: NOT_CONFIGURED };
@@ -264,6 +288,9 @@ export async function logLeadEvent(
   if (!(LOGGABLE as readonly string[]).includes(kind)) return { data: null, error: 'Unknown kind of note.' };
   const text = body.trim().slice(0, 4000);
   if (!text) return { data: null, error: 'Write something first.' };
+  if (followUpOn && !/^\d{4}-\d{2}-\d{2}$/.test(followUpOn)) {
+    return { data: null, error: 'Check the follow-up date.' };
+  }
 
   // The engine's timeline knows the type 'note'; keep to it and say what kind
   // of contact it was in words.
@@ -276,9 +303,12 @@ export async function logLeadEvent(
   });
   if (error) return fail('logLeadEvent', error);
 
-  if (touched) {
+  if (touched || followUpOn) {
     const now = new Date().toISOString();
-    await supabase.from('leads').update({ last_contacted_at: now, updated_at: now }).eq('id', id);
+    const patch: Record<string, unknown> = { updated_at: now };
+    if (touched) patch.last_contacted_at = now;
+    if (followUpOn) patch.next_action_on = followUpOn;
+    await supabase.from('leads').update(patch).eq('id', id);
   }
   return { data: true, error: null };
 }
@@ -338,4 +368,38 @@ export async function outreachWeek(today: string): Promise<AdminResult<OutreachD
     if (slot) slot.added += 1;
   }
   return { data: out, error: null };
+}
+
+/**
+ * They asked to stop. Mirrors Culture Alberta's /api/leads/opt-out: stamped as
+ * unsubscribed, moved to Declined, schedule cleared, anything waiting to send
+ * cancelled. Only ever called from a button a person pressed.
+ */
+export async function unsubscribeLead(id: string, by: string): Promise<AdminResult<true>> {
+  const supabase = getClient();
+  if (!supabase) return { data: null, error: NOT_CONFIGURED };
+  if (!isLeadId(id)) return { data: null, error: 'Not a lead id.' };
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('leads')
+    .update({ unsubscribed_at: now, next_action_on: null, stage: 'declined', updated_at: now })
+    .eq('id', id)
+    .select('id')
+    .maybeSingle();
+  if (error) return fail('unsubscribeLead', error);
+  if (!data) return { data: null, error: 'That lead no longer exists.' };
+
+  await supabase
+    .from('lead_drafts')
+    .update({ status: 'skipped', send_error: 'Lead unsubscribed' })
+    .eq('lead_id', id)
+    .eq('status', 'pending');
+  await supabase.from('lead_events').insert({
+    lead_id: id,
+    type: 'note',
+    body: `Marked as unsubscribed by ${by} — asked by email not to be contacted.`,
+    meta: { via: 'culturemedia.ca' },
+  });
+  return { data: true, error: null };
 }

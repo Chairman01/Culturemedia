@@ -32,12 +32,14 @@ export const DEAL_LABEL: Record<string, string> = {
   other: 'Other',
 };
 
-export const CONSENT_BASES = ['implied_inquiry', 'implied_published', 'express'] as const;
+export const CONSENT_BASES = ['implied_inquiry', 'implied_published', 'implied_existing', 'express'] as const;
 
 /** CASL: why we are allowed to email this person. No basis recorded, no email. */
 export const CONSENT_LABEL: Record<string, string> = {
   implied_inquiry: 'They contacted us first',
   implied_published: 'Their business email is published on their website',
+  // CASL's existing business relationship: good for two years after a purchase.
+  implied_existing: 'They bought from us in the last two years',
   express: 'They agreed to get emails from us',
 };
 
@@ -141,6 +143,28 @@ export const awaitingReply = (lead: Pick<LeadRow, 'last_reply_at' | 'last_contac
   Boolean(lead.last_reply_at) &&
   isOpen(lead) &&
   (!lead.last_contacted_at || String(lead.last_reply_at) > String(lead.last_contacted_at));
+
+/** Someone who has paid us — imported from the invoice ledger, or marked Client. */
+export const isCustomer = (lead: Pick<LeadRow, 'stage' | 'source'>): boolean =>
+  lead.stage === 'won' || lead.source === 'past_customer';
+
+/** Still worth a follow-up date: anyone not lost, declined or unsubscribed. */
+export const isFollowable = (lead: Pick<LeadRow, 'stage' | 'unsubscribed_at'>): boolean =>
+  !lead.unsubscribed_at && lead.stage !== 'lost' && lead.stage !== 'declined';
+
+const SIX_MONTHS_MS = 183 * 86400000;
+
+/**
+ * A customer who would otherwise be forgotten: no check-in booked, and nobody
+ * has spoken to them in six months (or ever). `today` is YYYY-MM-DD.
+ */
+export function goingCold(lead: LeadRow, today: string): boolean {
+  if (!isCustomer(lead) || !isFollowable(lead) || lead.next_action_on) return false;
+  // A renewal sequence is its own follow-up.
+  if (lead.sequence_key) return false;
+  if (!lead.last_contacted_at) return true;
+  return Date.parse(`${today}T12:00:00Z`) - Date.parse(lead.last_contacted_at) > SIX_MONTHS_MS;
+}
 
 /** What stops this lead from getting follow-up emails, in plain words. */
 export function needsOf(lead: LeadRow): string[] {

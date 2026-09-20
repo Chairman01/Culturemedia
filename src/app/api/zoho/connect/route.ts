@@ -22,7 +22,7 @@ export async function GET() {
   const params = new URLSearchParams({
     response_type: 'code',
     client_id: clientId,
-    scope: 'ZohoMail.messages.READ,ZohoMail.accounts.READ',
+    scope: 'ZohoMail.messages.READ,ZohoMail.accounts.READ,ZohoMail.folders.READ',
     redirect_uri: redirectUri,
     access_type: 'offline',   // request refresh token
     prompt: 'consent',        // always show consent to ensure refresh token is issued

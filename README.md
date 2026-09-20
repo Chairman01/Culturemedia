@@ -46,6 +46,12 @@ The marketing pages need nothing. The signed-in areas need these set in Vercel
 | `DASHBOARD_PASSWORD` | same | Sign-in password. **Required** for the same reason. |
 | `SUPABASE_URL` | every `/admin` page except Bids | Culture Alberta Supabase project URL. |
 | `SUPABASE_SERVICE_ROLE_KEY` | same | Service-role key. Server-side only — never prefix it with `NEXT_PUBLIC_`. |
+| `ZOHO_CLIENT_ID` · `ZOHO_CLIENT_SECRET` · `ZOHO_REFRESH_TOKEN` · `ZOHO_REDIRECT_URI` | Inbox, mail sync | Read-only Zoho Mail. A token minted before `ZohoMail.folders.READ` was requested reads the Inbox only; reconnect from the Inbox page to add Spam and Sent. |
+| `GMAIL_USER` · `GMAIL_APP_PASSWORD` | Inbox, mail sync | The Gmail address and a Google app password. Opened read-only over IMAP. Optional — without them Gmail simply shows as not connected. |
+
+> **Do not keep a working copy of this repo inside OneDrive.** OneDrive rolls files back to
+> older versions and drops `name(1).tsx` conflict copies while you work, which silently undoes
+> edits. Clone it somewhere like `C:\Users\<you>\dev\`.
 
 ## Admin area
 
@@ -55,9 +61,10 @@ Everything signed-in lives under `/admin` (sign in at `/admin/login`), in one si
 | --- | --- |
 | `/admin` | **Today** — replies to answer, emails to approve, add a lead, the week's outreach, the money |
 | `/admin/leads` | Every lead and client; open one to edit it, move its stage, start its emails, log calls |
-| `/admin/inbox` | Replies waiting on you, drafted emails waiting for approval, recent Zoho mail with **Add as lead** |
+| `/admin/inbox` | Replies waiting on you, drafted emails waiting for approval, and mail from Zoho **and** Gmail (inbox + spam) sorted into inquiries, payments, bounces, "please remove me" and the rest |
 | `/admin/packages` | What is for sale (`src/lib/packages.ts`), copy-ready pitches, the selling playbook |
-| `/admin/scorecard` | Culture Alberta KPIs, from `admin_kpi_scorecard()` |
+| `/admin/revenue` | All revenue in CAD, year over year: invoices in `public.revenue_invoices` plus Mediavine months converted at the scorecard's rates |
+| `/admin/scorecard` | All-revenue band, then Culture Alberta KPIs from `admin_kpi_scorecard()` |
 | `/admin/bids` | Alberta Purchasing Connection tenders (data in the browser's localStorage) |
 | `/admin/setup` · `/admin/sync` | APC bookmarklet install and the popup it posts to (deliberately not behind sign-in) |
 
@@ -65,5 +72,12 @@ The CRM tables (`leads`, `lead_events`, `lead_drafts`) are shared with the Cultu
 repo, whose engine drafts follow-up emails each morning, sends them through Zoho on **Approve &
 send**, and spots replies. This admin reads and edits leads; it never sends email. The rules in
 `src/lib/crm-admin.ts` mirror that repo's `PATCH /api/admin/leads` — keep them in step.
+
+**Mail sync** (`src/lib/mail-sync.ts`, run when Today or Inbox opens) reads both mailboxes and
+records only what a mailbox proves: a lead wrote to you (same effect as that repo's
+`recordReply()`), or you wrote to a lead (`last_contacted_at`, New → Contacted). It uses each
+message's own timestamp, so it is idempotent and answering from your mail client clears a lead
+from "replies to answer". Everything else the classifier finds (`src/lib/mail.ts`) is a
+suggestion on the page. It never sends, deletes, moves or marks mail.
 
 Old `/dashboard/*`, `/admin/pipeline` and `/admin/sales` URLs redirect to their new homes.

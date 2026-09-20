@@ -4,9 +4,10 @@ import { requireAdminApi } from '@/lib/admin-auth';
 import { loadInbox } from '@/lib/inbox';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
-// GET /api/admin/inbox — replies to answer, drafts to approve, recent Zoho mail.
-// Read-only: nothing here sends, replies or marks anything as read.
+// GET /api/admin/inbox — replies to answer, drafts to approve, and the mail from
+// both mailboxes. Read-only: it changes nothing, in the mailboxes or the CRM.
 export async function GET() {
   const denied = await requireAdminApi();
   if (denied) return denied;
