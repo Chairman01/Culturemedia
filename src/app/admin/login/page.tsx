@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { AdminShell } from '../_components/ui';
+import { AdminShell } from '../_components/shell';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
@@ -41,7 +41,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <AdminShell>
+    <AdminShell bare>
       <div className="login">
         <section className="card" aria-labelledby="login-h">
           <p className="eyebrow">Culture Media</p>

@@ -1,6 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
+
+import { AdminShell, PageHead } from '../_components/shell';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1015,7 +1018,7 @@ function PipelineBoard({
       {/* Stats row */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 140 }}>
-          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Active Leads</div>
+          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Active bids</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{allActive.length}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 140 }}>
@@ -1023,11 +1026,11 @@ function PipelineBoard({
           <div style={{ fontSize: 24, fontWeight: 800, color: '#16a34a' }}>${totalValue.toLocaleString()}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 100 }}>
-          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>APC Deals</div>
+          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>From APC</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: '#0f172a' }}>{leads.filter(l => l.stage !== 'lost').length}</div>
         </div>
         <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 20px', minWidth: 100 }}>
-          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>My Outreach</div>
+          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>Old leads</div>
           <div style={{ fontSize: 24, fontWeight: 800, color: '#7c3aed' }}>{manualLeads.filter(l => l.stage !== 'lost').length}</div>
         </div>
         {STAGES.filter(s => s.key !== 'lost').map(s => (
@@ -1058,7 +1061,7 @@ function PipelineBoard({
 
               {total === 0 && (
                 <div style={{ fontSize: 12, color: '#cbd5e1', textAlign: 'center', padding: '20px 0' }}>
-                  No leads
+                  Nothing here yet
                 </div>
               )}
 
@@ -1236,24 +1239,21 @@ function PipelineBoard({
 type MainTab = 'pipeline' | 'outreach' | 'culturemedia' | 'consulting' | 'easymoney' | 'china' | 'zero' | 'all';
 
 const TAB_CONFIG: { key: MainTab; label: string; desc: string }[] = [
-  { key: 'pipeline', label: 'Sales Pipeline', desc: 'All deals consolidated' },
-  { key: 'outreach', label: 'My Leads', desc: 'Your own outreach' },
+  { key: 'pipeline', label: 'My bids', desc: 'The bids you are chasing' },
+  { key: 'outreach', label: 'Old leads', desc: 'Kept from before the Leads page' },
   { key: 'culturemedia', label: 'Culture Media', desc: 'Marketing & creative' },
-  { key: 'consulting', label: 'Consulting', desc: 'Strategy & advisory' },
   { key: 'easymoney', label: 'Easy Money', desc: 'Service contracts' },
-  { key: 'china', label: 'China Connection', desc: 'Supply & product contracts' },
   { key: 'zero', label: '0 Competition', desc: 'No applicants yet' },
   { key: 'all', label: 'All Active', desc: 'All open listings' },
 ];
 
 
-export default function PipelineDashboard() {
+export default function BidsDashboard() {
   const [activeTab, setActiveTab] = useState<MainTab>('pipeline');
   const [postings, setPostings] = useState<Posting[]>([]);
   const [syncedAt, setSyncedAt] = useState<string | null>(null);
   const [pipeline, setPipeline] = useState<PipelineLead[]>([]);
   const [manualLeads, setManualLeads] = useState<ManualLead[]>([]);
-  const [apcExpanded, setApcExpanded] = useState(true);
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'score' | 'closing' | 'newest' | 'applicants'>('score');
   const [filterLowComp, setFilterLowComp] = useState(false);
@@ -1279,11 +1279,11 @@ export default function PipelineDashboard() {
     if (params.get('zoho_connected') === '1') {
       setZohoConnected(true);
       setZohoToast('Zoho Mail connected!');
-      window.history.replaceState({}, '', '/admin/pipeline');
+      window.history.replaceState({}, '', '/admin/bids');
       setTimeout(() => setZohoToast(null), 4000);
     } else if (params.get('zoho_error')) {
       setZohoToast(`Zoho error: ${params.get('zoho_error')}`);
-      window.history.replaceState({}, '', '/admin/pipeline');
+      window.history.replaceState({}, '', '/admin/bids');
       setTimeout(() => setZohoToast(null), 6000);
     }
   }, []);
@@ -1449,11 +1449,6 @@ export default function PipelineDashboard() {
       d.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit' });
   }
 
-  const NAV_ICONS: Record<MainTab, string> = {
-    pipeline: '📊', outreach: '📧', culturemedia: '✨', consulting: '💼',
-    easymoney: '💰', china: '🇨🇳', zero: '🎯', all: '📋',
-  };
-
   const getTabCount = (key: MainTab) => {
     const active = postings.filter(isActive);
     if (key === 'pipeline') return pipeline.filter(l => l.stage !== 'lost').length + manualLeads.filter(l => l.stage !== 'lost').length;
@@ -1466,7 +1461,7 @@ export default function PipelineDashboard() {
   const currentTabConfig = TAB_CONFIG.find(t => t.key === activeTab);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif' }}>
+    <AdminShell>
 
       {/* Toast notification */}
       {zohoToast && (
@@ -1482,236 +1477,50 @@ export default function PipelineDashboard() {
         </div>
       )}
 
-      {/* ── SIDEBAR ── */}
-      <div style={{
-        width: 220, background: '#111', color: '#fff', flexShrink: 0,
-        display: 'flex', flexDirection: 'column',
-        position: 'fixed', top: 0, bottom: 0, left: 0, zIndex: 100, overflowY: 'auto',
-      }}>
-        {/* Brand */}
-        <div style={{ padding: '22px 18px 14px' }}>
-          <div style={{ fontWeight: 800, fontSize: 15, color: '#fff', letterSpacing: -0.3 }}>Culture Media</div>
-          <div style={{ fontSize: 11, color: '#555', marginTop: 2 }}>APC pipeline</div>
-        </div>
-
-        <div style={{ height: 1, background: '#222', margin: '0 14px' }} />
-
-        {/* Pipeline section */}
-        <div style={{ padding: '10px 8px 4px' }}>
-          <div style={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: 1, padding: '4px 10px 6px' }}>Pipeline</div>
-          {(['pipeline'] as MainTab[]).map(key => {
-            const tab = TAB_CONFIG.find(t => t.key === key)!;
-            const n = getTabCount(key);
-            const on = activeTab === key;
-            return (
-              <button key={key} onClick={() => setActiveTab(key)} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                width: '100%', padding: '8px 10px', marginBottom: 2,
-                background: on ? '#fff' : 'transparent',
-                color: on ? '#000' : '#ccc',
-                border: 'none', borderRadius: 7, cursor: 'pointer',
-                fontSize: 13, fontWeight: on ? 700 : 400, textAlign: 'left',
-              }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span>{NAV_ICONS[key]}</span>{tab.label}
-                </span>
-                {n > 0 && <span style={{ fontSize: 10, background: on ? '#000' : '#2a2a2a', color: on ? '#fff' : '#bbb', borderRadius: 9999, padding: '1px 6px' }}>{n}</span>}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* My Leads section */}
-        <div style={{ padding: '4px 8px' }}>
-          <div style={{ fontSize: 10, color: '#a78bfa', textTransform: 'uppercase', letterSpacing: 1, padding: '4px 10px 6px', fontWeight: 700 }}>My Outreach</div>
-          {(['outreach'] as MainTab[]).map(key => {
-            const tab = TAB_CONFIG.find(t => t.key === key)!;
-            const n = getTabCount(key);
-            const on = activeTab === key;
-            return (
-              <button key={key} onClick={() => setActiveTab(key)} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                width: '100%', padding: '8px 10px', marginBottom: 2,
-                background: on ? '#fff' : 'transparent',
-                color: on ? '#000' : '#ccc',
-                border: 'none', borderRadius: 7, cursor: 'pointer',
-                fontSize: 13, fontWeight: on ? 700 : 400, textAlign: 'left',
-              }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span>{NAV_ICONS[key]}</span>{tab.label}
-                </span>
-                {n > 0 && <span style={{ fontSize: 10, background: on ? '#7c3aed' : '#2a2a2a', color: '#fff', borderRadius: 9999, padding: '1px 6px' }}>{n}</span>}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* APC Leads section — collapsible */}
-        <div style={{ padding: '4px 8px' }}>
-          <button
-            onClick={() => setApcExpanded(!apcExpanded)}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              width: '100%', background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 10, color: '#60a5fa', textTransform: 'uppercase', letterSpacing: 1,
-              padding: '4px 10px 6px', borderRadius: 4, fontWeight: 700,
-            }}
-          >
-            <span>APC Leads</span>
-            <span style={{ fontSize: 12, opacity: 0.8 }}>{apcExpanded ? '▾' : '▸'}</span>
+      <PageHead
+        title="Bids"
+        help="Alberta government tenders worth a look, and the ones you are chasing. Marketing and creative work first."
+      >
+        {activeTab === 'outreach' && zohoConnected && (
+          <button type="button" onClick={syncFromZoho} disabled={zohoSyncing}>
+            {zohoSyncing ? 'Syncing…' : 'Sync from Zoho'}
           </button>
-          {apcExpanded && TAB_CONFIG.filter(t => !['pipeline', 'outreach'].includes(t.key)).map(tab => {
-            const n = getTabCount(tab.key);
-            const on = activeTab === tab.key;
-            return (
-              <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                width: '100%', padding: '8px 10px', marginBottom: 2,
-                background: on ? '#fff' : 'transparent',
-                color: on ? '#000' : '#ccc',
-                border: 'none', borderRadius: 7, cursor: 'pointer',
-                fontSize: 13, fontWeight: on ? 700 : 400, textAlign: 'left',
-              }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span>{NAV_ICONS[tab.key]}</span>{tab.label}
-                </span>
-                {n > 0 && (
-                  <span style={{
-                    fontSize: 10, borderRadius: 9999, padding: '1px 6px',
-                    background: on ? (tab.key === 'zero' ? '#16a34a' : '#000') : '#2a2a2a',
-                    color: on ? '#fff' : (tab.key === 'zero' ? '#4ade80' : '#bbb'),
-                  }}>{n}</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Sync */}
-        <div style={{ padding: '4px 8px' }}>
-          <div style={{ height: 1, background: '#222', margin: '8px 6px 10px' }} />
-          <a href="/admin/setup" style={{
-            display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px',
-            background: hasData ? 'transparent' : '#1d4ed8',
-            color: hasData ? '#aaa' : '#fff',
-            borderRadius: 7, textDecoration: 'none', fontSize: 13, marginBottom: 2,
-          }}>
-            <span>⚡</span>{hasData ? 'Re-sync APC' : 'Sync APC'}
-          </a>
-          {syncedAt && (
-            <div style={{ fontSize: 10, color: '#444', padding: '2px 10px 6px', lineHeight: 1.5 }}>
-              {fmtSyncTime(syncedAt)}<br />{postings.length} total listings
-            </div>
-          )}
-        </div>
-
-        {/* Culture Alberta — the Supabase-backed pages under /admin */}
-        <div style={{ padding: '4px 8px' }}>
-          <div style={{ height: 1, background: '#222', margin: '8px 6px 10px' }} />
-          <div style={{ fontSize: 10, color: '#888', textTransform: 'uppercase', letterSpacing: 1, padding: '4px 10px 6px' }}>Culture Alberta</div>
-          {([['/admin/scorecard', '📊', 'Scorecard'], ['/admin/sales', '🤝', 'Sales']] as const).map(([href, icon, label]) => (
-            <a key={href} href={href} style={{
-              display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', marginBottom: 2,
-              color: '#ccc', textDecoration: 'none', fontSize: 13, borderRadius: 7,
-            }}>
-              <span>{icon}</span>{label}
-            </a>
-          ))}
-        </div>
-
-        {/* Bottom */}
-        <div style={{ marginTop: 'auto', padding: '8px 8px 16px', borderTop: '1px solid #222' }}>
-          {/* Zoho Mail connection */}
-          <div style={{ padding: '6px 10px 10px' }}>
-            <div style={{ fontSize: 10, color: '#555', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Email Sync</div>
-            {zohoConnected ? (
-              <button
-                onClick={syncFromZoho}
-                disabled={zohoSyncing}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6, width: '100%',
-                  padding: '7px 10px', background: '#052e16', color: '#4ade80',
-                  border: '1px solid #166534', borderRadius: 7, cursor: zohoSyncing ? 'not-allowed' : 'pointer',
-                  fontSize: 12, fontWeight: 600,
-                }}
-              >
-                <span>{zohoSyncing ? '⏳' : '✅'}</span>
-                {zohoSyncing ? 'Syncing...' : 'Zoho Connected — Sync'}
-              </button>
-            ) : (
-              <a
-                href="/api/zoho/connect"
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 6, width: '100%',
-                  padding: '7px 10px', background: '#1e1b4b', color: '#818cf8',
-                  border: '1px solid #3730a3', borderRadius: 7,
-                  fontSize: 12, fontWeight: 600, textDecoration: 'none',
-                }}
-              >
-                <span>📧</span>
-                {zohoConnected === null ? 'Checking...' : 'Connect Zoho Mail'}
-              </a>
-            )}
-          </div>
-
-          <a href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', color: '#666', textDecoration: 'none', fontSize: 13, borderRadius: 7 }}>
-            ← Admin home
-          </a>
-          <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', color: '#666', textDecoration: 'none', fontSize: 13, borderRadius: 7 }}>
-            ← View Site
-          </a>
-          <button
-            onClick={async () => { await fetch('/api/dashboard-auth', { method: 'DELETE' }); window.location.href = '/admin/login'; }}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 10px', color: '#666', background: 'none', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 13, textAlign: 'left' }}
-          >
-            Sign out
+        )}
+        {hasData && activeTab !== 'pipeline' && activeTab !== 'outreach' && (
+          <button type="button" onClick={reloadFromStorage}>
+            Refresh
           </button>
-        </div>
+        )}
+        <Link className="btn ghost" href="/admin/setup">
+          {hasData ? 'Re-sync listings' : 'Set up listing sync'}
+        </Link>
+      </PageHead>
+
+      <div className="tabs" role="group" aria-label="Bid lists">
+        {TAB_CONFIG.filter((t) => t.key !== 'outreach' || manualLeads.length > 0).map((tab) => {
+          const n = getTabCount(tab.key);
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              aria-pressed={activeTab === tab.key}
+              onClick={() => setActiveTab(tab.key)}
+            >
+              {tab.label}
+              {n > 0 ? ` ${n}` : ''}
+            </button>
+          );
+        })}
       </div>
+      <p className="cnote" style={{ margin: '0 0 16px' }}>
+        {activeTab === 'pipeline' || activeTab === 'outreach'
+          ? currentTabConfig?.desc
+          : `${tabPostings.length} active listing${tabPostings.length !== 1 ? 's' : ''} · ${currentTabConfig?.desc}`}
+        {syncedAt ? ` · listings synced ${fmtSyncTime(syncedAt)}` : ''}
+      </p>
 
-      {/* ── MAIN ── */}
-      <div style={{ marginLeft: 220, flex: 1, background: '#f8fafc', minHeight: '100vh' }}>
-
-        {/* Top bar */}
-        <div style={{
-          background: '#fff', borderBottom: '1px solid #e2e8f0',
-          padding: '20px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <div>
-            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#0f172a', margin: 0 }}>
-              {currentTabConfig?.label}
-            </h1>
-            <p style={{ fontSize: 13, color: '#64748b', margin: '2px 0 0' }}>
-              {activeTab === 'pipeline'
-                ? `${pipeline.filter(l => l.stage !== 'lost').length + manualLeads.filter(l => l.stage !== 'lost').length} active deals · Welcome back, Adam`
-                : activeTab === 'outreach'
-                ? `${manualLeads.filter(l => l.stage !== 'lost').length} active leads · ${currentTabConfig?.desc}`
-                : `${tabPostings.length} active listing${tabPostings.length !== 1 ? 's' : ''} · ${currentTabConfig?.desc}`
-              }
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {hasData && activeTab !== 'pipeline' && (
-              <button onClick={reloadFromStorage} style={{
-                fontSize: 13, color: '#64748b', background: '#fff',
-                border: '1px solid #e2e8f0', borderRadius: 8, padding: '7px 16px', cursor: 'pointer',
-              }}>
-                Refresh
-              </button>
-            )}
-            {(pipeline.filter(l => l.stage !== 'lost').length + manualLeads.filter(l => l.stage !== 'lost').length) > 0 && activeTab !== 'pipeline' && activeTab !== 'outreach' && (
-              <button onClick={() => setActiveTab('pipeline')} style={{
-                fontSize: 13, color: '#fff', background: '#000',
-                border: 'none', borderRadius: 8, padding: '7px 16px', cursor: 'pointer', fontWeight: 700,
-              }}>
-                View Pipeline ({pipeline.filter(l => l.stage !== 'lost').length + manualLeads.filter(l => l.stage !== 'lost').length})
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Page content */}
-        <div style={{ padding: '24px 32px' }}>
+      <div>
+        <div>
 
           {/* ── Sales Pipeline (consolidated) ── */}
           {activeTab === 'pipeline' && (
@@ -1812,6 +1621,6 @@ export default function PipelineDashboard() {
           )}
         </div>
       </div>
-    </div>
+    </AdminShell>
   );
 }

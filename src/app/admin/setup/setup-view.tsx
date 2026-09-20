@@ -125,7 +125,7 @@ export default function SetupView() {
 
         {/* Header */}
         <div style={{ marginBottom: 40 }}>
-          <a href="/admin/pipeline" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none' }}>
+          <a href="/admin/bids" style={{ fontSize: 13, color: '#64748b', textDecoration: 'none' }}>
             ← Back to dashboard
           </a>
           <h1 style={{ fontSize: 28, fontWeight: 800, marginTop: 16, marginBottom: 8, color: '#fff' }}>
@@ -267,7 +267,7 @@ export default function SetupView() {
           </div>
         </div>
 
-        <a href="/admin/pipeline" style={{
+        <a href="/admin/bids" style={{
           display: 'inline-block', background: '#3b82f6', color: '#fff',
           border: 'none', borderRadius: 8, padding: '12px 24px',
           fontWeight: 700, fontSize: 14, textDecoration: 'none',

@@ -17,7 +17,7 @@ export interface AdminResult<T> {
 
 let client: SupabaseClient | null = null;
 
-function getClient(): SupabaseClient | null {
+export function getClient(): SupabaseClient | null {
   if (client) return client;
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -28,7 +28,7 @@ function getClient(): SupabaseClient | null {
   return client;
 }
 
-const NOT_CONFIGURED =
+export const NOT_CONFIGURED =
   'Supabase is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.';
 
 /**

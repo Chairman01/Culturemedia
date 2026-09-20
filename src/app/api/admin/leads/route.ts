@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 import { requireAdminApi } from '@/lib/admin-auth';
+import { SEQUENCE_KEYS } from '@/lib/crm';
+import { listLeads, updateLead } from '@/lib/crm-admin';
 import { addLead } from '@/lib/supabase-admin';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +23,16 @@ const DB_ERRORS: Record<string, string> = {
   consent_invalid: 'Pick an email permission option.',
 };
 
+// GET /api/admin/leads — every lead, newest activity first
+export async function GET() {
+  const denied = await requireAdminApi();
+  if (denied) return denied;
+
+  const { data, error } = await listLeads();
+  if (error) return NextResponse.json({ error }, { status: 502 });
+  return NextResponse.json({ data });
+}
+
 function friendly(message: string): string {
   const hit = Object.keys(DB_ERRORS).find((k) => message.includes(k));
   return hit ? DB_ERRORS[hit] : message;
@@ -37,9 +49,10 @@ function bad(error: string) {
 /**
  * POST /api/admin/leads — public.admin_add_lead(p jsonb)
  *
- * Adding a lead only writes the CRM row and a lead_events row. It never
- * schedules or sends email: follow-ups start only when a sequence is chosen in
- * Partnerships, and each email still waits for an explicit approval there.
+ * Adding a lead writes the CRM row and a lead_events row. It never sends email.
+ * If the form explicitly picks a sequence, the lead is scheduled: the engine
+ * drafts the first email on its next morning run, and that draft still waits
+ * for a human to approve it before anything goes out.
  *
  * Retainers arrive as the monthly price plus a term, and are stored the way the
  * function expects: deal_value = price × months, term_months = months.
@@ -101,12 +114,30 @@ export async function POST(request: NextRequest) {
     term_months: retainer && months !== null ? String(months) : '',
   };
 
-  const { error } = await addLead(payload);
+  // Optional extras the function does not take. A sequence is only ever an
+  // explicit choice on the form, and it needs an address and a permission.
+  const phone = text(b.phone, 40);
+  const sequence = text(b.sequence_key, 40);
+  if (sequence && !SEQUENCE_KEYS.includes(sequence)) return bad('Pick an email sequence.');
+  if (sequence && !email) return bad('Add their email address before choosing a sequence.');
+  if (sequence && !consent) return bad('Record the email permission before choosing a sequence.');
+
+  const { data, error } = await addLead(payload);
   if (error) {
     const message = friendly(error);
     // A validation message from the function is the caller's problem, not ours.
     const known = message !== error;
     return NextResponse.json({ error: message }, { status: known ? 400 : 502 });
   }
-  return NextResponse.json({ ok: true, company });
+
+  const id = (data as { id?: string } | null)?.id;
+  let warning: string | null = null;
+  if (id && (phone || sequence)) {
+    const extras: Record<string, unknown> = {};
+    if (phone) extras.phone = phone;
+    if (sequence) extras.sequence_key = sequence;
+    const patched = await updateLead(id, extras, process.env.DASHBOARD_USER || 'admin');
+    if (patched.error) warning = `Added, but: ${patched.error}`;
+  }
+  return NextResponse.json({ ok: true, company, id: id ?? null, warning });
 }

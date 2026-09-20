@@ -1,24 +1,27 @@
-/* Admin shell — ported from the Claude scorecard page, with this site's Inter
-   and blue accent in place of its own type and colour. Everything is scoped
+/* Culture Media admin. One look for every page, modelled on the Culture Alberta
+   admin: a white sidebar with a black pill on the current page, white cards on
+   a near-white ground, black primary buttons. Light only, on purpose — the
+   admin should look the same every time it is opened. Everything is scoped
    under .adm so it never touches the marketing pages. */
 
 .adm {
-  --ground: #f6f6f3;
+  --ground: #fafafa;
   --surface: #ffffff;
-  --sunken: #efefea;
-  --ink: #16181c;
-  --ink-2: #3e434c;
-  --muted: #6b7280;
-  --rule: #e1e1db;
-  --rule-hard: #c4c4bb;
+  --sunken: #f3f4f6;
+  --ink: #0a0a0a;
+  --ink-2: #3f3f46;
+  --muted: #71717a;
+  --rule: #e5e7eb;
+  --rule-hard: #d4d4d8;
   --s2: #2563eb;
   --s2-soft: #dbeafe;
-  --crit: #a8321a;
-  --crit-bg: #f7e9e5;
-  --warn: #8a5a12;
-  --warn-bg: #f7f0e2;
-  --ok: #1f6b45;
-  --ok-bg: #e7f1eb;
+  --crit: #b42318;
+  --crit-bg: #fef3f2;
+  --warn: #93590a;
+  --warn-bg: #fdf6e3;
+  --ok: #17693f;
+  --ok-bg: #e8f5ee;
+  --side: 248px;
 
   background: var(--ground);
   color: var(--ink);
@@ -26,27 +29,9 @@
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
-}
-
-@media (prefers-color-scheme: dark) {
-  .adm:not([data-theme='light']) {
-    --ground: #0f1318;
-    --surface: #171c24;
-    --sunken: #1e242e;
-    --ink: #edeff2;
-    --ink-2: #c2c8d2;
-    --muted: #8a93a1;
-    --rule: #2a313c;
-    --rule-hard: #3c4552;
-    --s2: #60a5fa;
-    --s2-soft: #1e3a5f;
-    --crit: #f0846a;
-    --crit-bg: #2c1c19;
-    --warn: #d9a445;
-    --warn-bg: #2a2318;
-    --ok: #5fbf8d;
-    --ok-bg: #16261e;
-  }
+  flex: 1;
+  display: flex;
+  align-items: stretch;
 }
 
 .adm *,
@@ -55,11 +40,161 @@
   box-sizing: border-box;
 }
 
+/* ── frame: sidebar + page ─────────────────────────────────────────────────── */
+
+.adm .side {
+  width: var(--side);
+  flex: none;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-right: 1px solid var(--rule);
+  overflow-y: auto;
+}
+
+.adm .side .brand {
+  display: block;
+  padding: 22px 22px 20px;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--rule);
+}
+
+.adm .side nav {
+  display: grid;
+  gap: 2px;
+  padding: 14px 10px;
+}
+
+.adm .side nav a,
+.adm .side-foot a,
+.adm .side-foot button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 500;
+  text-decoration: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.adm .side nav a:hover,
+.adm .side-foot a:hover,
+.adm .side-foot button:hover {
+  background: var(--sunken);
+  color: var(--ink);
+}
+
+.adm .side nav a[aria-current='page'] {
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+}
+
+.adm .side nav a:focus-visible,
+.adm .side-foot a:focus-visible,
+.adm .side-foot button:focus-visible {
+  outline: 2px solid var(--s2);
+  outline-offset: 2px;
+}
+
+.adm .side .count {
+  margin-left: auto;
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #e11d48;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.adm .side-foot {
+  margin-top: auto;
+  padding: 10px;
+  border-top: 1px solid var(--rule);
+  display: grid;
+  gap: 2px;
+}
+
+.adm .side-foot a,
+.adm .side-foot button {
+  font-size: 13.5px;
+  color: var(--muted);
+  padding: 8px 12px;
+}
+
+.adm .main {
+  flex: 1;
+  min-width: 0;
+}
+
 .adm .wrap {
-  max-width: 1120px;
+  max-width: 1160px;
   margin: 0 auto;
-  padding-inline: 18px;
-  padding-block: 26px 56px;
+  padding-inline: 32px;
+  padding-block: 30px 64px;
+}
+
+.adm.adm-bare {
+  display: block;
+}
+
+@media (max-width: 860px) {
+  .adm {
+    display: block;
+  }
+
+  .adm .side {
+    position: static;
+    width: auto;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .adm .side .brand {
+    padding: 14px 16px;
+    font-size: 17px;
+  }
+
+  .adm .side nav {
+    display: flex;
+    gap: 4px;
+    padding: 8px 10px;
+    overflow-x: auto;
+  }
+
+  .adm .side nav a {
+    width: auto;
+    flex: none;
+    padding: 8px 12px;
+  }
+
+  .adm .side-foot {
+    display: none;
+  }
+
+  .adm .wrap {
+    padding-inline: 16px;
+    padding-block: 20px 48px;
+  }
 }
 
 .adm .mono,
@@ -979,4 +1114,508 @@
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* ── page head + buttons ───────────────────────────────────────────────────── */
+
+.adm .page-head {
+  align-items: flex-end;
+  margin-bottom: 22px;
+}
+
+.adm .page-head h1 {
+  font-size: 30px;
+  font-weight: 800;
+}
+
+.adm .page-head .help {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  max-width: 72ch;
+}
+
+.adm .btn,
+.adm a.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.adm .btn:hover {
+  background: #27272a;
+}
+
+.adm .btn.ghost {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--rule-hard);
+}
+
+.adm .btn.ghost:hover {
+  background: var(--sunken);
+}
+
+.adm .card {
+  border-radius: 12px;
+  padding: 18px 20px;
+}
+
+.adm .tile {
+  border-radius: 12px;
+}
+
+.adm .stack {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* ── today ─────────────────────────────────────────────────────────────────── */
+
+.adm .steps {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.adm .step {
+  display: grid;
+  grid-template-columns: 38px 1fr auto;
+  gap: 2px 14px;
+  align-items: center;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+}
+
+.adm .step .n {
+  grid-row: 1 / 3;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 15px;
+  background: var(--sunken);
+  color: var(--ink-2);
+}
+
+.adm .step.todo .n {
+  background: var(--ink);
+  color: #fff;
+}
+
+.adm .step.clear .n {
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.adm .step b {
+  font-size: 15.5px;
+  font-weight: 700;
+}
+
+.adm .step p {
+  grid-column: 2;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.adm .step .btn {
+  grid-row: 1 / 3;
+  grid-column: 3;
+}
+
+.adm .week {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.adm .week > div {
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 10px 6px;
+  text-align: center;
+  background: var(--surface);
+}
+
+.adm .week .d {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.adm .week .m {
+  display: block;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.adm .week .s {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.adm .week .hit {
+  background: var(--ok-bg);
+  border-color: transparent;
+}
+
+.adm .week .hit .m {
+  color: var(--ok);
+}
+
+.adm .week .miss .m,
+.adm .week .later .m {
+  color: var(--rule-hard);
+}
+
+.adm .week .now {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+/* ── leads ─────────────────────────────────────────────────────────────────── */
+
+.adm .toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.adm .toolbar .grow {
+  flex: 1 1 auto;
+}
+
+.adm .search {
+  flex: 1 1 220px;
+  max-width: 340px;
+  font: inherit;
+  font-size: 13.5px;
+  padding: 8px 12px;
+  border: 1px solid var(--rule-hard);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.adm .search:focus-visible {
+  outline: 2px solid var(--s2);
+  outline-offset: 1px;
+}
+
+.adm td.co a {
+  color: inherit;
+  text-decoration: none;
+  display: block;
+}
+
+.adm td.co a:hover b {
+  text-decoration: underline;
+}
+
+.adm tbody tr:hover td {
+  background: #fafafa;
+}
+
+.adm .detail {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.adm .back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 10px;
+}
+
+.adm .back:hover {
+  color: var(--ink);
+}
+
+.adm .timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.adm .timeline li {
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.adm .timeline li:last-child {
+  border-bottom: 0;
+}
+
+.adm .timeline .when {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--muted);
+  padding-top: 2px;
+}
+
+.adm .timeline .kind {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.adm .mail-body {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  background: var(--sunken);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 8px 0 0;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.adm .mail {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.adm .mail:last-child {
+  border-bottom: 0;
+}
+
+.adm .mail .top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.adm .mail .who {
+  font-weight: 650;
+  font-size: 13.5px;
+}
+
+.adm .mail.unread .who::before {
+  content: '';
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--s2);
+  margin-right: 7px;
+  vertical-align: 1px;
+}
+
+.adm .mail .subj {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 2px 0 0;
+}
+
+.adm .mail .sum {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin: 2px 0 0;
+}
+
+.adm .mail .acts-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* ── packages ──────────────────────────────────────────────────────────────── */
+
+.adm .pkgs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.adm .pkg {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.adm .pkg .kind {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.adm .pkg h3 {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.adm .pkg .price {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.adm .pkg .for {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.adm .pkg ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--ink-2);
+  font-size: 13px;
+  display: grid;
+  gap: 4px;
+  list-style: disc;
+}
+
+.adm .pkg .btn {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.adm .pkg.anchor {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 1px var(--ink);
+}
+
+.adm .section-title {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 26px 0 4px;
+}
+
+.adm .section-help {
+  color: var(--muted);
+  font-size: 13.5px;
+  margin: 0 0 12px;
+  max-width: 76ch;
+}
+
+.adm .prose {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+.adm .prose ol,
+.adm .prose ul {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 8px;
+}
+
+.adm .prose ol {
+  list-style: decimal;
+}
+
+.adm .prose ul {
+  list-style: disc;
+}
+
+.adm .prose b {
+  color: var(--ink);
+}
+
+.adm .sources {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+.adm .sources a {
+  color: var(--s2);
+}
+
+@media (max-width: 1000px) {
+  .adm .pkgs {
+    grid-template-columns: 1fr;
+  }
+
+  .adm .detail {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .adm .step {
+    grid-template-columns: 38px 1fr;
+  }
+
+  .adm .step .btn {
+    grid-row: auto;
+    grid-column: 2;
+    justify-self: start;
+    margin-top: 6px;
+  }
+}
+
+.adm details.guide {
+  margin-top: 8px;
+}
+
+.adm details.guide > summary {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.adm details.guide[open] > summary {
+  margin-bottom: 12px;
+}
+
+.adm .main > .wrap > .fresh {
+  max-width: none;
+  margin: -12px 0 16px;
 }
