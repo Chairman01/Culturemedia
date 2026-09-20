@@ -15,7 +15,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const { id } = await params;
   if (!isLeadId(id)) return NextResponse.json({ error: 'Not a lead id.' }, { status: 400 });
 
-  let body: { kind?: unknown; body?: unknown; touched?: unknown };
+  let body: { kind?: unknown; body?: unknown; touched?: unknown; follow_up_on?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -27,6 +27,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     String(body.kind ?? 'note'),
     String(body.body ?? ''),
     body.touched === true,
+    typeof body.follow_up_on === 'string' && body.follow_up_on ? body.follow_up_on : null,
   );
   if (error) return NextResponse.json({ error }, { status: 400 });
   return NextResponse.json({ ok: true });

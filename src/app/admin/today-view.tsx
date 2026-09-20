@@ -28,6 +28,7 @@ export default function TodayView({
   replies,
   drafts,
   blocked,
+  cold,
   due,
   week,
   revenue,
@@ -42,7 +43,9 @@ export default function TodayView({
   replies: number;
   drafts: number;
   blocked: number;
-  due: { id: string; company: string; on: string; stage: string }[];
+  /** Customers with no check-in booked and no contact in six months. */
+  cold: number;
+  due: { id: string; company: string; on: string; stage: string; customer: boolean }[];
   week: OutreachDay[];
   error: string | null;
 }) {
@@ -210,7 +213,9 @@ export default function TodayView({
                     <Link href={`/admin/leads/${l.id}`} style={{ color: 'inherit', fontWeight: 600 }}>
                       {l.company}
                     </Link>
-                    <span className="sub-line">{STAGE_LABEL[l.stage] || l.stage}</span>
+                    <span className="sub-line">
+                      {l.customer ? 'Past customer — check in' : STAGE_LABEL[l.stage] || l.stage}
+                    </span>
                   </span>
                   <b className={l.on < today ? 'crit' : ''}>{day(l.on)}</b>
                 </li>
@@ -219,6 +224,13 @@ export default function TodayView({
               <li className="empty-note">Nothing due. Set a “next step” date on a lead to see it here.</li>
             )}
           </ul>
+          {cold > 0 && (
+            <p className="acts-row" style={{ marginTop: 10 }}>
+              <Link className="btn ghost" href="/admin/leads?show=cold">
+                {cold} past {cold === 1 ? 'customer has' : 'customers have'} no check-in booked
+              </Link>
+            </p>
+          )}
           {blocked > 0 && (
             <p className="acts-row" style={{ marginTop: 10 }}>
               <Link className="btn ghost" href="/admin/leads?show=blocked">

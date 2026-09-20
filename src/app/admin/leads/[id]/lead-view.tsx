@@ -18,12 +18,13 @@ import {
   STAGES,
   STAGE_LABEL,
   awaitingReply,
+  isCustomer,
   isOpen,
   needsOf,
   type LeadRow,
 } from '@/lib/crm';
 import type { LeadDetail } from '@/lib/crm-admin';
-import { day } from '../../_components/format';
+import { day, money } from '../../_components/format';
 import { AdminShell, PageHead } from '../../_components/shell';
 import { Banner } from '../../_components/ui';
 
@@ -33,6 +34,19 @@ const FIELDS = [
 ] as const;
 
 const asText = (v: unknown) => (v === null || v === undefined ? '' : String(v));
+
+/** YYYY-MM-DD plus a number of days, without touching the clock or a time zone. */
+function addDays(date: string, days: number): string {
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+}
+
+const FOLLOW_UPS: [string, number][] = [
+  ['In 2 weeks', 14],
+  ['In 1 month', 30],
+  ['In 3 months', 91],
+  ['In 6 months', 182],
+];
 
 const DRAFT_STATUS: Record<string, string> = {
   pending: 'Waiting for approval',
@@ -80,7 +94,9 @@ export default function LeadView({
     );
   }
 
-  const { lead, events, drafts } = detail;
+  const { lead, events, drafts, invoices } = detail;
+  const customer = isCustomer(lead);
+  const spent = invoices.reduce((a, i) => a + (Number(i.amount_paid) || 0), 0);
   const needs = needsOf(lead);
   const replied = awaitingReply(lead);
 
@@ -140,7 +156,12 @@ export default function LeadView({
       const res = await fetch(`/api/admin/leads/${id}/events`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind, body: text, touched: data.get('touched') === 'on' }),
+        body: JSON.stringify({
+          kind,
+          body: text,
+          touched: data.get('touched') === 'on',
+          follow_up_on: Number(data.get('follow_up')) > 0 ? addDays(today, Number(data.get('follow_up'))) : '',
+        }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -178,7 +199,18 @@ export default function LeadView({
       {lead.unsubscribed_at && (
         <Banner tone="crit">They unsubscribed on {day(lead.unsubscribed_at)}. Do not email them.</Banner>
       )}
-      {isOpen(lead) && lead.next_action_on && lead.next_action_on < today && (
+      {customer && !lead.unsubscribed_at && (
+        <Banner>
+          A past customer{spent > 0 ? ` — ${money(spent)} so far` : ''}. A short personal note beats any sequence: ask
+          how it went, share what is new, and offer the next step up.
+          {!lead.next_action_on
+            ? ' No check-in is booked — set one on the right.'
+            : lead.next_action_on >= today
+              ? ` Check-in booked for ${day(lead.next_action_on)}.`
+              : ''}
+        </Banner>
+      )}
+      {(isOpen(lead) || customer) && lead.next_action_on && lead.next_action_on < today && (
         <Banner tone="warn">The next step was due {day(lead.next_action_on)}.</Banner>
       )}
       {!lead.unsubscribed_at && needs.length > 0 && (
@@ -275,6 +307,7 @@ export default function LeadView({
                   </option>
                 ))}
               </select>
+              {lead.consent_note && <span className="hint">{lead.consent_note}</span>}
             </label>
             <label className="wide">
               Follow-up emails
@@ -334,6 +367,19 @@ export default function LeadView({
                 />
                 Counts as contacting them (updates “last contact”)
               </label>
+              <label className="wide">
+                Look at them again
+                <select name="follow_up" key={`f-${kind}`} defaultValue={customer && kind !== 'note' ? '91' : '0'}>
+                  <option value="0">
+                    {lead.next_action_on ? `Leave it at ${day(lead.next_action_on)}` : 'No date'}
+                  </option>
+                  {FOLLOW_UPS.map(([label, days]) => (
+                    <option key={days} value={days}>
+                      {label} — {day(addDays(today, days))}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <div className="actions">
                 <button type="submit" disabled={logging}>
                   {logging ? 'Saving…' : 'Add to timeline'}
@@ -341,6 +387,32 @@ export default function LeadView({
               </div>
             </form>
           </section>
+
+          {invoices.length > 0 && (
+            <section className="card" aria-labelledby="p-h">
+              <h2 id="p-h">
+                What they have bought <small>{money(spent)} in all</small>
+              </h2>
+              <ul className="srows">
+                {invoices.map((i) => (
+                  <li key={i.id}>
+                    <span>
+                      {day(i.invoiced_on)} {i.invoiced_on.slice(0, 4)}
+                      <span className="sub-line">
+                        {[i.invoice_number ? `No. ${i.invoice_number}` : '', i.customer !== lead.company ? i.customer : '', i.notes || '']
+                          .filter(Boolean)
+                          .join(' · ')}
+                      </span>
+                    </span>
+                    <b className={i.work_status !== 'complete' ? 'crit' : i.status === 'paid' ? '' : 'warn'}>
+                      {money(i.amount)}
+                      {i.work_status !== 'complete' ? ' · work owed' : i.status !== 'paid' ? ' · unpaid' : ''}
+                    </b>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <section className="card" aria-labelledby="e-h">
             <h2 id="e-h">

@@ -1,5 +1,5 @@
 import { requireAdminPage } from '@/lib/admin-auth';
-import { awaitingReply, isOpen, needsOf } from '@/lib/crm';
+import { awaitingReply, goingCold, isCustomer, isFollowable, needsOf } from '@/lib/crm';
 import { listLeads, listPendingDrafts, outreachWeek } from '@/lib/crm-admin';
 import { summarise } from '@/lib/revenue';
 import { listInvoices } from '@/lib/revenue-admin';
@@ -46,11 +46,19 @@ export default async function TodayPage() {
       replies={all.filter(awaitingReply).length}
       drafts={(drafts.data ?? []).length}
       blocked={all.filter((l) => needsOf(l).length > 0).length}
+      cold={all.filter((l) => goingCold(l, today)).length}
       due={all
-        .filter((l) => isOpen(l) && l.next_action_on && l.next_action_on <= today)
+        // Customers too: a booked check-in is a next step like any other.
+        .filter((l) => isFollowable(l) && l.next_action_on && l.next_action_on <= today)
         .sort((a, b) => String(a.next_action_on).localeCompare(String(b.next_action_on)))
         .slice(0, 8)
-        .map((l) => ({ id: l.id, company: l.company, on: String(l.next_action_on), stage: l.stage }))}
+        .map((l) => ({
+          id: l.id,
+          company: l.company,
+          on: String(l.next_action_on),
+          stage: l.stage,
+          customer: isCustomer(l),
+        }))}
       week={week.data ?? []}
       revenue={{
         year: money.thisYear,

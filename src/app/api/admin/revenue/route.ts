@@ -14,7 +14,8 @@ export async function GET() {
   return NextResponse.json({ data });
 }
 
-// POST /api/admin/revenue — record an invoice or a payment
+// POST /api/admin/revenue — record an invoice or a payment. Whoever paid also
+// becomes (or stays) a customer in Leads, with a check-in booked. No email is sent.
 export async function POST(request: NextRequest) {
   const denied = await requireAdminApi();
   if (denied) return denied;
@@ -28,7 +29,8 @@ export async function POST(request: NextRequest) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
     return NextResponse.json({ error: 'Expected an invoice.' }, { status: 400 });
   }
-  const { data, error } = await addInvoice(body as Record<string, unknown>);
+  const { data, error, customer } = await addInvoice(body as Record<string, unknown>);
   if (error) return NextResponse.json({ error }, { status: 400 });
-  return NextResponse.json({ data });
+  // `customer` says which lead now carries this sale and when their check-in is.
+  return NextResponse.json({ data, customer: customer ?? null });
 }

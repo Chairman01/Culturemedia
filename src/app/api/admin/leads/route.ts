@@ -9,7 +9,9 @@ export const dynamic = 'force-dynamic';
 
 const DEAL_TYPES = ['retainer', 'one_time', 'sponsorship', 'partnership', 'other'];
 const STAGES = ['new', 'contacted', 'engaged', 'proposal', 'won'];
-const CONSENT = ['implied_inquiry', 'implied_published', 'express'];
+const CONSENT = ['implied_inquiry', 'implied_published', 'implied_existing', 'express'];
+// admin_add_lead() predates this reason, so it is written straight after the insert.
+const LATE_CONSENT = 'implied_existing';
 
 /** admin_add_lead raises these; turn them into something readable. */
 const DB_ERRORS: Record<string, string> = {
@@ -108,7 +110,7 @@ export async function POST(request: NextRequest) {
     category: text(b.category, 80),
     deal_type: dealType,
     stage,
-    consent_basis: consent,
+    consent_basis: consent === LATE_CONSENT ? '' : consent,
     notes: text(b.notes, 2000),
     deal_value: total,
     term_months: retainer && months !== null ? String(months) : '',
@@ -132,8 +134,9 @@ export async function POST(request: NextRequest) {
 
   const id = (data as { id?: string } | null)?.id;
   let warning: string | null = null;
-  if (id && (phone || sequence)) {
+  if (id && (phone || sequence || consent === LATE_CONSENT)) {
     const extras: Record<string, unknown> = {};
+    if (consent === LATE_CONSENT) extras.consent_basis = consent;
     if (phone) extras.phone = phone;
     if (sequence) extras.sequence_key = sequence;
     const patched = await updateLead(id, extras, process.env.DASHBOARD_USER || 'admin');

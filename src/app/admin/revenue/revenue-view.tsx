@@ -4,6 +4,7 @@
 // partnerships and retainers invoiced by hand — in CAD, year over year.
 
 import { Plus } from 'lucide-react';
+import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';
 
 import type { Scorecard } from '@/lib/admin-types';
@@ -40,8 +41,11 @@ export default function RevenueView({
   initial,
   initialError,
   scorecard,
+  customers,
   today,
 }: {
+  /** `e:<email>` and `c:<company>` → lead id, so a customer name opens their record. */
+  customers: Record<string, string>;
   initial: Invoice[];
   initialError: string | null;
   scorecard: Scorecard | null;
@@ -259,8 +263,7 @@ export default function RevenueView({
                 shown.map((i) => (
                   <tr key={i.id}>
                     <td className="co">
-                      <b>{i.customer}</b>
-                      <span>{i.notes || i.email || ''}</span>
+                      <CustomerCell invoice={i} customers={customers} />
                     </td>
                     <td>{i.invoice_number || '—'}</td>
                     <td className="l">{CATEGORY_LABEL[i.category] || i.category}</td>
@@ -313,6 +316,20 @@ export default function RevenueView({
   );
 }
 
+/** The customer's name, linked to their record in Leads when there is one. */
+function CustomerCell({ invoice, customers }: { invoice: Invoice; customers: Record<string, string> }) {
+  const leadId =
+    (invoice.email && customers[`e:${invoice.email.toLowerCase()}`]) ||
+    customers[`c:${invoice.customer.toLowerCase()}`];
+  const inner = (
+    <>
+      <b>{invoice.customer}</b>
+      <span>{invoice.notes || invoice.email || ''}</span>
+    </>
+  );
+  return leadId ? <Link href={`/admin/leads/${leadId}`}>{inner}</Link> : inner;
+}
+
 function AddInvoiceForm({ today, onAdded }: { today: string; onAdded: () => Promise<void> }) {
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('paid');
@@ -340,7 +357,13 @@ function AddInvoiceForm({ today, onAdded }: { today: string; onAdded: () => Prom
         setMsg({ tone: 'crit', text: body.error || "Couldn't save it." });
         return;
       }
-      setMsg({ tone: 'ok', text: `Recorded ${String(data.customer)}.` });
+      const c = body.customer as { how: string; checkInOn: string | null } | null;
+      const about = c
+        ? ` ${c.how === 'created' ? 'Added them to your customers' : 'Updated their customer record'}${
+            c.checkInOn ? `, check-in booked for ${day(c.checkInOn)}` : ''
+          }.`
+        : '';
+      setMsg({ tone: 'ok', text: `Recorded ${String(data.customer)}.${about}` });
       form.reset();
       setStatus('paid');
       await onAdded();

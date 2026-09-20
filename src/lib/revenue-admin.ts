@@ -82,7 +82,103 @@ function clean(input: Record<string, unknown>, partial: boolean): { row: Record<
   return { row };
 }
 
-export async function addInvoice(input: Record<string, unknown>): Promise<AdminResult<Invoice>> {
+export interface CustomerLink {
+  leadId: string;
+  /** 'created' when the invoice made a new customer record, 'updated' when one existed. */
+  how: 'created' | 'updated';
+  checkInOn: string | null;
+}
+
+const plusDays = (date: string, days: number) => {
+  const [y, m, d] = date.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
+};
+
+/**
+ * Everyone who pays becomes (or stays) a customer in Leads with a check-in
+ * booked about three months out, so nobody who has bought is ever forgotten.
+ * Never emails anyone: it only writes the lead, its timeline and a date.
+ */
+async function ensureCustomer(inv: Invoice): Promise<CustomerLink | null> {
+  const supabase = getClient();
+  if (!supabase || inv.category === 'adsense') return null;
+
+  const paidOn = inv.paid_on || inv.invoiced_on;
+  const paidAt = new Date(`${paidOn}T18:00:00Z`).toISOString();
+  const checkInOn = plusDays(paidOn, 91);
+  const amount = Number(inv.amount_paid) || Number(inv.amount) || 0;
+  const paid = inv.status === 'paid';
+  const line = `Invoice${inv.invoice_number ? ` ${inv.invoice_number}` : ''} recorded: $${amount.toFixed(2)}${
+    paid ? ' paid' : ' (not paid yet)'
+  }.`;
+
+  const columns = 'id, stage, next_action_on, unsubscribed_at, deal_value';
+  let existing = inv.email
+    ? (await supabase.from('leads').select(columns).ilike('email', inv.email).limit(1)).data?.[0]
+    : undefined;
+  existing ??= (await supabase.from('leads').select(columns).ilike('company', inv.customer).limit(1)).data?.[0];
+
+  if (existing) {
+    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    // Paying is what makes someone a customer, whatever stage they were at.
+    const becameCustomer = paid && !['won', 'lost', 'declined'].includes(existing.stage);
+    if (becameCustomer) {
+      patch.stage = 'won';
+      patch.won_at = paidAt;
+    }
+    if (paid) patch.deal_value = (Number(existing.deal_value) || 0) + amount;
+    if (!existing.next_action_on && !existing.unsubscribed_at) patch.next_action_on = checkInOn;
+    await supabase.from('leads').update(patch).eq('id', existing.id);
+    await supabase.from('lead_events').insert({
+      lead_id: existing.id,
+      type: becameCustomer ? 'stage_change' : 'note',
+      body: becameCustomer ? `${line} Moved to won — they are a customer now.` : line,
+      meta: { via: 'culturemedia.ca revenue', invoiceId: inv.id },
+    });
+    return {
+      leadId: existing.id,
+      how: 'updated',
+      checkInOn: (patch.next_action_on as string | undefined) ?? existing.next_action_on ?? null,
+    };
+  }
+
+  const { data: created, error } = await supabase
+    .from('leads')
+    .insert({
+      company: inv.customer,
+      email: inv.email,
+      tier: 'smb',
+      source: 'past_customer',
+      stage: 'won',
+      deal_type: inv.category === 'retainer' ? 'retainer' : 'one_time',
+      deal_value: amount,
+      won_at: paidAt,
+      last_contacted_at: paidAt,
+      next_action_on: checkInOn,
+      consent_basis: inv.email ? 'implied_existing' : null,
+      consent_note: inv.email
+        ? `Bought from us on ${paidOn}. Under CASL that permits marketing email until ${plusDays(paidOn, 730)}.`
+        : null,
+      notes: `Customer created from an invoice. ${line}`,
+    })
+    .select('id')
+    .single();
+  if (error || !created) {
+    console.error('[admin] ensureCustomer failed', error);
+    return null;
+  }
+  await supabase.from('lead_events').insert({
+    lead_id: created.id,
+    type: 'created',
+    body: `Customer added from the invoice ledger. ${line}`,
+    meta: { via: 'culturemedia.ca revenue', invoiceId: inv.id },
+  });
+  return { leadId: created.id, how: 'created', checkInOn };
+}
+
+export async function addInvoice(
+  input: Record<string, unknown>,
+): Promise<AdminResult<Invoice> & { customer?: CustomerLink | null }> {
   const supabase = getClient();
   if (!supabase) return { data: null, error: NOT_CONFIGURED };
   const result = clean(input, false);
@@ -97,7 +193,8 @@ export async function addInvoice(input: Record<string, unknown>): Promise<AdminR
 
   const { data, error } = await supabase.from('revenue_invoices').insert(row).select(COLUMNS).single();
   if (error) return fail('addInvoice', error);
-  return { data: data as Invoice, error: null };
+  const invoice = data as Invoice;
+  return { data: invoice, error: null, customer: await ensureCustomer(invoice) };
 }
 
 export async function updateInvoice(id: number, input: Record<string, unknown>): Promise<AdminResult<Invoice>> {
