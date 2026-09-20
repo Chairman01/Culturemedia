@@ -1,61 +1,63 @@
 // Everything the Inbox page shows, gathered in one place: leads who wrote back,
-// emails the engine drafted that are waiting for approval, and the recent Zoho
-// inbox with each sender matched against the CRM.
+// emails the engine drafted that are waiting for approval, and the mail from
+// both mailboxes sorted into what it means.
 
 import 'server-only';
 
 import { awaitingReply, type LeadDraftRow, type LeadRow } from './crm';
 import { listLeads, listPendingDrafts } from './crm-admin';
-import { PERSONAL_DOMAINS, recentInbox, type InboxMessage } from './zoho-mail';
-
-export interface InboxMail extends InboxMessage {
-  /** Set when the sender is already in the CRM. */
-  leadId: string | null;
-  leadCompany: string | null;
-  /** A guess at the company from the address, for "Add as lead". */
-  companyGuess: string;
-}
+import type { Classified } from './mail';
+import { readMail, syncMail, type MailSnapshot, type SyncReport } from './mail-sync';
 
 export interface InboxData {
   replies: LeadRow[];
   drafts: LeadDraftRow[];
-  mail: InboxMail[];
-  zohoConnected: boolean;
-  zohoReason: string | null;
+  /** Incoming mail from both mailboxes (inbox + spam), newest first. */
+  mail: Classified[];
+  mailboxes: MailSnapshot['mailboxes'];
+  /** Leads already marked unsubscribed, so the page does not offer to do it twice. */
+  stopped: string[];
+  /** What the last sync changed; null when the page was only read. */
+  report: SyncReport | null;
   error: string | null;
 }
 
-function companyFromAddress(address: string): string {
-  const domain = address.split('@')[1] || '';
-  if (!domain || PERSONAL_DOMAINS.has(domain)) return '';
-  const name = domain.split('.')[0] || '';
-  return name ? name[0].toUpperCase() + name.slice(1) : '';
+function shape(snapshot: MailSnapshot, drafts: LeadDraftRow[], report: SyncReport | null, error: string | null): InboxData {
+  return {
+    replies: snapshot.leads.filter(awaitingReply),
+    drafts,
+    mail: snapshot.incoming,
+    mailboxes: snapshot.mailboxes,
+    stopped: snapshot.leads.filter((l) => l.unsubscribed_at).map((l) => l.id),
+    report,
+    error,
+  };
 }
 
+/** Read-only: what is there, without touching the CRM. */
 export async function loadInbox(): Promise<InboxData> {
-  const [leads, drafts, zoho] = await Promise.all([listLeads(), listPendingDrafts(), recentInbox(40)]);
+  const [snapshot, drafts] = await Promise.all([readMail(), listPendingDrafts()]);
+  return shape(snapshot, drafts.data ?? [], null, snapshot.leadsError || drafts.error);
+}
 
-  const all = leads.data ?? [];
-  const byEmail = new Map(all.filter((l) => l.email).map((l) => [String(l.email).toLowerCase(), l]));
+/** Read, then record what the mailboxes prove (replies, mail you sent). */
+export async function syncInbox(): Promise<InboxData> {
+  const { snapshot, report } = await syncMail();
+  // After the sync: a reply cancels that lead's pending drafts.
+  const drafts = await listPendingDrafts();
+  return shape(snapshot, drafts.data ?? [], report, snapshot.leadsError || drafts.error);
+}
 
-  const mail: InboxMail[] = zoho.connected
-    ? zoho.messages.map((m) => {
-        const lead = byEmail.get(m.fromAddress);
-        return {
-          ...m,
-          leadId: lead?.id ?? null,
-          leadCompany: lead?.company ?? null,
-          companyGuess: companyFromAddress(m.fromAddress),
-        };
-      })
-    : [];
-
+/** First paint: the CRM side only, so the page appears before the mailboxes answer. */
+export async function loadInboxQuick(): Promise<InboxData> {
+  const [leads, drafts] = await Promise.all([listLeads(), listPendingDrafts()]);
   return {
-    replies: all.filter(awaitingReply),
+    replies: (leads.data ?? []).filter(awaitingReply),
     drafts: drafts.data ?? [],
-    mail,
-    zohoConnected: zoho.connected,
-    zohoReason: zoho.connected ? null : zoho.reason,
+    mail: [],
+    mailboxes: [],
+    stopped: [],
+    report: null,
     error: leads.error || drafts.error,
   };
 }

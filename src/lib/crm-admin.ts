@@ -339,3 +339,37 @@ export async function outreachWeek(today: string): Promise<AdminResult<OutreachD
   }
   return { data: out, error: null };
 }
+
+/**
+ * They asked to stop. Mirrors Culture Alberta's /api/leads/opt-out: stamped as
+ * unsubscribed, moved to Declined, schedule cleared, anything waiting to send
+ * cancelled. Only ever called from a button a person pressed.
+ */
+export async function unsubscribeLead(id: string, by: string): Promise<AdminResult<true>> {
+  const supabase = getClient();
+  if (!supabase) return { data: null, error: NOT_CONFIGURED };
+  if (!isLeadId(id)) return { data: null, error: 'Not a lead id.' };
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('leads')
+    .update({ unsubscribed_at: now, next_action_on: null, stage: 'declined', updated_at: now })
+    .eq('id', id)
+    .select('id')
+    .maybeSingle();
+  if (error) return fail('unsubscribeLead', error);
+  if (!data) return { data: null, error: 'That lead no longer exists.' };
+
+  await supabase
+    .from('lead_drafts')
+    .update({ status: 'skipped', send_error: 'Lead unsubscribed' })
+    .eq('lead_id', id)
+    .eq('status', 'pending');
+  await supabase.from('lead_events').insert({
+    lead_id: id,
+    type: 'note',
+    body: `Marked as unsubscribed by ${by} — asked by email not to be contacted.`,
+    meta: { via: 'culturemedia.ca' },
+  });
+  return { data: true, error: null };
+}

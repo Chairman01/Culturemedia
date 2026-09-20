@@ -1,34 +1,42 @@
-// Read-only view of the Zoho inbox, for the admin Inbox page.
+// Read-only view of the Zoho mailbox: Inbox, Spam and Sent.
 //
-// The site's Zoho grant is ZohoMail.messages.READ + accounts.READ, so this can
-// list what arrived and nothing more: it cannot send, reply, delete or mark as
-// read. Sending stays with the Culture Alberta engine's Approve & send.
+// The site's Zoho grant is read-only, so this can list what arrived and nothing
+// more: it cannot send, reply, delete or mark as read. Sending stays with the
+// Culture Alberta engine's Approve & send.
+//
+// Zoho wants numeric folder ids, which come from the folders endpoint and need
+// the ZohoMail.folders.READ scope. A connection made before that scope was
+// requested still works — it just reads the Inbox only and says so.
 
 import 'server-only';
 
 import { loadTokens, saveTokens } from '@/app/api/zoho/callback/route';
 
-export interface InboxMessage {
-  id: string;
-  fromName: string;
-  fromAddress: string;
-  subject: string;
-  summary: string;
-  /** ISO timestamp. */
-  receivedAt: string;
-  unread: boolean;
+import type { Folder, MailMessage } from './mail';
+
+export interface MailboxResult {
+  mailbox: 'zoho' | 'gmail';
+  /** The address, for display. */
+  label: string;
+  connected: boolean;
+  /** Why it is not connected, or what is missing, in plain words. */
+  note: string | null;
+  /** Folders that were actually read. */
+  folders: Folder[];
+  messages: MailMessage[];
 }
 
-export type InboxResult =
-  | { connected: true; messages: InboxMessage[] }
-  | { connected: false; reason: string };
+// Overridable so the sync can be exercised against a local stand-in; unset in
+// production, where they are Zoho's real hosts.
+const ACCOUNTS_HOST = process.env.ZOHO_ACCOUNTS_HOST || 'https://accounts.zoho.com';
+const MAIL_HOST = process.env.ZOHO_MAIL_HOST || 'https://mail.zoho.com';
 
 async function refreshAccessToken(refreshToken: string): Promise<string | null> {
   const clientId = process.env.ZOHO_CLIENT_ID;
   const clientSecret = process.env.ZOHO_CLIENT_SECRET;
   if (!clientId || !clientSecret) return null;
   try {
-    const res = await fetch('https://accounts.zoho.com/oauth/v2/token', {
+    const res = await fetch(`${ACCOUNTS_HOST}/oauth/v2/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -62,17 +70,26 @@ async function accessToken(): Promise<string | null> {
   return fresh;
 }
 
-/** "Dana Reid <dana@x.ca>" → name + lower-cased address. */
-function parseAddress(raw: string): { name: string; address: string } {
-  const text = String(raw || '')
+const unescape = (raw: unknown) =>
+  String(raw ?? '')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"');
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&');
+
+/** "Dana Reid <dana@x.ca>" → name + lower-cased address. */
+export function parseAddress(raw: unknown): { name: string; address: string } {
+  const text = unescape(raw).trim();
   const match = /^(.*)<([^>]+)>\s*$/.exec(text);
-  if (match) {
-    return { name: match[1].replace(/"/g, '').trim(), address: match[2].toLowerCase().trim() };
-  }
-  return { name: '', address: text.toLowerCase().trim() };
+  if (match) return { name: match[1].replace(/"/g, '').trim(), address: match[2].toLowerCase().trim() };
+  return { name: '', address: text.toLowerCase() };
+}
+
+function parseAddressList(raw: unknown): string[] {
+  return unescape(raw)
+    .split(/[,;]/)
+    .map((part) => parseAddress(part).address)
+    .filter((a) => a.includes('@'));
 }
 
 /** Zoho sends epoch milliseconds as a string; tolerate an ISO date too. */
@@ -82,56 +99,109 @@ function toIso(value: unknown): string {
   return Number.isNaN(date.getTime()) ? '' : date.toISOString();
 }
 
-export async function recentInbox(limit = 40): Promise<InboxResult> {
+type RawMessage = {
+  messageId?: string;
+  fromAddress?: string;
+  sender?: string;
+  toAddress?: string;
+  subject?: string;
+  summary?: string;
+  receivedTime?: string;
+  sentDateInGMT?: string;
+  status?: string;
+};
+
+const FOLDER_TYPES: Record<string, Folder> = { inbox: 'inbox', spam: 'spam', sent: 'sent' };
+
+export async function readZoho(limit = 40): Promise<MailboxResult> {
+  const base: MailboxResult = {
+    mailbox: 'zoho',
+    label: 'Zoho Mail',
+    connected: false,
+    note: null,
+    folders: [],
+    messages: [],
+  };
+
   const token = await accessToken();
-  if (!token) return { connected: false, reason: 'Zoho Mail is not connected.' };
+  if (!token) return { ...base, note: 'Zoho Mail is not connected.' };
+  const headers = { Authorization: `Zoho-oauthtoken ${token}` };
 
   try {
-    const headers = { Authorization: `Zoho-oauthtoken ${token}` };
-    const accountsRes = await fetch('https://mail.zoho.com/api/accounts', { headers, cache: 'no-store' });
-    if (!accountsRes.ok) return { connected: false, reason: 'Zoho refused the connection. Reconnect it.' };
-    const accounts: Array<{ accountId: string }> = (await accountsRes.json()).data || [];
-    if (!accounts.length) return { connected: true, messages: [] };
+    const accountsRes = await fetch(`${MAIL_HOST}/api/accounts`, { headers, cache: 'no-store' });
+    if (!accountsRes.ok) return { ...base, note: 'Zoho refused the connection. Reconnect it.' };
+    const accounts: Array<{ accountId: string; primaryEmailAddress?: string; mailboxAddress?: string }> =
+      (await accountsRes.json()).data || [];
+    if (!accounts.length) return { ...base, connected: true, note: 'Zoho has no mail account on this login.' };
+    const account = accounts[0];
+    const label = account.primaryEmailAddress || account.mailboxAddress || 'Zoho Mail';
+    const api = `${MAIL_HOST}/api/accounts/${account.accountId}`;
 
-    const res = await fetch(
-      `https://mail.zoho.com/api/accounts/${accounts[0].accountId}/messages/view?folderId=inbox&limit=${limit}&sortBy=date&sortorder=false`,
-      { headers, cache: 'no-store' },
+    // Folder ids. Without the folders scope this call is refused and we fall
+    // back to the default view, which is the Inbox.
+    const wanted = new Map<Folder, string | null>();
+    const foldersRes = await fetch(`${api}/folders`, { headers, cache: 'no-store' });
+    if (foldersRes.ok) {
+      const folders: Array<{ folderId?: string; folderType?: string; folderName?: string }> =
+        (await foldersRes.json()).data || [];
+      for (const f of folders) {
+        const kind = FOLDER_TYPES[String(f.folderType || f.folderName || '').toLowerCase()];
+        if (kind && f.folderId && !wanted.has(kind)) wanted.set(kind, String(f.folderId));
+      }
+    }
+    const limitedToInbox = !wanted.has('inbox');
+    if (limitedToInbox) wanted.set('inbox', null);
+
+    const messages: MailMessage[] = [];
+    const read: Folder[] = [];
+    let firstError: string | null = null;
+
+    await Promise.all(
+      [...wanted.entries()].map(async ([folder, folderId]) => {
+        const params = new URLSearchParams({
+          limit: String(limit),
+          sortBy: 'date',
+          sortorder: 'false',
+          includeto: 'true',
+        });
+        if (folderId) params.set('folderId', folderId);
+        const res = await fetch(`${api}/messages/view?${params}`, { headers, cache: 'no-store' });
+        if (!res.ok) {
+          firstError ??= `Zoho answered ${res.status} for the ${folder} folder.`;
+          return;
+        }
+        read.push(folder);
+        for (const m of ((await res.json()).data || []) as RawMessage[]) {
+          const from = parseAddress(m.fromAddress);
+          messages.push({
+            id: `zoho:${m.messageId ?? ''}`,
+            mailbox: 'zoho',
+            folder,
+            fromName: from.name || unescape(m.sender),
+            fromAddress: from.address,
+            to: parseAddressList(m.toAddress),
+            subject: unescape(m.subject) || '(no subject)',
+            summary: unescape(m.summary),
+            at: toIso(m.receivedTime ?? m.sentDateInGMT),
+            unread: String(m.status) === '0',
+          });
+        }
+      }),
     );
-    if (!res.ok) return { connected: false, reason: `Zoho answered ${res.status} for the inbox.` };
 
-    type Raw = {
-      messageId?: string;
-      fromAddress?: string;
-      sender?: string;
-      subject?: string;
-      summary?: string;
-      receivedTime?: string;
-      sentDateInGMT?: string;
-      status?: string;
+    if (!read.length) return { ...base, label, note: firstError || 'Zoho returned nothing.' };
+    return {
+      ...base,
+      label,
+      connected: true,
+      folders: read,
+      messages,
+      note: limitedToInbox
+        ? 'Reading the Inbox only. Reconnect Zoho once to also check Spam and Sent.'
+        : firstError,
     };
-    const rows: Raw[] = (await res.json()).data || [];
-    const messages = rows.map((m) => {
-      const from = parseAddress(m.fromAddress || '');
-      return {
-        id: String(m.messageId ?? ''),
-        fromName: from.name || String(m.sender ?? ''),
-        fromAddress: from.address,
-        subject: String(m.subject ?? '(no subject)'),
-        summary: String(m.summary ?? ''),
-        receivedAt: toIso(m.receivedTime ?? m.sentDateInGMT),
-        unread: String(m.status) === '0',
-      };
-    });
-    return { connected: true, messages };
   } catch (err) {
-    console.error('[admin] Zoho inbox read failed', err);
-    return { connected: false, reason: 'Could not reach Zoho Mail.' };
+    console.error('[admin] Zoho read failed', err);
+    return { ...base, note: 'Could not reach Zoho Mail.' };
   }
 }
-
-/** Free-mail domains: a sender here is a person, not a company we can name. */
-export const PERSONAL_DOMAINS = new Set([
-  'gmail.com', 'googlemail.com', 'yahoo.com', 'yahoo.ca', 'hotmail.com', 'outlook.com', 'live.com',
-  'icloud.com', 'me.com', 'mac.com', 'protonmail.com', 'aol.com', 'msn.com', 'shaw.ca', 'telus.net',
-  'rogers.com', 'bell.net', 'videotron.ca',
-]);

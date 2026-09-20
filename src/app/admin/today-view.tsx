@@ -6,13 +6,14 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { OpsAction, SalesTotals } from '@/lib/admin-types';
 import { STAGE_LABEL } from '@/lib/crm';
 import type { OutreachDay } from '@/lib/crm-admin';
 import { day, money } from './_components/format';
 import { AdminShell, PageHead } from './_components/shell';
+import { useRefreshOnFocus } from './_components/use-refresh';
 import { ActionRow, Banner, Tile } from './_components/ui';
 
 const MRR_TARGET = 5000;
@@ -29,8 +30,10 @@ export default function TodayView({
   blocked,
   due,
   week,
+  revenue,
   error,
 }: {
+  revenue: { year: number; total: number; partnerships: number; lastYear: number };
   today: string;
   todayLabel: string;
   isWeekend: boolean;
@@ -46,6 +49,32 @@ export default function TodayView({
   const router = useRouter();
   const [busyId, setBusyId] = useState<number | null>(null);
   const [banner, setBanner] = useState(error || '');
+  const [mailNote, setMailNote] = useState('');
+  const checkedMail = useRef(false);
+
+  // Opening the admin checks both mailboxes once, quietly. If a lead replied
+  // (or you answered one), the counts above are re-read so step 1 is true.
+  useEffect(() => {
+    if (checkedMail.current) return;
+    checkedMail.current = true;
+    fetch('/api/admin/inbox/sync', { method: 'POST', cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body) => {
+        const report = body?.data?.report;
+        if (!report) return;
+        const parts = [
+          ...report.replies.map((r: { company: string }) => `${r.company} replied`),
+          ...report.contacted.map((c: { company: string }) => `you emailed ${c.company}`),
+        ];
+        if (parts.length) {
+          setMailNote(`Updated from your mail: ${parts.join(' · ')}.`);
+          router.refresh();
+        }
+      })
+      .catch(() => {});
+  }, [router]);
+
+  useRefreshOnFocus(() => router.refresh());
 
   const addedToday = week.find((w) => w.date === today)?.added ?? 0;
   const daysHit = week.filter((w) => w.added > 0 || w.firstTouches > 0).length;
@@ -81,6 +110,7 @@ export default function TodayView({
       />
 
       <Banner tone="crit">{banner}</Banner>
+      <Banner>{mailNote}</Banner>
 
       <ol className="steps">
         <Step
@@ -154,7 +184,11 @@ export default function TodayView({
           value={money(t.mrr ?? 0)}
           foot={`target ${money(MRR_TARGET)} a month`}
         />
-        <Tile label="Booked" value={money(t.booked ?? 0)} foot={`${t.clients ?? 0} clients`} />
+        <Tile
+          label={`All revenue, ${revenue.year} so far`}
+          value={money(revenue.total)}
+          foot={`${money(revenue.partnerships)} from partnerships · ${money(revenue.lastYear)} by now last year`}
+        />
         <Tile label="In talks or proposals" value={money(t.in_play ?? 0)} foot={`${t.open ?? 0} open leads`} />
         <Tile
           label="Gone quiet"
