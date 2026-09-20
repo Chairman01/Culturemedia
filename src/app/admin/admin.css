@@ -1685,6 +1685,21 @@
   vertical-align: -1px;
 }
 
+.adm .rev-chart .legend i.line,
+.adm .rev-chart .tip i.line {
+  width: 14px;
+  height: 2px;
+  border-radius: 0;
+  vertical-align: 3px;
+}
+
+.adm .rev-chart .legend .unit {
+  margin-left: auto;
+  color: var(--muted);
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 11px;
+}
+
 .adm .rev-chart .plot {
   position: relative;
 }

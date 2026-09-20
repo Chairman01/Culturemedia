@@ -2,7 +2,7 @@
 
 import 'server-only';
 
-import { INVOICE_CATEGORIES, INVOICE_STATUSES, WORK_STATUSES, type Invoice } from './revenue';
+import { INVOICE_CATEGORIES, INVOICE_STATUSES, WORK_STATUSES, type Expense, type Invoice } from './revenue';
 import { getClient, NOT_CONFIGURED, type AdminResult } from './supabase-admin';
 
 const COLUMNS =
@@ -14,6 +14,60 @@ function fail<T>(where: string, error: unknown): AdminResult<T> {
   console.error(`[admin] ${where} failed`, error);
   return { data: null, error: (error as { message?: string } | null)?.message || `${where} failed` };
 }
+
+// ─── expenses ─────────────────────────────────────────────────────────────────
+
+const EXPENSE_COLUMNS = 'id, month, category, amount, currency, notes';
+
+export async function listExpenses(): Promise<AdminResult<Expense[]>> {
+  const supabase = getClient();
+  if (!supabase) return { data: null, error: NOT_CONFIGURED };
+  const { data, error } = await supabase
+    .from('revenue_expenses')
+    .select(EXPENSE_COLUMNS)
+    .order('month', { ascending: true })
+    .limit(5000);
+  if (error) return fail('listExpenses', error);
+  return { data: (data ?? []) as Expense[], error: null };
+}
+
+/**
+ * One figure per category per month, like a spreadsheet cell: setting it again
+ * replaces it, and an empty amount clears it. A negative amount is a credit.
+ */
+export async function setExpense(input: Record<string, unknown>): Promise<AdminResult<'saved' | 'cleared'>> {
+  const supabase = getClient();
+  if (!supabase) return { data: null, error: NOT_CONFIGURED };
+
+  const month = text(input.month, 7);
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return { data: null, error: 'Pick a month.' };
+  const category = text(input.category, 80);
+  if (!category) return { data: null, error: 'What was it for? Category is required.' };
+
+  const raw = String(input.amount ?? '').replace(/[$,\s]/g, '');
+  if (raw === '') {
+    const { error } = await supabase.from('revenue_expenses').delete().eq('month', `${month}-01`).eq('category', category);
+    if (error) return fail('setExpense', error);
+    return { data: 'cleared', error: null };
+  }
+  const amount = Number(raw);
+  if (!Number.isFinite(amount) || Math.abs(amount) > 10_000_000) return { data: null, error: 'Check the amount.' };
+
+  const { error } = await supabase.from('revenue_expenses').upsert(
+    {
+      month: `${month}-01`,
+      category,
+      amount: Math.round(amount * 100) / 100,
+      notes: text(input.notes, 500) || null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'month,category' },
+  );
+  if (error) return fail('setExpense', error);
+  return { data: 'saved', error: null };
+}
+
+// ─── invoices ─────────────────────────────────────────────────────────────────
 
 export async function listInvoices(): Promise<AdminResult<Invoice[]>> {
   const supabase = getClient();
