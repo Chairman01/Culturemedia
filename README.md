@@ -63,8 +63,8 @@ Everything signed-in lives under `/admin` (sign in at `/admin/login`), in one si
 | `/admin/leads` | Every lead and client; open one to edit it, move its stage, start its emails, log calls |
 | `/admin/inbox` | Replies waiting on you, drafted emails waiting for approval, and mail from Zoho **and** Gmail (inbox + spam) sorted into inquiries, payments, bounces, "please remove me" and the rest |
 | `/admin/packages` | What is for sale (`src/lib/packages.ts`), copy-ready pitches, the selling playbook |
-| `/admin/revenue` | All revenue in CAD, year over year: invoices in `public.revenue_invoices` plus Mediavine months converted at the scorecard's rates |
-| `/admin/scorecard` | All-revenue band, then Culture Alberta KPIs from `admin_kpi_scorecard()` |
+| `/admin/revenue` | What came in, what it cost and what was kept, in USD or CAD, year over year: invoices (`public.revenue_invoices`), monthly running costs (`public.revenue_expenses`) and Mediavine months. Conversion uses the scorecard's live rates, then the Bank of Canada monthly averages in `src/lib/fx-history.ts` for older months |
+| `/admin/scorecard` | The same all-revenue band (it follows the page's USD/CAD switch), then Culture Alberta KPIs from `admin_kpi_scorecard()` |
 | `/admin/bids` | Alberta Purchasing Connection tenders (data in the browser's localStorage) |
 | `/admin/setup` · `/admin/sync` | APC bookmarklet install and the popup it posts to (deliberately not behind sign-in) |
 

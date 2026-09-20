@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 import type { MetricRow, Scorecard, Target, WeekRow } from '@/lib/admin-types';
-import type { Invoice } from '@/lib/revenue';
+import type { Expense, Invoice } from '@/lib/revenue';
 import { Chart, Sparkline, type ChartItem, type ChartKind } from '../_components/chart';
 import { RevenueBand } from '../_components/revenue-band';
 import { useRefreshOnFocus } from '../_components/use-refresh';
@@ -93,11 +93,13 @@ export default function ScorecardView({
   initial,
   initialError,
   invoices,
+  expenses,
   today,
 }: {
   initial: Scorecard | null;
   initialError: string | null;
   invoices: Invoice[];
+  expenses: Expense[];
   today: string;
 }) {
   const [sc, setSc] = useState<Scorecard | null>(initial);
@@ -339,8 +341,8 @@ export default function ScorecardView({
             value={currency}
             onChange={pickCurrency}
             options={[
-              { k: 'USD', label: 'USD', title: 'Ad revenue and RPM in USD' },
-              { k: 'CAD', label: 'CAD', title: 'Ad revenue and RPM in CAD' },
+              { k: 'USD', label: 'USD', title: 'Revenue, expenses, ad revenue and RPM in USD' },
+              { k: 'CAD', label: 'CAD', title: 'Revenue, expenses, ad revenue and RPM in CAD' },
             ]}
           />
         <button type="button" className="btn ghost" onClick={load} disabled={refreshing}>
@@ -351,7 +353,8 @@ export default function ScorecardView({
       <Freshness sc={sc} today={today} />
       <Banner tone={banner.tone}>{banner.text}</Banner>
 
-      <RevenueBand sc={sc} invoices={invoices} today={today} />
+      {/* Follows the USD / CAD switch above, like every other money figure here. */}
+      <RevenueBand sc={sc} invoices={invoices} expenses={expenses} currency={currency} today={today} />
 
       <div className="tiles">{tiles}</div>
 

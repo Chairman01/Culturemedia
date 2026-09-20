@@ -34,7 +34,8 @@ export default function TodayView({
   revenue,
   error,
 }: {
-  revenue: { year: number; total: number; partnerships: number; lastYear: number };
+  /** CAD. `kept` is null until there are expenses on file. */
+  revenue: { year: number; total: number; partnerships: number; lastYear: number; kept: number | null };
   today: string;
   todayLabel: string;
   isWeekend: boolean;
@@ -190,7 +191,11 @@ export default function TodayView({
         <Tile
           label={`All revenue, ${revenue.year} so far`}
           value={money(revenue.total)}
-          foot={`${money(revenue.partnerships)} from partnerships · ${money(revenue.lastYear)} by now last year`}
+          foot={
+            revenue.kept === null
+              ? `${money(revenue.partnerships)} from partnerships · ${money(revenue.lastYear)} by now last year`
+              : `${money(revenue.kept)} kept after expenses · ${money(revenue.partnerships)} from partnerships`
+          }
         />
         <Tile label="In talks or proposals" value={money(t.in_play ?? 0)} foot={`${t.open ?? 0} open leads`} />
         <Tile

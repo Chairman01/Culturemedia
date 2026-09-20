@@ -11,8 +11,8 @@
 
 import { useState } from 'react';
 
-import { SOURCE_COLOR, SOURCE_LABEL } from '@/lib/revenue';
-import { money } from './format';
+import { SOURCE_COLOR, SOURCE_LABEL, type Currency } from '@/lib/revenue';
+import { cash, money } from './format';
 
 export interface RevenueColumn {
   label: string;
@@ -20,6 +20,8 @@ export interface RevenueColumn {
   partnerships: number;
   /** Last year's total for the same slot. */
   ghost?: number;
+  /** What was spent in that slot; null or undefined when there is nothing on file. */
+  expenses?: number | null;
   /** Still in progress: drawn lighter. */
   partial?: boolean;
   /** Has not happened yet: left empty. */
@@ -28,6 +30,8 @@ export interface RevenueColumn {
 
 const MONO = 'var(--font-admin-mono), ui-monospace, monospace';
 const GHOST = '#c4c4cc';
+// Costs are not a third thing being sold, so they get ink, not a series colour.
+const EXPENSE = 'var(--ink)';
 
 function niceMax(v: number): number {
   if (v <= 0) return 100;
@@ -49,17 +53,23 @@ export function RevenueColumns({
   columns,
   ghostName,
   ariaLabel,
+  currency,
+  wide = false,
 }: {
   columns: RevenueColumn[];
+  currency: Currency;
+  /** For a chart that spans the page: a wider canvas, so type stays the same size. */
+  wide?: boolean;
   /** Set to show last year's companion bars, e.g. "2025". */
   ghostName?: string;
   ariaLabel: string;
 }) {
   const [hover, setHover] = useState<number | null>(null);
 
-  // Same 520-wide canvas as the scorecard charts, so type lands at the same size.
-  const W = 520;
-  const H = 250;
+  // The canvas matches how wide the chart is drawn (520 in a half-width card,
+  // like the scorecard charts), so type lands at the same size either way.
+  const W = wide ? 1040 : 520;
+  const H = wide ? 280 : 250;
   const L = 48;
   const R = 12;
   const T = 28;
@@ -68,12 +78,13 @@ export function RevenueColumns({
   const plotH = H - T - B;
   const showGhost = Boolean(ghostName);
 
-  const peak = Math.max(1, ...columns.map((c) => Math.max(c.ads + c.partnerships, c.ghost ?? 0)));
+  const showExpenses = columns.some((c) => typeof c.expenses === 'number' && c.expenses !== 0);
+  const peak = Math.max(1, ...columns.map((c) => Math.max(c.ads + c.partnerships, c.ghost ?? 0, c.expenses ?? 0)));
   const max = niceMax(peak * 1.12);
   const y = (v: number) => T + plotH * (1 - v / max);
   const band = plotW / Math.max(1, columns.length);
-  const barW = showGhost ? Math.min(22, band * 0.4) : Math.min(56, band * 0.56);
-  const ghostW = showGhost ? Math.min(12, band * 0.22) : 0;
+  const barW = showGhost ? Math.min(wide ? 30 : 22, band * 0.4) : Math.min(56, band * 0.56);
+  const ghostW = showGhost ? Math.min(wide ? 16 : 12, band * 0.22) : 0;
   const GAP = 2;
 
   const active = hover !== null ? columns[hover] : null;
@@ -95,6 +106,13 @@ export function RevenueColumns({
             {ghostName} total
           </li>
         )}
+        {showExpenses && (
+          <li>
+            <i className="line" style={{ background: EXPENSE }} />
+            Expenses
+          </li>
+        )}
+        <li className="unit">in {currency}</li>
       </ul>
 
       <div className="plot">
@@ -141,12 +159,19 @@ export function RevenueColumns({
                 {aH > 0 && (
                   <path d={topRounded(x0, topY, barW, aH, 4)} fill={SOURCE_COLOR.ads} fillOpacity={opacity} />
                 )}
+                {typeof c.expenses === 'number' && c.expenses > 0 && !c.future && (
+                  // A tick across the column at what that period cost: above it is kept.
+                  <g>
+                    <line x1={x0 - 4} x2={x0 + barW + 4} y1={y(c.expenses)} y2={y(c.expenses)} stroke="var(--surface)" strokeWidth={5} />
+                    <line x1={x0 - 4} x2={x0 + barW + 4} y1={y(c.expenses)} y2={y(c.expenses)} stroke={EXPENSE} strokeWidth={2} />
+                  </g>
+                )}
                 {total > 0 && (
                   <text
                     x={x0 + barW / 2}
                     y={topY - 6}
                     textAnchor="middle"
-                    fontSize={columns.length > 8 ? 8.5 : 11}
+                    fontSize={columns.length > 8 && !wide ? 8.5 : 11}
                     fontWeight={700}
                     fill={c.partial ? 'var(--muted)' : 'var(--ink)'}
                     fontFamily={MONO}
@@ -165,7 +190,7 @@ export function RevenueColumns({
                   height={plotH + B}
                   fill={hover === i ? 'rgb(0 0 0 / 0.035)' : 'transparent'}
                   tabIndex={c.future ? -1 : 0}
-                  aria-label={`${c.label}: ${money(total)}`}
+                  aria-label={`${c.label}: ${cash(total, currency)}`}
                   onMouseEnter={() => setHover(i)}
                   onMouseLeave={() => setHover(null)}
                   onFocus={() => setHover(i)}
@@ -191,19 +216,30 @@ export function RevenueColumns({
             </b>
             <span>
               <i style={{ background: SOURCE_COLOR.partnerships }} /> Partnerships
-              <em>{money(active.partnerships)}</em>
+              <em>{cash(active.partnerships, currency)}</em>
             </span>
             <span>
               <i style={{ background: SOURCE_COLOR.ads }} /> Ads
-              <em>{money(active.ads)}</em>
+              <em>{cash(active.ads, currency)}</em>
             </span>
             <span className="sum">
-              Total<em>{money(active.ads + active.partnerships)}</em>
+              Total<em>{cash(active.ads + active.partnerships, currency)}</em>
             </span>
+            {typeof active.expenses === 'number' && (
+              <>
+                <span>
+                  <i className="line" style={{ background: EXPENSE }} /> Expenses
+                  <em>{cash(-active.expenses, currency)}</em>
+                </span>
+                <span className="sum">
+                  Kept<em>{cash(active.ads + active.partnerships - active.expenses, currency)}</em>
+                </span>
+              </>
+            )}
             {showGhost && (
               <span>
                 <i style={{ background: GHOST }} /> {ghostName}
-                <em>{money(active.ghost ?? 0)}</em>
+                <em>{cash(active.ghost ?? 0, currency)}</em>
               </span>
             )}
           </div>

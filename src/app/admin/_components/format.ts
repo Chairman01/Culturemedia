@@ -50,6 +50,14 @@ export function money(v: unknown): string {
   return n === null ? '—' : `$${group(Math.round(n))}`;
 }
 
+/** A whole-dollar amount labelled with its currency: "C$9,710", "−US$1,240". */
+export function cash(v: unknown, currency: Currency): string {
+  const n = num(v);
+  if (n === null) return '—';
+  const rounded = Math.round(n);
+  return `${rounded < 0 ? '−' : ''}${currency === 'CAD' ? 'C$' : 'US$'}${group(Math.abs(rounded))}`;
+}
+
 /** "2026-09-17" or a timestamp → "Sep 17". */
 export function day(iso?: string | null): string {
   if (!iso) return '—';
