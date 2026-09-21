@@ -4,11 +4,14 @@
 // public.admin_kpi_scorecard() — rendered on the server for the first paint,
 // re-fetched through /api/admin/scorecard on Refresh and after Mark done.
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 
 import type { MetricRow, Scorecard, Target, WeekRow } from '@/lib/admin-types';
 import type { Expense, Invoice } from '@/lib/revenue';
 import { Chart, Sparkline, type ChartItem, type ChartKind } from '../_components/chart';
+import { Detail, DetailTable, Explain } from '../_components/detail';
+import { KpiDetail } from '../_components/kpi-detail';
 import { RevenueBand } from '../_components/revenue-band';
 import { useRefreshOnFocus } from '../_components/use-refresh';
 import {
@@ -107,6 +110,8 @@ export default function ScorecardView({
     initialError ? { tone: 'crit', text: initialError } : { tone: '', text: '' },
   );
   const [currency, setCurrency] = useState<Currency>('USD');
+  // Which tile's detail panel is open.
+  const [openKpi, setOpenKpi] = useState<string | null>(null);
   const [kind, setKind] = useState<{ wk: ChartKind; mo: ChartKind }>({ wk: 'bar', mo: 'bar' });
   const [weekTab, setWeekTab] = useState('revenue');
   const [monthTab, setMonthTab] = useState('revenue');
@@ -239,6 +244,7 @@ export default function ScorecardView({
           key={m}
           label={label}
           title={t?.why}
+          onOpen={() => setOpenKpi('mrr')}
           value={fmt(v, 'dollars')}
           foot={
             <>
@@ -252,9 +258,16 @@ export default function ScorecardView({
       );
     }
 
-    const raw = last ? num(last[m]) : null;
-    const v = last ? conv(m, last[m], 'week', last.week_start) : null;
-    const p = prev ? conv(m, prev[m], 'week', prev.week_start) : null;
+    // The newest week that has this number. A source that loads late (Mediavine,
+    // Search Console) shows its latest real week and says which, not a dash.
+    let at = weeks.length - 1;
+    while (at >= 0 && num(weeks[at][m]) === null) at -= 1;
+    const cur = at >= 0 ? weeks[at] : undefined;
+    const before = at > 0 ? weeks[at - 1] : prev && !cur ? prev : undefined;
+    const stale = Boolean(cur && last && cur.week_start !== last.week_start);
+    const raw = cur ? num(cur[m]) : null;
+    const v = cur ? conv(m, cur[m], 'week', cur.week_start) : null;
+    const p = before ? conv(m, before[m], 'week', before.week_start) : null;
     const u = unitFor(m, unit);
 
     let delta: ReactNode = null;
@@ -275,11 +288,13 @@ export default function ScorecardView({
         key={m}
         label={label}
         title={t?.why}
+        onOpen={() => setOpenKpi(m)}
         value={fmt(v, u, !isMoneyUnit(u), currency)}
         spark={<Sparkline values={weeks.slice(-8).map((w) => conv(m, w[m], 'week', w.week_start))} />}
         foot={
           <>
             {delta}
+            {stale && cur && <span>week of {day(cur.week_start)}</span>}
             {t && <span>target {fmt(conv(m, t.target, 'latest'), u, true, currency)}</span>}
             <Chip s={statusOf(t, raw)} />
           </>
@@ -357,6 +372,57 @@ export default function ScorecardView({
       <RevenueBand sc={sc} invoices={invoices} expenses={expenses} currency={currency} today={today} />
 
       <div className="tiles">{tiles}</div>
+      {openKpi && openKpi !== 'mrr' && (
+        <KpiDetail
+          metric={openKpi}
+          label={TILE_METRICS.find(([k]) => k === openKpi)?.[1] || openKpi}
+          target={targetOf(openKpi)}
+          unit={unitFor(openKpi, targetOf(openKpi)?.unit ?? 'count')}
+          currency={currency}
+          source={SOURCE_OF[openKpi]}
+          through={
+            SOURCE_OF[openKpi] === 'Mediavine'
+              ? sc?.freshness?.mediavine_daily_through
+              : SOURCE_OF[openKpi] === 'Search Console'
+                ? sc?.freshness?.search_console_through
+                : SOURCE_OF[openKpi] === 'Bing'
+                  ? sc?.freshness?.bing_through
+                  : null
+          }
+          weeks={weeks.map((w) => ({
+            week_start: w.week_start,
+            value: conv(openKpi, w[openKpi], 'week', w.week_start),
+            raw: num(w[openKpi]),
+          }))}
+          onClose={() => setOpenKpi(null)}
+        />
+      )}
+      {openKpi === 'mrr' && (
+        <Detail title="Retainer MRR" value={fmt(num(sc?.current?.mrr), 'dollars')} onClose={() => setOpenKpi(null)}>
+          <Explain>
+            Monthly recurring revenue: what retainer clients pay you every month, in Canadian dollars. It
+            is the steadiest money a media business can have — it arrives whether or not Google sends
+            readers that week. The target is {fmt(targetOf('mrr')?.target, 'dollars')} a month.
+          </Explain>
+          <h3>Where the next retainer comes from</h3>
+          <DetailTable
+            head={['Stage', 'Leads']}
+            right={[1]}
+            rows={[
+              ['New — not contacted yet', 'new'],
+              ['Contacted — waiting to hear back', 'contacted'],
+              ['Engaged — they replied', 'engaged'],
+              ['Proposal sent', 'proposal'],
+              ['Won', 'won'],
+            ].map(([name, k]) => [name, String(num((sc?.current?.pipeline || {})[k]) || 0)])}
+          />
+          <p className="acts-row">
+            <Link className="btn" href="/admin/leads">
+              Open leads
+            </Link>
+          </p>
+        </Detail>
+      )}
 
       <div className="grid2">
         <section className="card" aria-labelledby="wk-h">

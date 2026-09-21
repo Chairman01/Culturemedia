@@ -23,6 +23,7 @@ import {
 import { cash, day, money, monthLabel } from '../_components/format';
 import { RevenueBand } from '../_components/revenue-band';
 import { RevenueColumns } from '../_components/revenue-chart';
+import { RevenueDetail, type RevenueTopic } from '../_components/revenue-detail';
 import { AdminShell, PageHead } from '../_components/shell';
 import { Banner, Seg, Tile } from '../_components/ui';
 
@@ -48,6 +49,7 @@ export default function RevenueView({
   today: string;
 }) {
   const [invoices, setInvoices] = useState<Invoice[]>(initial);
+  const [topic, setTopic] = useState<RevenueTopic | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [banner, setBanner] = useState(initialError || '');
   const [currency, setCurrency] = useState<Currency>('CAD');
@@ -168,13 +170,19 @@ export default function RevenueView({
         linkToRevenue={false}
       />
 
+      {topic && (
+        <RevenueDetail topic={topic} s={s} invoices={invoices} currency={currency} onClose={() => setTopic(null)} />
+      )}
+
       <div className="tiles">
         <Tile
+          onOpen={() => setTopic('expenses')}
           label={`Expenses, ${s.thisYear} so far`}
           value={cash(s.ytdExpenses, currency)}
           foot={<span>about {cash(s.ytdExpenses / monthsSoFar, currency)} a month</span>}
         />
         <Tile
+          onOpen={() => setTopic('kept')}
           label="Kept after expenses"
           value={cash(s.ytdKept, currency)}
           foot={
@@ -184,6 +192,7 @@ export default function RevenueView({
           }
         />
         <Tile
+          onOpen={() => setTopic('expenses')}
           label="Biggest cost"
           value={biggest ? cash(biggest.total, currency) : '—'}
           foot={
@@ -195,6 +204,7 @@ export default function RevenueView({
           }
         />
         <Tile
+          onOpen={() => setTopic('loose')}
           label="Loose ends"
           value={s.owed > 0 ? cash(s.owed, currency) : String(s.workOwed.length)}
           foot={
@@ -287,7 +297,7 @@ export default function RevenueView({
         </p>
       </details>
 
-      <section className="card" aria-labelledby="i-h">
+      <section className="card" id="invoices" aria-labelledby="i-h">
         <div className="chead">
           <h2 id="i-h">
             Invoices <small>{shown.length} shown · as invoiced, in CAD</small>
