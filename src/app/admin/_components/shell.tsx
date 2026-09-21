@@ -20,17 +20,19 @@ import { useEffect, useState, type ReactNode } from 'react';
 
 const NAV = [
   { href: '/admin', label: 'Today', icon: House, exact: true, badge: 'urgent' },
-  { href: '/admin/leads', label: 'Leads', icon: Users },
   { href: '/admin/inbox', label: 'Inbox', icon: Inbox, badge: 'waiting' },
-  { href: '/admin/packages', label: 'Packages', icon: Package },
+  { href: '/admin/leads', label: 'Leads', icon: Users },
   { href: '/admin/revenue', label: 'Revenue', icon: CircleDollarSign },
-  { href: '/admin/scorecard', label: 'Scorecard', icon: ChartColumn },
+  { href: '/admin/scorecard', label: 'Scorecard & KPIs', icon: ChartColumn },
   { href: '/admin/bids', label: 'Bids', icon: Gavel, also: ['/admin/setup'] },
+  { href: '/admin/packages', label: 'Packages', icon: Package },
 ] as const;
 
 export function AdminShell({ children, bare = false }: { children: ReactNode; bare?: boolean }) {
   const pathname = usePathname() || '';
   const [counts, setCounts] = useState<{ waiting: number; urgent: number }>({ waiting: 0, urgent: 0 });
+  // What each number is made of, shown when you point at it.
+  const [tips, setTips] = useState<{ waiting: string; urgent: string }>({ waiting: '', urgent: '' });
 
   // Replies to answer + emails to approve, so the Inbox can't be missed from
   // any page. A failed fetch just means no badge.
@@ -44,6 +46,13 @@ export function AdminShell({ children, bare = false }: { children: ReactNode; ba
           setCounts({
             waiting: (Number(d.replies) || 0) + (Number(d.drafts) || 0),
             urgent: Number(d.urgent) || 0,
+          });
+          const replies = Number(d.replies) || 0;
+          const drafts = Number(d.drafts) || 0;
+          const urgent = Number(d.urgent) || 0;
+          setTips({
+            waiting: `${replies} ${replies === 1 ? 'reply' : 'replies'} to answer · ${drafts} ${drafts === 1 ? 'email' : 'emails'} to approve`,
+            urgent: `${urgent} ${urgent === 1 ? 'thing needs' : 'things need'} you today`,
           });
         }
       })
@@ -79,7 +88,7 @@ export function AdminShell({ children, bare = false }: { children: ReactNode; ba
               <Link key={item.href} href={item.href} aria-current={active ? 'page' : undefined}>
                 <Icon size={18} strokeWidth={2} aria-hidden="true" />
                 <span>{item.label}</span>
-                {'badge' in item && counts[item.badge] ? <b className="count">{counts[item.badge]}</b> : null}
+                {'badge' in item && counts[item.badge] ? <b className="count" title={tips[item.badge]}>{counts[item.badge]}</b> : null}
               </Link>
             );
           })}

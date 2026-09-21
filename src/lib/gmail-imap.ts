@@ -11,7 +11,7 @@ import 'server-only';
 import { ImapFlow, type FetchMessageObject, type MessageStructureObject } from 'imapflow';
 
 import type { Folder, MailMessage } from './mail';
-import type { MailboxResult } from './zoho-mail';
+import { oldestOf, type FolderCheck, type MailboxResult } from './zoho-mail';
 
 const PREVIEW_BYTES = 1800;
 
@@ -101,6 +101,7 @@ export async function readGmail(limit = 40): Promise<MailboxResult> {
     connected: false,
     note: null,
     folders: [],
+    checked: [],
     messages: [],
   };
   if (!user || !pass) {
@@ -131,14 +132,23 @@ export async function readGmail(limit = 40): Promise<MailboxResult> {
 
     const messages: MailMessage[] = [];
     const read: Folder[] = [];
+    const checked: FolderCheck[] = [];
 
     for (const [folder, path] of paths) {
       const lock = await client.getMailboxLock(path, { readOnly: true });
       try {
         const total = typeof client.mailbox === 'object' && client.mailbox ? client.mailbox.exists : 0;
         read.push(folder);
-        if (!total) continue;
-        const range = `${Math.max(1, total - limit + 1)}:*`;
+        const name = folder[0].toUpperCase() + folder.slice(1);
+        if (!total) {
+          checked.push({ name, count: 0, since: null });
+          continue;
+        }
+        // Each inbox message costs a second trip for its preview, so spam — rarely
+        // more than a handful worth seeing — gets a shorter window.
+        const take = folder === 'spam' ? Math.min(limit, 30) : limit;
+        const range = `${Math.max(1, total - take + 1)}:*`;
+        const before = messages.length;
 
         // Pass 1: headers and structure. Pass 2: the first bytes of each text part.
         const found: FetchMessageObject[] = [];
@@ -167,6 +177,8 @@ export async function readGmail(limit = 40): Promise<MailboxResult> {
           }
           messages.push(toMessage(msg, folder, preview));
         }
+        const mine = messages.slice(before);
+        checked.push({ name, count: mine.length, since: oldestOf(mine) });
       } finally {
         lock.release();
       }
@@ -177,6 +189,7 @@ export async function readGmail(limit = 40): Promise<MailboxResult> {
       ...base,
       connected: true,
       folders: read,
+      checked,
       messages,
       note: missing.length ? `Gmail did not report a ${missing.join(' or ')} folder.` : null,
     };

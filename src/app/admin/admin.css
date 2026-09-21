@@ -1415,19 +1415,41 @@
 }
 
 .adm .mail {
-  padding: 18px 0;
-  border-bottom: 1px solid var(--rule);
+  position: relative;
+  padding: 18px 12px;
+  margin: 0 -12px;
+  border-radius: 10px;
+  transition: background 0.12s ease;
 }
 
-.adm .mail:last-child {
-  border-bottom: 0;
+/* A hairline between rows that does not run into the hover highlight. */
+.adm .mail + .mail::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: var(--rule);
 }
 
-/* Out of the spam folder and not vouched for yet. */
-.adm .mail.flagged {
-  border-left: 3px solid var(--warn);
-  padding-left: 14px;
-  margin-left: -2px;
+.adm .mail:hover,
+.adm .mail:focus-within {
+  background: var(--sunken);
+}
+
+.adm .mail:hover::before,
+.adm .mail:hover + .mail::before,
+.adm .mail:focus-within::before,
+.adm .mail:focus-within + .mail::before {
+  background: transparent;
+}
+
+/* Point at a message to read all of the preview. */
+.adm .mail:hover .sum,
+.adm .mail:focus-within .sum {
+  display: block;
+  overflow: visible;
 }
 
 .adm .mail .top {
@@ -1445,9 +1467,120 @@
 }
 
 .adm .mail .when {
+  display: inline-flex;
+  align-items: center;
   font-size: 12.5px;
   color: var(--muted);
   white-space: nowrap;
+}
+
+/* Which mailbox: the same label everywhere, tinted so the two never blur. */
+.adm .src {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  margin-right: 8px;
+}
+
+.adm .src::before,
+.adm .dot {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  flex: none;
+}
+
+.adm .src.gmail {
+  background: #fdecea;
+  color: #a4231a;
+}
+
+.adm .src.zoho {
+  background: #e3f3f0;
+  color: #0b5d56;
+}
+
+.adm .src.gmail::before,
+.adm .dot.gmail {
+  background: #d93025;
+}
+
+.adm .src.zoho::before,
+.adm .dot.zoho {
+  background: #0f766e;
+}
+
+.adm .ctabs .dot {
+  margin-right: 7px;
+  vertical-align: 1px;
+}
+
+.adm .mailbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin: 0 0 12px;
+}
+
+.adm .mailbar .ctabs {
+  margin: 0;
+}
+
+.adm .mailbar input {
+  flex: 1 1 260px;
+  min-width: 0;
+  font: inherit;
+  font-size: 14px;
+  padding: 9px 14px;
+  border: 1px solid var(--rule-hard);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.adm .mailbar input:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.adm .covered {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.adm .covered summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.adm .covered ul {
+  list-style: none;
+  margin: 10px 0 6px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.adm .covered li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.adm .covered li b {
+  min-width: 110px;
+  color: var(--ink);
 }
 
 .adm .mail.unread .who::before {
@@ -1726,18 +1859,27 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 0 12px 14px;
+  padding: 12px 0;
   border-top: 1px solid var(--rule);
-  border-left: 3px solid var(--warn);
-  margin-left: -2px;
+}
+
+.adm .need b::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--warn);
+  margin-right: 9px;
+  vertical-align: 1px;
+}
+
+.adm .need.crit b::before {
+  background: var(--crit);
 }
 
 .adm .need:first-of-type {
   border-top: 0;
-}
-
-.adm .need.crit {
-  border-left-color: var(--crit);
 }
 
 .adm .need b {

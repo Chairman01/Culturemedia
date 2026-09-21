@@ -38,6 +38,8 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   const [trusting, setTrusting] = useState<string | null>(null);
   const [marking, setMarking] = useState<string | null>(null);
   const [muting, setMuting] = useState<string | null>(null);
+  const [box, setBox] = useState<'all' | 'zoho' | 'gmail'>('all');
+  const [find, setFind] = useState('');
   const [tab, setTab] = useState<ConvoStatus>('todo');
   const started = useRef(false);
   const router = useRouter();
@@ -194,9 +196,20 @@ export default function InboxView({ initial }: { initial: InboxData }) {
     }
   };
 
+  // One mailbox at a time, when asked. Replies from leads stay whole: they are
+  // matched to the lead, whichever mailbox they arrived in.
+  const mail = box === 'all' ? data.mail : data.mail.filter((m) => m.mailbox === box);
+  const needle = find.trim().toLowerCase();
+  const found =
+    needle.length < 2
+      ? []
+      : mail.filter((m) =>
+          `${m.fromName} ${m.fromAddress} ${m.subject} ${m.summary}`.toLowerCase().includes(needle),
+        );
+
   // Strangers, one row per person rather than one per message.
   const convos = buildConversations(
-    data.mail.filter((m) => (m.kind === 'inquiry' || m.kind === 'other') && !hidden(m)),
+    mail.filter((m) => (m.kind === 'inquiry' || m.kind === 'other') && !hidden(m)),
     data.marks,
     data.repliedTo,
   );
@@ -209,8 +222,8 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   const shown = tab === 'todo' ? todo : tab === 'working' ? working : finished;
   // People who wrote about something the rules don't recognise, not yet dealt with.
   const quietPeople = convos.filter((c) => c.state === 'todo' && !c.asked);
-  const noise = data.mail.filter((m) => m.kind === 'noise' || hidden(m));
-  const look = data.mail.filter((m) => ['money', 'bounce', 'stop'].includes(m.kind) && !hidden(m));
+  const noise = mail.filter((m) => m.kind === 'noise' || hidden(m));
+  const look = mail.filter((m) => ['money', 'bounce', 'stop'].includes(m.kind) && !hidden(m));
   const fromLeads = data.mail.filter((m) => m.kind === 'lead_reply');
   const report = data.report;
   const changed = report ? report.replies.length + report.contacted.length : 0;
@@ -235,12 +248,93 @@ export default function InboxView({ initial }: { initial: InboxData }) {
           data.mailboxes.map((b) => (
             <span key={b.mailbox} className={`box ${b.connected ? (b.note ? 'warn' : 'ok') : 'off'}`}>
               <b>{BOX_NAME[b.mailbox]}</b>{' '}
-              {b.connected ? `${b.label} · ${b.folders.join(', ')}` : 'not connected — see below'}
+              {b.connected
+                ? `${b.label} · ${b.checked.length} ${b.checked.length === 1 ? 'folder' : 'folders'} read`
+                : 'not connected — see below'}
               {b.connected && b.note && <em> — {b.note}</em>}
             </span>
           ))
         )}
       </div>
+
+      {checked && data.mailboxes.some((b) => b.connected) && (
+        <>
+          <details className="covered">
+            <summary>
+              What was checked — {data.mailboxes.reduce((n, b) => n + b.checked.length, 0)} folders,{' '}
+              {data.mailboxes.reduce((n, b) => n + b.checked.reduce((k, f) => k + f.count, 0), 0)} emails
+            </summary>
+            <ul>
+              {data.mailboxes
+                .filter((b) => b.connected)
+                .flatMap((b) =>
+                  b.checked.map((f) => (
+                    <li key={`${b.mailbox}-${f.name}`}>
+                      <span className={`src ${b.mailbox}`}>{BOX_NAME[b.mailbox]}</span>
+                      <b>{f.name}</b>
+                      <span>
+                        {f.count ? `${f.count} newest, back to ${day(f.since)}` : 'empty'}
+                      </span>
+                    </li>
+                  )),
+                )}
+            </ul>
+            <p className="cnote">
+              The page holds the newest mail in each folder. An email older than the date shown is
+              not on this page — open the mailbox for it. Every folder is read, including the ones
+              Zoho files mail into by itself.
+            </p>
+          </details>
+
+          <div className="mailbar">
+            <div className="ctabs" role="group" aria-label="Which mailbox to show">
+              {(
+                [
+                  ['all', 'Both mailboxes', data.mail.length],
+                  ['zoho', 'Zoho', data.mail.filter((m) => m.mailbox === 'zoho').length],
+                  ['gmail', 'Gmail', data.mail.filter((m) => m.mailbox === 'gmail').length],
+                ] as const
+              ).map(([key, label, n]) => (
+                <button key={key} type="button" aria-pressed={box === key} onClick={() => setBox(key)}>
+                  {key !== 'all' && <i className={`dot ${key}`} aria-hidden="true" />}
+                  {label} <b>{n}</b>
+                </button>
+              ))}
+            </div>
+            <input
+              type="search"
+              value={find}
+              onChange={(e) => setFind(e.target.value)}
+              placeholder="Find an email — a name, address or any words"
+              aria-label="Find an email"
+            />
+          </div>
+
+          {needle.length >= 2 && (
+            <section className="card" aria-labelledby="f-h" style={{ marginBottom: 12 }}>
+              <h2 id="f-h">
+                Found <small>{found.length || 'nothing'}</small>
+              </h2>
+              {found.length ? (
+                found.map((m) => (
+                  <MailRow
+                    key={m.id}
+                    m={m}
+                    onAdd={!m.leadId && m.kind !== 'bounce' ? () => addAsLead(m) : undefined}
+                    trusted={isTrusted(m)}
+                    muted={hidden(m)}
+                  />
+                ))
+              ) : (
+                <p className="empty-note">
+                  Nothing on this page matches “{find.trim()}”. If the email is older than the dates
+                  under “What was checked”, it is in the mailbox but not here.
+                </p>
+              )}
+            </section>
+          )}
+        </>
+      )}
 
       {report && changed > 0 && (
         <p className="banner" role="status">
@@ -267,7 +361,10 @@ export default function InboxView({ initial }: { initial: InboxData }) {
               <div key={lead.id} className="mail unread">
                 <div className="top">
                   <span className="who">{lead.company}</span>
-                  <span className="muted">replied {day(lead.last_reply_at)}</span>
+                  <span className="when">
+                    {latest && <span className={`src ${latest.mailbox}`}>{BOX_NAME[latest.mailbox]}</span>}
+                    replied {day(lead.last_reply_at)}
+                  </span>
                 </div>
                 <p className="subj">
                   {latest ? latest.subject : [lead.contact_name, lead.email].filter(Boolean).join(' · ')}
@@ -509,7 +606,8 @@ function MailRow({
       <div className="top">
         <span className="who">{m.fromName || m.fromAddress}</span>
         <span className="when">
-          {BOX_NAME[m.mailbox]} · {day(m.at)}
+          <span className={`src ${m.mailbox}`}>{BOX_NAME[m.mailbox]}</span>
+          {day(m.at)}
         </span>
       </div>
       {/* The address itself: a friendly display name is the easy half to fake. */}
@@ -524,6 +622,7 @@ function MailRow({
         </span>
         {m.leadCompany && <span className="chip ok">{m.leadCompany}</span>}
         {flagged && <span className="chip warn">Found in spam</span>}
+        {m.folderName && <span className="chip none">Filed under “{m.folderName}”</span>}
         {m.folder === 'spam' && trusted && <span className="chip none">You marked this not spam</span>}
         {stopped && <span className="chip none">Unsubscribed — no more emails</span>}
         {muted && <span className="chip none">You hid this sender</span>}

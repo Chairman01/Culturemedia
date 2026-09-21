@@ -48,7 +48,10 @@ const SEND_SLACK_MS = 2 * 60 * 1000;
 
 /** Read both mailboxes and classify. Read-only: safe to call from a GET. */
 export async function readMail(): Promise<MailSnapshot & { sent: MailMessage[] }> {
-  const [zoho, gmail, leads] = await Promise.all([readZoho(40), readGmail(30), listLeads()]);
+  // The newest 100 per Zoho folder (one request each) and 60 per Gmail folder
+  // (one request per message for its preview, so it costs more). The page
+  // shows how far back each folder was read.
+  const [zoho, gmail, leads] = await Promise.all([readZoho(100), readGmail(60), listLeads()]);
   const all = [...zoho.messages, ...gmail.messages].filter((m) => m.at);
 
   // Our own addresses: mail "from" these in the inbox is a copy of something we sent.
@@ -80,6 +83,7 @@ export async function readMail(): Promise<MailSnapshot & { sent: MailMessage[] }
       connected: box.connected,
       note: box.note,
       folders: box.folders,
+      checked: box.checked,
     })),
     incoming,
     repliedTo,
