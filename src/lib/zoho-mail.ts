@@ -129,12 +129,18 @@ type RawMessage = {
   fromAddress?: string;
   sender?: string;
   toAddress?: string;
+  ccAddress?: string;
   subject?: string;
   summary?: string;
   receivedTime?: string;
   sentDateInGMT?: string;
   status?: string;
 };
+
+// Zoho's own "Permalink" for a message: the folder it sits in, then the message.
+const WEB_HOST = process.env.ZOHO_WEB_HOST || 'https://mail.zoho.com';
+const permalink = (folderId: string | null | undefined, messageId: string | undefined) =>
+  messageId ? `${WEB_HOST}/zm/#mail/folder/${folderId || 'inbox'}/p/${messageId}` : undefined;
 
 const FOLDER_TYPES: Record<string, Folder> = { inbox: 'inbox', spam: 'spam', sent: 'sent' };
 // Never incoming mail worth reading.
@@ -179,11 +185,12 @@ export async function searchZoho(query: string, limit = 25): Promise<{ messages:
       const where = folderOf.get(String(m.folderId ?? ''));
       messages.push({
         id: `zoho:search:${m.messageId ?? ''}`,
+        link: permalink(m.folderId, m.messageId),
         mailbox: 'zoho',
         folder: where?.kind ?? 'inbox',
         fromName: from.name || unescape(m.sender),
         fromAddress: from.address,
-        to: parseAddressList(m.toAddress),
+        to: [...parseAddressList(m.toAddress), ...parseAddressList(m.ccAddress)],
         subject: unescape(m.subject) || '(no subject)',
         summary: unescape(m.summary),
         at: toIso(m.receivedTime ?? m.sentDateInGMT),
@@ -279,11 +286,12 @@ export async function readZoho(limit = 100): Promise<MailboxResult> {
           const from = parseAddress(m.fromAddress);
           mine.push({
             id: `zoho:${m.messageId ?? ''}`,
+            link: permalink(m.folderId || folderId, m.messageId),
             mailbox: 'zoho',
             folder,
             fromName: from.name || unescape(m.sender),
             fromAddress: from.address,
-            to: parseAddressList(m.toAddress),
+            to: [...parseAddressList(m.toAddress), ...parseAddressList(m.ccAddress)],
             subject: unescape(m.subject) || '(no subject)',
             summary: unescape(m.summary),
             at: toIso(m.receivedTime ?? m.sentDateInGMT),

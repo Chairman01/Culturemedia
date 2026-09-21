@@ -70,6 +70,23 @@ export function previewOf(buffer: Buffer | undefined, encoding: string, html: bo
     .slice(0, 400);
 }
 
+/**
+ * Gmail opens a conversation from its thread id in hex. `authuser` picks the
+ * right account when several are signed in to the browser. Without a thread id,
+ * a search for the message's own id finds exactly that email.
+ */
+function gmailLink(msg: FetchMessageObject): string | undefined {
+  const account = encodeURIComponent(process.env.GMAIL_USER || '');
+  const base = `https://mail.google.com/mail/?authuser=${account}`;
+  try {
+    if (msg.threadId) return `${base}#all/${BigInt(msg.threadId).toString(16)}`;
+  } catch {
+    /* not a number: fall through to the message-id search */
+  }
+  const id = (msg.envelope?.messageId || '').replace(/^<|>$/g, '');
+  return id ? `${base}#search/${encodeURIComponent(`rfc822msgid:${id}`)}` : undefined;
+}
+
 function toMessage(msg: FetchMessageObject, folder: Folder, preview: string): MailMessage {
   const env = msg.envelope;
   const from = env?.from?.[0];
@@ -77,6 +94,7 @@ function toMessage(msg: FetchMessageObject, folder: Folder, preview: string): Ma
   const date = when ? new Date(when) : null;
   return {
     id: `gmail:${folder}:${msg.uid}`,
+    link: gmailLink(msg),
     mailbox: 'gmail',
     folder,
     fromName: from?.name || '',
@@ -133,7 +151,7 @@ export async function searchGmail(query: string, limit = 25): Promise<{ messages
         const found: FetchMessageObject[] = [];
         for await (const msg of client.fetch(
           newest.join(','),
-          { uid: true, envelope: true, flags: true, internalDate: true, bodyStructure: true, headers: ['list-unsubscribe', 'list-id', 'precedence'] },
+          { uid: true, envelope: true, flags: true, internalDate: true, bodyStructure: true, threadId: true, headers: ['list-unsubscribe', 'list-id', 'precedence'] },
           { uid: true },
         )) {
           found.push(msg);
@@ -232,6 +250,7 @@ export async function readGmail(limit = 40): Promise<MailboxResult> {
           flags: true,
           internalDate: true,
           bodyStructure: true,
+          threadId: true,
           headers: ['list-unsubscribe', 'list-id', 'precedence'],
         })) {
           found.push(msg);

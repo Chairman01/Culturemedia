@@ -21,6 +21,8 @@ export interface MailMessage {
   /** ISO timestamp the message arrived or was sent. */
   at: string;
   unread: boolean;
+  /** Web address that opens this one email in the mailbox's own site. */
+  link?: string;
   /** The mailbox's own name for the folder when it is not Inbox, Spam or Sent (Zoho's "Newsletter"). */
   folderName?: string;
   /** The message carries bulk-mail headers (List-Unsubscribe, List-Id, Precedence: bulk). */
