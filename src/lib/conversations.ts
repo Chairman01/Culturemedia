@@ -29,6 +29,8 @@ export interface Conversation {
   earlier: number;
   /** Any of their messages asked about advertising — not only the newest. */
   asked: boolean;
+  /** Any of their messages reads like a complaint, a legal notice or a demand. */
+  urgent: boolean;
   state: ConvoStatus;
   /** Whose move it is, when the Sent folder can tell. */
   turn: 'yours' | 'theirs' | null;
@@ -83,6 +85,7 @@ export function buildConversations(
       latest,
       earlier: list.length - 1,
       asked: list.some((m) => m.kind === 'inquiry'),
+      urgent: list.some((m) => m.urgent),
       state,
       turn,
       repliedAt,

@@ -10,6 +10,8 @@ import { useEffect, useRef, useState } from 'react';
 
 import type { OpsAction, SalesTotals } from '@/lib/admin-types';
 import type { Alert } from '@/lib/alerts';
+import { buildConversations, type SenderMark } from '@/lib/conversations';
+import type { Classified } from '@/lib/mail';
 import { STAGE_LABEL } from '@/lib/crm';
 import type { OutreachDay } from '@/lib/crm-admin';
 import { day, money } from './_components/format';
@@ -98,10 +100,44 @@ export default function TodayView({
       .then((body) => {
         // A mailbox that is not connected is mail nobody is checking.
         const boxes = (body?.data?.mailboxes ?? []) as { mailbox: string; connected: boolean; note: string | null }[];
+        // Mail that reads like a complaint or a legal notice, still unanswered.
+        const inbox = (body?.data ?? {}) as {
+          mail?: Classified[];
+          marks?: Record<string, SenderMark>;
+          repliedTo?: Record<string, string>;
+          muted?: string[];
+        };
+        const notBusiness = new Set(inbox.muted ?? []);
+        const pressing = buildConversations(
+          (inbox.mail ?? []).filter(
+            (m) => (m.kind === 'inquiry' || m.kind === 'other') && !(notBusiness.has(m.fromAddress.toLowerCase()) && !m.leadId),
+          ),
+          inbox.marks ?? {},
+          inbox.repliedTo ?? {},
+        ).filter((c) => c.urgent && c.state === 'todo');
+        const urgentAlerts: Alert[] = pressing.length
+          ? [
+              {
+                id: 'mail-urgent',
+                tone: 'crit',
+                title:
+                  pressing.length === 1
+                    ? 'An email reads like a complaint or legal notice, and has no reply'
+                    : `${pressing.length} emails read like complaints or legal notices, and have no reply`,
+                detail: `“${pressing[0].latest.subject}” from ${pressing[0].latest.fromName || pressing[0].key}${
+                  pressing.length > 1 ? `, and ${pressing.length - 1} more` : ''
+                }. Answer it, or mark it Done in the Inbox if it is handled.`,
+                href: '/admin/inbox',
+                cta: 'Open inbox',
+              },
+            ]
+          : [];
+
         const name = (b: { mailbox: string }) => (b.mailbox === 'gmail' ? 'Gmail' : 'Zoho');
         const off = boxes.filter((b) => !b.connected);
         const partly = boxes.filter((b) => b.connected && b.note);
         setMailAlerts([
+          ...urgentAlerts,
           ...(off.length
             ? [
                 {

@@ -44,6 +44,8 @@ export interface Classified extends MailMessage {
   leadCompany: string | null;
   /** A guess at the company from the address, for "Add as lead". */
   companyGuess: string;
+  /** Reads like a complaint, a legal notice or a demand: answer it whatever else it is. */
+  urgent: boolean;
 }
 
 /** Free-mail domains: a sender here is a person, not a company we can name. */
@@ -62,23 +64,29 @@ const STOP =
 
 // Never a person: these local parts are noise whatever the message says.
 const AUTOMATED_LOCAL =
-  /^(no-?reply|do-?not-?reply|donotreply|notifications?|notify|newsletter|news|updates?|mailer|bounces?|alerts?|digest|marketing|promo(tions)?|deals|offers)\b/i;
+  /^(no-?reply|do-?not-?reply|donotreply|recommendations?|suggestions?|discover|notifications?|notify|newsletter|news|updates?|mailer|bounces?|alerts?|digest|marketing|promo(tions)?|deals|offers)\b/i;
 // Usually a system, sometimes a small business's shared inbox — so these only
 // count as noise when the message is not asking about advertising.
 const SHARED_LOCAL = /^(team|support|billing|receipts?|invoices?|accounts?|security|admin|system)\b/i;
 const AUTOMATED_DOMAIN =
-  /(^|\.)(microsoft\.com|bing\.com|office365\.com|resend\.com|sendgrid\.(net|com)|mailchimpapp\.com|mcsv\.net|klaviyo\.com|constantcontact\.com|hubspot(email)?\.(com|net)|beehiiv\.com|eventbrite\.(ca|com)|lu\.ma|typeform\.com|figma\.com|loom\.com|atlassian\.(com|net)|cloudflare\.com|namecheap\.com|waveapps\.com|hootsuite\.com|later\.com|buffer\.com|semrush\.com|ahrefs\.com|producthunt\.com|facebookmail\.com|linkedin\.com|instagram\.com|twitter\.com|x\.com|tiktok\.com|youtube\.com|google\.com|accounts\.google\.com|apple\.com|amazon\.(ca|com)|paypal\.(ca|com)|intuit\.com|stripe\.com|shopify\.com|canva\.com|mailchimp\.com|substack\.com|medium\.com|vercel\.com|github\.com|supabase\.(com|io)|zoho\.com|zohomail\.com|mediavine\.com|godaddy\.com|wix\.com|squarespace\.com|meta\.com|calendly\.com|zoom\.us|dropbox\.com|slack\.com|notion\.so|openai\.com|anthropic\.com)$/i;
+  /(^|\.)(pinterest\.(com|ca)|quora\.com|reddit(mail)?\.com|nextdoor\.(com|ca)|spotify\.com|netflix\.com|uber\.com|doordash\.com|skipthedishes\.com|airbnb\.(com|ca)|indeed\.com|glassdoor\.(com|ca)|microsoft\.com|bing\.com|office365\.com|resend\.com|sendgrid\.(net|com)|mailchimpapp\.com|mcsv\.net|klaviyo\.com|constantcontact\.com|hubspot(email)?\.(com|net)|beehiiv\.com|eventbrite\.(ca|com)|lu\.ma|typeform\.com|figma\.com|loom\.com|atlassian\.(com|net)|cloudflare\.com|namecheap\.com|waveapps\.com|hootsuite\.com|later\.com|buffer\.com|semrush\.com|ahrefs\.com|producthunt\.com|facebookmail\.com|linkedin\.com|instagram\.com|twitter\.com|x\.com|tiktok\.com|youtube\.com|google\.com|accounts\.google\.com|apple\.com|amazon\.(ca|com)|paypal\.(ca|com)|intuit\.com|stripe\.com|shopify\.com|canva\.com|mailchimp\.com|substack\.com|medium\.com|vercel\.com|github\.com|supabase\.(com|io)|zoho\.com|zohomail\.com|mediavine\.com|godaddy\.com|wix\.com|squarespace\.com|meta\.com|calendly\.com|zoom\.us|dropbox\.com|slack\.com|notion\.so|openai\.com|anthropic\.com)$/i;
 
 // The sending domain starts with a label only bulk mail uses: updates.resend.com,
 // news.example.com, em1234.brand.com.
 const BULK_SUBDOMAIN =
-  /^(updates?|news|newsletters?|e|em\d*|email|emails|mailer|mailing|marketing|notifications?|notify|send|sender|bounces?|campaigns?|click|engage|announce(ments)?|events|community|digest|promo|offers)\./i;
+  /^(updates?|discover|recommendations?|info|go|news|newsletters?|e|em\d*|email|emails|mailer|mailing|marketing|notifications?|notify|send|sender|bounces?|campaigns?|click|engage|announce(ments)?|events|community|digest|promo|offers)\./i;
 // Wording only a mailing platform adds. Kept narrow on purpose: "you're invited"
 // and "join us" are how a local business announces a grand opening, and that is
 // a lead. Only tested on strangers: a lead who writes "unsubscribe" is handled
 // above as a stop request.
 const BULK_TEXT =
-  /\bunsubscribe\b|view (this )?(email )?in (your |a )?browser|you are receiving this|you received this (email|message) because|manage (your )?(email )?preferences|update your preferences|no longer wish to receive|email preferences|all rights reserved/i;
+  /\bunsubscribe\b|view (this )?(email )?in (your |a )?browser|open the following (url|link) in your browser|\/email\/click\/|[?&]utm_(source|medium|campaign)=|to stop receiving these|you are receiving this|you received this (email|message) because|manage (your )?(email )?preferences|update your preferences|no longer wish to receive|email preferences|all rights reserved/i;
+
+// Not sales, and not to be left: a photographer about their pictures, a reader
+// asking for a correction, someone owed money. Only ever applied to mail from
+// people — a newsletter shouting URGENT is still a newsletter.
+const URGENT =
+  /unauthori[sz]ed|copyright|infring|\bdmca\b|take ?down|cease and desist|legal (action|notice|counsel|team)|\blawyer|\battorney|without (my |our |any )?(permission|consent|credit|compensation)|defamat|\blibel|complain|\bcorrection\b|retraction|(remove|delete|take down) (this|the|my|our|these|those) (photos?|images?|pictures?|articles?|posts?|story|stories|videos?)|overdue|past due|final notice|time[- ]sensitive/i;
 
 const MONEY =
   /e-?transfer|interac|payment (received|sent|confirmation|of)|you('ve| have) (received|been paid)|sent you (money|\$)|deposit(ed)?\b|invoice\b|receipt\b|remittance|payout|paid\b/i;
@@ -125,10 +133,12 @@ export function classify(m: MailMessage, index: ReturnType<typeof indexLeads>): 
   const sameCompany = exact ? null : index.byDomain.get(domain) || null;
   const lead = exact || sameCompany;
 
+  const reads = URGENT.test(text);
   const done = (kind: MailKind, why: string): Classified => ({
     ...m,
     kind,
     why,
+    urgent: reads && kind !== 'noise' && kind !== 'bounce',
     leadId: lead?.id ?? null,
     leadCompany: lead?.company ?? null,
     companyGuess: companyFromAddress(from),
