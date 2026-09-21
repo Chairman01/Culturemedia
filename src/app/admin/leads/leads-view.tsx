@@ -16,6 +16,7 @@ import {
   needsOf,
   type LeadRow,
 } from '@/lib/crm';
+import { saveCheck } from '@/lib/inbox-cache';
 import { GROUP_ORDER, GROUP_TITLE, standingOf, type Standing, type StandingGroup } from '@/lib/standing';
 import { AddLeadForm } from '../_components/add-lead';
 import { day, money, num } from '../_components/format';
@@ -121,13 +122,7 @@ export default function LeadsView({
         setError("Couldn't check your mailboxes. Try again in a minute.");
         return;
       }
-      try {
-        if (body?.data) {
-          sessionStorage.setItem('cm-admin-inbox', JSON.stringify({ at: Date.now(), data: { ...body.data, report: null } }));
-        }
-      } catch {
-        /* storage blocked: the Inbox just checks again itself */
-      }
+      if (body?.data) saveCheck({ ...body.data, report: null }, Date.now());
       await load();
     } catch {
       setError("Couldn't reach the server.");
