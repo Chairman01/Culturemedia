@@ -27,6 +27,8 @@ export default function TodayView({
   totals,
   alerts,
   priorities,
+  done,
+  total,
   claudeOpen,
   replies,
   drafts,
@@ -46,6 +48,9 @@ export default function TodayView({
   alerts: Alert[];
   /** Open priorities that are yours to do, most important first. */
   priorities: OpsAction[];
+  /** Your priorities already finished, and the two counts together. */
+  done: number;
+  total: number;
   claudeOpen: number;
   replies: number;
   drafts: number;
@@ -219,10 +224,14 @@ export default function TodayView({
         <h2 id="p-h">
           Your priorities{' '}
           <small>
-            {priorities.length} open{claudeOpen ? ` · Claude has ${claudeOpen} more` : ''} ·{' '}
+            {total ? `${done} of ${total} done` : 'none yet'}
+            {claudeOpen ? ` · Claude has ${claudeOpen} more` : ''} ·{' '}
             <Link href="/admin/scorecard">all on the Scorecard</Link>
           </small>
         </h2>
+        <div className="progress" aria-hidden="true">
+          <i style={{ width: total ? `${((100 * done) / total).toFixed(1)}%` : 0 }} />
+        </div>
         {priorities.length ? (
           <ol className="prio">
             {(showAll ? priorities : priorities.slice(0, 5)).map((a, i) => {
@@ -313,8 +322,12 @@ export default function TodayView({
 
       <section className="card" aria-labelledby="d-h">
           <h2 id="d-h">
-            Next steps due <small>{due.length || 'none'}</small>
+            People to contact <small>{due.length ? `${due.length} due` : 'none due'}</small>
           </h2>
+          <p className="cnote" style={{ margin: '0 0 10px' }}>
+            Leads whose next step is booked for today or earlier. Open one, send the note, then set
+            the next date — that date is what brings them back here instead of going quiet.
+          </p>
           <ul className="srows">
             {due.length ? (
               due.map((l) => (
@@ -327,13 +340,27 @@ export default function TodayView({
                       {l.customer ? 'Past customer — check in' : STAGE_LABEL[l.stage] || l.stage}
                     </span>
                   </span>
-                  <b className={l.on < today ? 'crit' : ''}>{day(l.on)}</b>
+                  <b className={l.on < today ? 'crit' : ''}>
+                    {l.on < today ? 'Overdue · ' : ''}
+                    {day(l.on)}
+                  </b>
                 </li>
               ))
             ) : (
-              <li className="empty-note">Nothing due. Set a “next step” date on a lead to see it here.</li>
+              <li className="empty-note">
+                Nobody is due today. Every lead with a next-step date appears here on the day, so
+                this is empty only when nobody is waiting on you.
+              </li>
             )}
           </ul>
+          {due.length > 0 && (
+            <p className="acts-row" style={{ marginTop: 12 }}>
+              {/* One name, not a list to choose from: the whole point is to start. */}
+              <Link className="btn" href={`/admin/leads/${due[0].id}`}>
+                Start with {due[0].company}
+              </Link>
+            </p>
+          )}
           {blocked > 0 && (
             <p className="acts-row" style={{ marginTop: 10 }}>
               <Link className="btn ghost" href="/admin/leads?show=blocked">

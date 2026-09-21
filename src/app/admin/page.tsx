@@ -39,6 +39,8 @@ export default async function TodayPage() {
   const all = leads.data ?? [];
   const actions = scorecard.data?.actions ?? [];
   const mine = ownPriorities(actions);
+  // Your own actions only: the bar should measure the list underneath it.
+  const mineDone = actions.filter((a) => a.status === 'done' && /you/i.test(a.owner)).length;
 
   return (
     <TodayView
@@ -48,6 +50,8 @@ export default async function TodayPage() {
       totals={sales.data?.totals ?? null}
       alerts={buildAlerts({ invoices: invoices.data ?? [], leads: all, actions, today })}
       priorities={mine}
+      done={mineDone}
+      total={mine.length + mineDone}
       claudeOpen={actions.filter((a) => (a.status === 'todo' || a.status === 'in_progress') && !/you/i.test(a.owner)).length}
       replies={all.filter(awaitingReply).length}
       drafts={(drafts.data ?? []).length}
