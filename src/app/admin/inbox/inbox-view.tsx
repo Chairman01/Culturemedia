@@ -3,7 +3,7 @@
 // The Inbox: everyone waiting on you, in the order to deal with them.
 //   1. Leads who wrote back            — answer these first
 //   2. Emails drafted for approval     — then send today's outreach
-//   3. New people asking about ads     — strangers worth adding as leads
+//   3. Conversations with new people   — one row per person: to do, in progress, done
 //   4. Worth a look                    — payments, bounces, "please remove me"
 //   5. Everything else                 — collapsed; spam is included so nothing hides
 // Opening the page checks both mailboxes (Zoho and Gmail: inbox, spam, sent)
@@ -14,6 +14,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { buildConversations, type Conversation, type ConvoStatus } from '@/lib/conversations';
 import { PARTNERSHIPS_URL, SEQUENCE_LABEL } from '@/lib/crm';
 import type { InboxData } from '@/lib/inbox';
 import type { Classified } from '@/lib/mail';
@@ -35,6 +36,8 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   const [problem, setProblem] = useState('');
   const [stopping, setStopping] = useState<string | null>(null);
   const [trusting, setTrusting] = useState<string | null>(null);
+  const [marking, setMarking] = useState<string | null>(null);
+  const [tab, setTab] = useState<ConvoStatus>('todo');
   const started = useRef(false);
   const router = useRouter();
 
@@ -133,11 +136,49 @@ export default function InboxView({ initial }: { initial: InboxData }) {
     }
   };
 
-  const inquiries = data.mail.filter((m) => m.kind === 'inquiry');
+  // Where a conversation stands is kept on our side, with the time you said so:
+  // a message that arrives after "done" brings the conversation back by itself.
+  const setStatus = async (c: Conversation, status: ConvoStatus) => {
+    if (marking || (c.state === status && !c.reopened)) return;
+    setMarking(c.key);
+    setProblem('');
+    try {
+      const res = await fetch('/api/admin/inbox/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: c.key, status }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.data) {
+        setProblem(body.error || "Couldn't save that.");
+        return;
+      }
+      setData((d) => ({ ...d, marks: { ...d.marks, [c.key]: body.data } }));
+    } catch {
+      setProblem("Couldn't reach the server.");
+    } finally {
+      setMarking(null);
+    }
+  };
+
+  // Strangers, one row per person rather than one per message.
+  const convos = buildConversations(
+    data.mail.filter((m) => m.kind === 'inquiry' || m.kind === 'other'),
+    data.marks,
+    data.repliedTo,
+  );
+  const todo = convos.filter((c) => c.state === 'todo' && c.asked);
+  // Your move first: a conversation waiting on them can sit, one waiting on you can't.
+  const working = convos
+    .filter((c) => c.state === 'working')
+    .sort((a, b) => Number(b.turn === 'yours') - Number(a.turn === 'yours'));
+  const finished = convos.filter((c) => c.state === 'done');
+  const shown = tab === 'todo' ? todo : tab === 'working' ? working : finished;
+  // People who wrote about something the rules don't recognise, not yet dealt with.
+  const quietPeople = convos.filter((c) => c.state === 'todo' && !c.asked);
+  const noise = data.mail.filter((m) => m.kind === 'noise');
   const look = data.mail.filter((m) => ['money', 'bounce', 'stop'].includes(m.kind));
   const fromLeads = data.mail.filter((m) => m.kind === 'lead_reply');
-  const rest = data.mail.filter((m) => m.kind === 'other' || m.kind === 'noise');
-  const restPeople = rest.filter((m) => m.kind === 'other');
   const report = data.report;
   const changed = report ? report.replies.length + report.contacted.length : 0;
 
@@ -265,31 +306,53 @@ export default function InboxView({ initial }: { initial: InboxData }) {
 
       <section className="card" aria-labelledby="n-h" style={{ marginBottom: 12 }}>
         <h2 id="n-h">
-          3 · New people asking about advertising <small>{checked ? inquiries.length || 'none' : '…'}</small>
+          3 · Conversations with new people <small>{checked ? `${todo.length} to do` : '…'}</small>
         </h2>
-        {inquiries.length ? (
+        {checked ? (
           <>
-            <p className="cnote" style={{ margin: '0 0 6px' }}>
-              Strangers who mentioned advertising, rates, sponsorship, an event or a collaboration —
-              from either mailbox, spam included. Add the real ones as leads and leave the rest.
+            <p className="cnote" style={{ margin: '0 0 10px' }}>
+              One row per person, from either mailbox, spam included. A conversation moves to In
+              progress by itself once your Sent folder shows you replied, and comes back from Done
+              if they write again.
             </p>
-            {inquiries.map((m) => (
-              <MailRow
-                key={m.id}
-                m={m}
-                onAdd={() => addAsLead(m)}
-                onTrust={(trust) => trustSender(m, trust)}
-                trusted={isTrusted(m)}
-                busy={trusting === m.id}
+            <div className="ctabs" role="group" aria-label="Which conversations to show">
+              {(
+                [
+                  ['todo', 'To do', todo.length],
+                  ['working', 'In progress', working.length],
+                  ['done', 'Done', finished.length],
+                ] as const
+              ).map(([key, label, n]) => (
+                <button key={key} type="button" aria-pressed={tab === key} onClick={() => setTab(key)}>
+                  {label} <b>{n}</b>
+                </button>
+              ))}
+            </div>
+            {shown.length ? (
+              shown.map((c) => (
+                <MailRow
+                key={c.key}
+                m={c.latest}
+                onAdd={() => addAsLead(c.latest)}
+                onTrust={(trust) => trustSender(c.latest, trust)}
+                trusted={isTrusted(c.latest)}
+                busy={trusting === c.latest.id || marking === c.key}
+                convo={c}
+                onStatus={(status) => setStatus(c, status)}
               />
-            ))}
+              ))
+            ) : (
+              <p className="empty-note">
+                {tab === 'todo'
+                  ? 'Nobody waiting. Strangers who mention advertising, rates, sponsorship, an event or a collaboration land here.'
+                  : tab === 'working'
+                    ? 'Nothing in progress. Mark a conversation In progress, or just reply to it — the next mail check moves it here.'
+                    : 'Nothing finished yet. Done conversations wait here, and come back to To do by themselves if the person writes again.'}
+              </p>
+            )}
           </>
         ) : (
-          <p className="empty-note">
-            {checked
-              ? 'Nobody new. This catches strangers who mention advertising, features, rates, sponsorship, events or a collaboration — in either mailbox, including spam.'
-              : 'Checking…'}
-          </p>
+          <p className="empty-note">Checking…</p>
         )}
       </section>
 
@@ -315,20 +378,34 @@ export default function InboxView({ initial }: { initial: InboxData }) {
       {checked && (
         <details className="card guide">
           <summary>
-            Everything else — {restPeople.length} from people, {rest.length - restPeople.length} automated
+            Everything else — {quietPeople.length} from people, {noise.length} automated
           </summary>
-          {rest.length ? (
-            rest.map((m) => (
-              <MailRow
-                key={m.id}
-                m={m}
-                onAdd={m.kind === 'other' ? () => addAsLead(m) : undefined}
-                onTrust={(trust) => trustSender(m, trust)}
-                trusted={isTrusted(m)}
-                busy={trusting === m.id}
+          {quietPeople.length + noise.length ? (
+            <>
+              {quietPeople.map((c) => (
+                <MailRow
+                key={c.key}
+                m={c.latest}
+                onAdd={() => addAsLead(c.latest)}
+                onTrust={(trust) => trustSender(c.latest, trust)}
+                trusted={isTrusted(c.latest)}
+                busy={trusting === c.latest.id || marking === c.key}
+                convo={c}
+                onStatus={(status) => setStatus(c, status)}
                 quiet
               />
-            ))
+              ))}
+              {noise.map((m) => (
+                <MailRow
+                  key={m.id}
+                  m={m}
+                  onTrust={(trust) => trustSender(m, trust)}
+                  trusted={isTrusted(m)}
+                  busy={trusting === m.id}
+                  quiet
+                />
+              ))}
+            </>
           ) : (
             <p className="empty-note">Nothing else recent.</p>
           )}
@@ -350,6 +427,8 @@ const KIND_LABEL: Record<string, { text: string; tone: string }> = {
   noise: { text: 'Automated', tone: 'none' },
 };
 
+const STATE_LABEL: Record<ConvoStatus, string> = { todo: 'To do', working: 'In progress', done: 'Done' };
+
 function MailRow({
   m,
   onAdd,
@@ -359,6 +438,8 @@ function MailRow({
   stopped,
   busy,
   quiet,
+  convo,
+  onStatus,
 }: {
   m: Classified;
   onAdd?: () => void;
@@ -371,6 +452,9 @@ function MailRow({
   stopped?: boolean;
   busy?: boolean;
   quiet?: boolean;
+  /** Set when the row stands for a whole conversation with this sender. */
+  convo?: Conversation;
+  onStatus?: (status: ConvoStatus) => void;
 }) {
   const label = KIND_LABEL[m.kind];
   // Still wearing the spam warning: in the spam folder and not vouched for.
@@ -384,7 +468,9 @@ function MailRow({
         </span>
       </div>
       {/* The address itself: a friendly display name is the easy half to fake. */}
-      {m.fromName ? <p className="addr">{m.fromAddress}</p> : null}
+      {m.fromName && m.fromName.toLowerCase() !== m.fromAddress.toLowerCase() ? (
+        <p className="addr">{m.fromAddress}</p>
+      ) : null}
       <p className="subj">{m.subject || '(no subject)'}</p>
       {m.summary && !quiet && <p className="sum">{m.summary}</p>}
       <p className="tags">
@@ -395,6 +481,18 @@ function MailRow({
         {flagged && <span className="chip warn">Found in spam</span>}
         {m.folder === 'spam' && trusted && <span className="chip none">You marked this not spam</span>}
         {stopped && <span className="chip none">Unsubscribed — no more emails</span>}
+        {convo?.turn === 'theirs' && convo.repliedAt && (
+          <span className="chip ok">You replied {day(convo.repliedAt)} · waiting on them</span>
+        )}
+        {convo?.turn === 'yours' && convo.state !== 'done' && (
+          <span className="chip warn">They wrote back · your turn</span>
+        )}
+        {convo?.reopened && <span className="chip warn">New message since you marked it done</span>}
+        {convo && convo.earlier > 0 && (
+          <span className="chip none">
+            +{convo.earlier} earlier {convo.earlier === 1 ? 'message' : 'messages'}
+          </span>
+        )}
       </p>
       <p className="acts-row">
         {onAdd && (
@@ -425,6 +523,21 @@ function MailRow({
         <a className="btn ghost" href={WEBMAIL[m.mailbox]} target="_blank" rel="noopener noreferrer">
           Open {BOX_NAME[m.mailbox]}
         </a>
+        {convo && onStatus && (
+          <span className="seg state" role="group" aria-label="Where this conversation stands">
+            {(['todo', 'working', 'done'] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                aria-pressed={convo.state === s}
+                disabled={busy}
+                onClick={() => onStatus(s)}
+              >
+                {STATE_LABEL[s]}
+              </button>
+            ))}
+          </span>
+        )}
       </p>
     </article>
   );

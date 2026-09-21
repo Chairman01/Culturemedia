@@ -7,7 +7,8 @@ import 'server-only';
 import { awaitingReply, type LeadDraftRow, type LeadRow } from './crm';
 import { listLeads, listPendingDrafts } from './crm-admin';
 import type { Classified } from './mail';
-import { listTrustedSenders } from './mail-senders';
+import type { SenderMark } from './conversations';
+import { listSenders, type SenderCalls } from './mail-senders';
 import { readMail, syncMail, type MailSnapshot, type SyncReport } from './mail-sync';
 
 export interface InboxData {
@@ -20,6 +21,10 @@ export interface InboxData {
   stopped: string[];
   /** Addresses the owner marked "not spam", lower-case, so they stop being flagged. */
   trusted: string[];
+  /** Where you left each conversation, by lower-case address. */
+  marks: Record<string, SenderMark>;
+  /** When you last emailed each address, read from the Sent folders. */
+  repliedTo: Record<string, string>;
   /** What the last sync changed; null when the page was only read. */
   report: SyncReport | null;
   error: string | null;
@@ -28,7 +33,7 @@ export interface InboxData {
 function shape(
   snapshot: MailSnapshot,
   drafts: LeadDraftRow[],
-  trusted: string[],
+  calls: SenderCalls | null,
   report: SyncReport | null,
   error: string | null,
 ): InboxData {
@@ -38,7 +43,9 @@ function shape(
     mail: snapshot.incoming,
     mailboxes: snapshot.mailboxes,
     stopped: snapshot.leads.filter((l) => l.unsubscribed_at).map((l) => l.id),
-    trusted,
+    trusted: calls?.trusted ?? [],
+    marks: calls?.marks ?? {},
+    repliedTo: snapshot.repliedTo,
     report,
     error,
   };
@@ -46,16 +53,16 @@ function shape(
 
 /** Read-only: what is there, without touching the CRM. */
 export async function loadInbox(): Promise<InboxData> {
-  const [snapshot, drafts, trusted] = await Promise.all([readMail(), listPendingDrafts(), listTrustedSenders()]);
-  return shape(snapshot, drafts.data ?? [], trusted.data ?? [], null, snapshot.leadsError || drafts.error);
+  const [snapshot, drafts, senders] = await Promise.all([readMail(), listPendingDrafts(), listSenders()]);
+  return shape(snapshot, drafts.data ?? [], senders.data, null, snapshot.leadsError || drafts.error);
 }
 
 /** Read, then record what the mailboxes prove (replies, mail you sent). */
 export async function syncInbox(): Promise<InboxData> {
   const { snapshot, report } = await syncMail();
   // After the sync: a reply cancels that lead's pending drafts.
-  const [drafts, trusted] = await Promise.all([listPendingDrafts(), listTrustedSenders()]);
-  return shape(snapshot, drafts.data ?? [], trusted.data ?? [], report, snapshot.leadsError || drafts.error);
+  const [drafts, senders] = await Promise.all([listPendingDrafts(), listSenders()]);
+  return shape(snapshot, drafts.data ?? [], senders.data, report, snapshot.leadsError || drafts.error);
 }
 
 /** First paint: the CRM side only, so the page appears before the mailboxes answer. */
@@ -68,6 +75,8 @@ export async function loadInboxQuick(): Promise<InboxData> {
     mailboxes: [],
     stopped: [],
     trusted: [],
+    marks: {},
+    repliedTo: {},
     report: null,
     error: leads.error || drafts.error,
   };
