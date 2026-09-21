@@ -92,6 +92,80 @@ function toMessage(msg: FetchMessageObject, folder: Folder, preview: string): Ma
   };
 }
 
+/**
+ * Search the whole Gmail account — All Mail (which includes archived mail and
+ * everything that skipped the inbox), then Spam — with Gmail's own search, so
+ * "costco" or a person's name finds mail of any age. Read-only.
+ */
+export async function searchGmail(query: string, limit = 25): Promise<{ messages: MailMessage[]; note: string | null }> {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!user || !pass) return { messages: [], note: null };
+
+  const client = new ImapFlow({
+    host: 'imap.gmail.com',
+    port: 993,
+    secure: true,
+    auth: { user, pass: pass.replace(/\s+/g, '') },
+    logger: false,
+    socketTimeout: 20000,
+  });
+  client.on('error', (err: unknown) => console.error('[admin] Gmail IMAP error', err));
+
+  try {
+    await client.connect();
+    let all = 'INBOX';
+    let junk: string | null = null;
+    for (const box of await client.list()) {
+      if (box.specialUse === '\\All') all = box.path;
+      if (box.specialUse === '\\Junk') junk = box.path;
+    }
+    const places: { path: string; folder: Folder; take: number }[] = [{ path: all, folder: 'inbox', take: limit }];
+    if (junk) places.push({ path: junk, folder: 'spam', take: 10 });
+
+    const messages: MailMessage[] = [];
+    for (const place of places) {
+      const lock = await client.getMailboxLock(place.path, { readOnly: true });
+      try {
+        const hits = (await client.search({ gmraw: query }, { uid: true })) || [];
+        const newest = hits.slice(-place.take);
+        if (!newest.length) continue;
+        const found: FetchMessageObject[] = [];
+        for await (const msg of client.fetch(
+          newest.join(','),
+          { uid: true, envelope: true, flags: true, internalDate: true, bodyStructure: true, headers: ['list-unsubscribe', 'list-id', 'precedence'] },
+          { uid: true },
+        )) {
+          found.push(msg);
+        }
+        for (const msg of found.reverse()) {
+          // A preview costs a round trip each: the first fifteen are plenty to recognise a result.
+          const part = messages.length < 15 ? findTextPart(msg.bodyStructure) : null;
+          let preview = '';
+          if (part) {
+            const one = await client.fetchOne(String(msg.uid), { bodyParts: [{ key: part.part, maxLength: PREVIEW_BYTES }] }, { uid: true });
+            const buffer = one ? one.bodyParts?.get(part.part) : undefined;
+            preview = previewOf(buffer, part.encoding, part.html);
+          }
+          messages.push({ ...toMessage(msg, place.folder, preview), id: `gmail:search:${place.folder}:${msg.uid}` });
+        }
+      } finally {
+        lock.release();
+      }
+    }
+    return { messages, note: null };
+  } catch (err) {
+    console.error('[admin] Gmail search failed', err);
+    return { messages: [], note: 'Could not search Gmail.' };
+  } finally {
+    try {
+      await client.logout();
+    } catch {
+      /* already closed */
+    }
+  }
+}
+
 export async function readGmail(limit = 40): Promise<MailboxResult> {
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;

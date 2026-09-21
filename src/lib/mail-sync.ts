@@ -40,6 +40,9 @@ export interface MailSnapshot {
   leadsError: string | null;
 }
 
+const AUTO_REPLY =
+  /^(re:\s*)?(auto(matic)?[- ]?(reply|response)|out of (the )?office|away from (my|the) (desk|office)|thank you for (contacting|reaching out|your (e-?mail|message|inquiry)))/i;
+
 const ms = (iso: string | null | undefined) => (iso ? Date.parse(iso) || 0 : 0);
 
 // An email the engine sent shows up in Sent a moment after the engine stamped
@@ -70,6 +73,9 @@ export async function readMail(): Promise<MailSnapshot & { sent: MailMessage[] }
   const sent = all.filter((m) => m.folder === 'sent' || own.has(m.fromAddress));
   const repliedTo: Record<string, string> = {};
   for (const m of sent) {
+    // An auto-responder answers every sender, newsletters included. That is not
+    // you replying, and must not move a conversation to In progress.
+    if (AUTO_REPLY.test(m.subject)) continue;
     for (const to of m.to) {
       const address = to.toLowerCase();
       if (ms(m.at) > ms(repliedTo[address])) repliedTo[address] = m.at;

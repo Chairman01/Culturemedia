@@ -95,6 +95,10 @@ const unescape = (raw: unknown) =>
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)))
     .replace(/&amp;/g, '&');
 
 /** "Dana Reid <dana@x.ca>" → name + lower-cased address. */
@@ -121,6 +125,7 @@ function toIso(value: unknown): string {
 
 type RawMessage = {
   messageId?: string;
+  folderId?: string;
   fromAddress?: string;
   sender?: string;
   toAddress?: string;
@@ -136,6 +141,62 @@ const FOLDER_TYPES: Record<string, Folder> = { inbox: 'inbox', spam: 'spam', sen
 const SKIP_FOLDERS = /^(drafts?|trash|templates?|outbox|snoozed|scheduled|archive)$/i;
 // Enough extra folders for any real mailbox, few enough to stay quick.
 const MAX_OTHER_FOLDERS = 10;
+
+/**
+ * Search the whole Zoho mailbox — every folder, any age — for a word, name or
+ * address. The page only holds the newest mail; this is how an older email is
+ * found. Read-only, like everything else here.
+ */
+export async function searchZoho(query: string, limit = 25): Promise<{ messages: MailMessage[]; note: string | null }> {
+  const token = await accessToken();
+  if (!token) return { messages: [], note: null };
+  const headers = { Authorization: `Zoho-oauthtoken ${token}` };
+  try {
+    const accountsRes = await fetch(`${MAIL_HOST}/api/accounts`, { headers, cache: 'no-store' });
+    if (!accountsRes.ok) return { messages: [], note: 'Zoho refused the connection. Reconnect it.' };
+    const account = ((await accountsRes.json()).data || [])[0] as { accountId: string } | undefined;
+    if (!account) return { messages: [], note: null };
+    const api = `${MAIL_HOST}/api/accounts/${account.accountId}`;
+
+    // Folder names, so a result can say where the email is sitting.
+    const folderOf = new Map<string, { name: string; kind: Folder | null }>();
+    const foldersRes = await fetch(`${api}/folders`, { headers, cache: 'no-store' });
+    if (foldersRes.ok) {
+      for (const f of ((await foldersRes.json()).data || []) as Array<{ folderId?: string; folderType?: string; folderName?: string }>) {
+        if (!f.folderId) continue;
+        const kind = FOLDER_TYPES[String(f.folderType || f.folderName || '').toLowerCase()] ?? null;
+        folderOf.set(String(f.folderId), { name: f.folderName || f.folderType || 'a folder', kind });
+      }
+    }
+
+    const params = new URLSearchParams({ searchKey: `entire:${query}`, limit: String(limit), includeto: 'true' });
+    const res = await fetch(`${api}/messages/search?${params}`, { headers, cache: 'no-store' });
+    if (!res.ok) return { messages: [], note: `Zoho could not run that search (it answered ${res.status}).` };
+
+    const messages: MailMessage[] = [];
+    for (const m of ((await res.json()).data || []) as RawMessage[]) {
+      const from = parseAddress(m.fromAddress);
+      const where = folderOf.get(String(m.folderId ?? ''));
+      messages.push({
+        id: `zoho:search:${m.messageId ?? ''}`,
+        mailbox: 'zoho',
+        folder: where?.kind ?? 'inbox',
+        fromName: from.name || unescape(m.sender),
+        fromAddress: from.address,
+        to: parseAddressList(m.toAddress),
+        subject: unescape(m.subject) || '(no subject)',
+        summary: unescape(m.summary),
+        at: toIso(m.receivedTime ?? m.sentDateInGMT),
+        unread: String(m.status) === '0',
+        ...(where && !where.kind ? { folderName: where.name } : {}),
+      });
+    }
+    return { messages, note: null };
+  } catch (err) {
+    console.error('[admin] Zoho search failed', err);
+    return { messages: [], note: 'Could not reach Zoho Mail to search it.' };
+  }
+}
 
 export async function readZoho(limit = 100): Promise<MailboxResult> {
   const base: MailboxResult = {

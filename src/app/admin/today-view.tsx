@@ -72,8 +72,29 @@ export default function TodayView({
   useEffect(() => {
     if (checkedMail.current) return;
     checkedMail.current = true;
-    fetch('/api/admin/inbox/sync', { method: 'POST', cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
+    // The Inbox keeps its last check for the session. Reuse it while it is under
+    // an hour old, so opening Today does not read both mailboxes every time.
+    const KEY = 'cm-admin-inbox';
+    let saved: { at: number; data: { mailboxes?: unknown[] } } | null = null;
+    try {
+      saved = JSON.parse(sessionStorage.getItem(KEY) || 'null');
+    } catch {
+      saved = null;
+    }
+    const fresh = Boolean(saved?.data?.mailboxes?.length && Date.now() - (saved?.at ?? 0) < 60 * 60 * 1000);
+    const check = fresh
+      ? Promise.resolve({ data: { ...saved?.data, report: null } })
+      : fetch('/api/admin/inbox/sync', { method: 'POST', cache: 'no-store' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((body) => {
+            try {
+              if (body?.data) sessionStorage.setItem(KEY, JSON.stringify({ at: Date.now(), data: { ...body.data, report: null } }));
+            } catch {
+              /* storage blocked: fine, it just checks again next time */
+            }
+            return body;
+          });
+    check
       .then((body) => {
         // A mailbox that is not connected is mail nobody is checking.
         const boxes = (body?.data?.mailboxes ?? []) as { mailbox: string; connected: boolean; note: string | null }[];

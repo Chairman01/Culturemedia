@@ -6,6 +6,9 @@
 //   3. Conversations with new people   — one row per person: to do, in progress, done
 //   4. Worth a look                    — payments, bounces, "please remove me"
 //   5. Everything else                 — collapsed; spam is included so nothing hides
+// The page keeps its last check for the browser session: coming back to it
+// shows that check at once, and the mailboxes are only read again when you
+// press Check mail now (or the check is over an hour old).
 // Opening the page checks both mailboxes (Zoho and Gmail: inbox, spam, sent)
 // and records what they prove. It never sends, deletes, moves or marks mail —
 // including "Not spam", which is remembered here rather than in the mailbox.
@@ -15,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { buildConversations, type Conversation, type ConvoStatus } from '@/lib/conversations';
-import { PARTNERSHIPS_URL, SEQUENCE_LABEL } from '@/lib/crm';
+import { PARTNERSHIPS_URL, SEQUENCE_LABEL, STAGE_LABEL, awaitingReply } from '@/lib/crm';
 import type { InboxData } from '@/lib/inbox';
 import type { Classified } from '@/lib/mail';
 import { PREFILL_KEY, type LeadPrefill } from '../_components/add-lead';
@@ -29,6 +32,12 @@ const WEBMAIL: Record<string, string> = {
 };
 const BOX_NAME: Record<string, string> = { zoho: 'Zoho', gmail: 'Gmail' };
 
+// The last check, kept for this browser session only (it holds email previews).
+export const INBOX_CACHE_KEY = 'cm-admin-inbox';
+export const INBOX_FRESH_MS = 60 * 60 * 1000;
+const clock = (at: number) =>
+  new Date(at).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Edmonton' });
+
 export default function InboxView({ initial }: { initial: InboxData }) {
   const [data, setData] = useState<InboxData>(initial);
   const [syncing, setSyncing] = useState(false);
@@ -40,6 +49,12 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   const [muting, setMuting] = useState<string | null>(null);
   const [box, setBox] = useState<'all' | 'zoho' | 'gmail'>('all');
   const [find, setFind] = useState('');
+  const [view, setView] = useState<'list' | 'board'>('list');
+  const [checkedAt, setCheckedAt] = useState('');
+  const lastCheck = useRef(0);
+  // A search of the whole mailbox, not just what this page holds.
+  const [deep, setDeep] = useState<{ q: string; results: Classified[]; notes: string[] } | null>(null);
+  const [searching, setSearching] = useState(false);
   const [tab, setTab] = useState<ConvoStatus>('todo');
   const started = useRef(false);
   const router = useRouter();
@@ -60,6 +75,8 @@ export default function InboxView({ initial }: { initial: InboxData }) {
       }
       setData(body.data as InboxData);
       setChecked(true);
+      lastCheck.current = Date.now();
+      setCheckedAt(clock(lastCheck.current));
     } catch {
       setProblem("Couldn't reach the server.");
     } finally {
@@ -67,12 +84,59 @@ export default function InboxView({ initial }: { initial: InboxData }) {
     }
   }, []);
 
-  // Check the mailboxes as soon as the page opens.
+  // Opening the page shows the last check. The mailboxes are read again only
+  // when there is no check yet, or it is over an hour old — or you ask.
   useEffect(() => {
     if (started.current) return;
     started.current = true;
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(INBOX_CACHE_KEY) || 'null') as { at: number; data: InboxData } | null;
+      if (saved?.data?.mailboxes?.length && Array.isArray(saved.data.leads)) {
+        lastCheck.current = saved.at;
+        setData(saved.data);
+        setChecked(true);
+        setCheckedAt(clock(saved.at));
+        if (Date.now() - saved.at < INBOX_FRESH_MS) return;
+      }
+    } catch {
+      /* no saved check: read the mailboxes */
+    }
     void sync();
   }, [sync]);
+
+  // Keep the saved check in step with what you do here (Done, Not spam, Not business).
+  useEffect(() => {
+    if (!checked || !lastCheck.current) return;
+    try {
+      sessionStorage.setItem(INBOX_CACHE_KEY, JSON.stringify({ at: lastCheck.current, data: { ...data, report: null } }));
+    } catch {
+      /* storage full or blocked: the page still works, it just checks again next time */
+    }
+  }, [data, checked]);
+
+  const searchEverywhere = async () => {
+    const q = find.trim();
+    if (q.length < 2 || searching) return;
+    setSearching(true);
+    setProblem('');
+    try {
+      const res = await fetch('/api/admin/inbox/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ q }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.data) {
+        setProblem(body.error || "Couldn't search the mailboxes. Try again in a minute.");
+        return;
+      }
+      setDeep({ q, results: body.data.results as Classified[], notes: body.data.notes as string[] });
+    } catch {
+      setProblem("Couldn't reach the server.");
+    } finally {
+      setSearching(false);
+    }
+  };
 
   // Hand the sender to the add-a-lead form without putting them in a URL.
   const addAsLead = (m: Classified) => {
@@ -144,9 +208,12 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   const isMuted = (m: Classified) => data.muted.includes(m.fromAddress.toLowerCase());
   const hidden = (m: Classified) => isMuted(m) && !m.leadId;
 
-  const muteSender = async (m: Classified, mute: boolean) => {
+  const muteSender = (m: Classified, mute: boolean) => muteAddress(m.fromAddress, mute, m.id);
+
+  const muteAddress = async (rawAddress: string, mute: boolean, busyKey: string) => {
+    const m = { fromAddress: rawAddress };
     if (muting) return;
-    setMuting(m.id);
+    setMuting(busyKey);
     setProblem('');
     try {
       const res = await fetch('/api/admin/inbox/mute', {
@@ -234,6 +301,7 @@ export default function InboxView({ initial }: { initial: InboxData }) {
         title="Inbox"
         help="Everyone waiting on you, from both mailboxes, spam included. Work down the page."
       >
+        {checkedAt && !syncing && <span className="checked-at">Last checked {checkedAt}</span>}
         <button type="button" className="btn ghost" onClick={sync} disabled={syncing}>
           {syncing ? 'Checking mail…' : 'Check mail now'}
         </button>
@@ -304,10 +372,24 @@ export default function InboxView({ initial }: { initial: InboxData }) {
             <input
               type="search"
               value={find}
-              onChange={(e) => setFind(e.target.value)}
-              placeholder="Find an email — a name, address or any words"
+              onChange={(e) => {
+                setFind(e.target.value);
+                setDeep(null);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void searchEverywhere();
+              }}
+              placeholder="Find an email — a name, company or any words, then press Enter"
               aria-label="Find an email"
             />
+            <div className="seg" role="group" aria-label="How to lay the page out">
+              <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>
+                List
+              </button>
+              <button type="button" aria-pressed={view === 'board'} onClick={() => setView('board')}>
+                Board
+              </button>
+            </div>
           </div>
 
           {needle.length >= 2 && (
@@ -326,11 +408,46 @@ export default function InboxView({ initial }: { initial: InboxData }) {
                   />
                 ))
               ) : (
-                <p className="empty-note">
-                  Nothing on this page matches “{find.trim()}”. If the email is older than the dates
-                  under “What was checked”, it is in the mailbox but not here.
-                </p>
+                <p className="empty-note">Nothing among the newest mail on this page matches “{find.trim()}”.</p>
               )}
+
+              <div className="deep">
+                {deep && deep.q === find.trim() ? (
+                  <>
+                    <h3>
+                      In the whole mailbox <small>{deep.results.length || 'nothing'}</small>
+                    </h3>
+                    {deep.notes.map((n) => (
+                      <p key={n} className="fmsg crit">
+                        {n}
+                      </p>
+                    ))}
+                    {deep.results.length ? (
+                      deep.results.map((m) => (
+                        <MailRow
+                          key={m.id}
+                          m={m}
+                          onAdd={!m.leadId && m.folder !== 'sent' && m.kind !== 'bounce' ? () => addAsLead(m) : undefined}
+                          trusted={isTrusted(m)}
+                          muted={hidden(m)}
+                        />
+                      ))
+                    ) : (
+                      <p className="empty-note">
+                        No email in Zoho or Gmail — any folder, any age — mentions “{deep.q}”. Try one
+                        word of the name, or part of the address.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="acts-row">
+                    <button type="button" className="btn" onClick={searchEverywhere} disabled={searching}>
+                      {searching ? 'Searching Zoho and Gmail…' : `Search the whole mailbox for “${find.trim()}”`}
+                    </button>
+                    <span className="cnote">Every folder, any age — not just the newest mail on this page.</span>
+                  </p>
+                )}
+              </div>
             </section>
           )}
         </>
@@ -350,6 +467,20 @@ export default function InboxView({ initial }: { initial: InboxData }) {
       )}
       {report && report.errors.length > 0 && <Banner tone="warn">{report.errors.join(' ')}</Banner>}
 
+      {checked && view === 'board' && (
+        <Board
+          convos={convos}
+          leads={data.leads}
+          onOpen={(address) => {
+            setView('list');
+            setFind(address);
+            setDeep(null);
+            window.scrollTo({ top: 0 });
+          }}
+        />
+      )}
+
+      <div hidden={view === 'board'}>
       <section className="card" aria-labelledby="r-h" style={{ marginBottom: 12 }}>
         <h2 id="r-h">
           1 · Replies to answer <small>{data.replies.length || 'none'}</small>
@@ -443,8 +574,9 @@ export default function InboxView({ initial }: { initial: InboxData }) {
             <p className="cnote" style={{ margin: '0 0 10px' }}>
               One row per person, from either mailbox, spam included. A conversation moves to In
               progress by itself once your Sent folder shows you replied, and comes back from Done
-              if they write again. Not a person at all? <b>Hide sender</b> files a newsletter or product
-              update under Everything else for good.
+              if they write again. Not about Culture Media — a newsletter, a personal email, a
+              product update? <b>Not business</b> takes that sender off this page for good; the list at the
+              bottom lets you bring anyone back.
             </p>
             <div className="ctabs" role="group" aria-label="Which conversations to show">
               {(
@@ -508,10 +640,30 @@ export default function InboxView({ initial }: { initial: InboxData }) {
         </section>
       )}
 
+      {checked && data.muted.length > 0 && (
+        <details className="card guide" style={{ marginBottom: 12 }}>
+          <summary>Not business — {data.muted.length} {data.muted.length === 1 ? 'sender' : 'senders'} kept off this page</summary>
+          <p className="cnote" style={{ margin: '8px 0' }}>
+            Newsletters, personal mail, product updates. Their mail is still in your mailbox; it just never
+            shows up here as something to do. Bring one back if it turns out to matter.
+          </p>
+          <ul className="srows">
+            {data.muted.map((address) => (
+              <li key={address}>
+                <span>{address}</span>
+                <button type="button" onClick={() => muteAddress(address, false, address)} disabled={muting !== null}>
+                  {muting === address ? 'Saving…' : 'Bring back'}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
       {checked && (
         <details className="card guide">
           <summary>
-            Everything else — {quietPeople.length} from people, {noise.length} automated or hidden
+            Everything else — {quietPeople.length} from people, {noise.length} automated or not business
           </summary>
           {quietPeople.length + noise.length ? (
             <>
@@ -547,6 +699,8 @@ export default function InboxView({ initial }: { initial: InboxData }) {
           )}
         </details>
       )}
+
+      </div>
 
       {checked && data.mailboxes.some((b) => !b.connected || b.note) && <ConnectHelp data={data} />}
     </AdminShell>
@@ -625,7 +779,8 @@ function MailRow({
         {m.folderName && <span className="chip none">Filed under “{m.folderName}”</span>}
         {m.folder === 'spam' && trusted && <span className="chip none">You marked this not spam</span>}
         {stopped && <span className="chip none">Unsubscribed — no more emails</span>}
-        {muted && <span className="chip none">You hid this sender</span>}
+        {muted && <span className="chip none">Marked not business</span>}
+        {m.folder === 'sent' && <span className="chip none">You sent this</span>}
         {convo?.turn === 'theirs' && convo.repliedAt && (
           <span className="chip ok">You replied {day(convo.repliedAt)} · waiting on them</span>
         )}
@@ -666,8 +821,18 @@ function MailRow({
           </button>
         )}
         {onMute && !m.leadId && (
-          <button type="button" className="btn ghost" onClick={() => onMute(!muted)} disabled={busy}>
-            {muted ? 'Show again' : 'Hide sender'}
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() => onMute(!muted)}
+            disabled={busy}
+            title={
+              muted
+                ? 'Put this sender back among your conversations'
+                : 'Not about Culture Media: take this sender off the page for good. You can bring them back from the list at the bottom.'
+            }
+          >
+            {muted ? 'Bring back' : 'Not business'}
           </button>
         )}
         <a className="btn ghost" href={WEBMAIL[m.mailbox]} target="_blank" rel="noopener noreferrer">
@@ -690,6 +855,135 @@ function MailRow({
         )}
       </p>
     </article>
+  );
+}
+
+interface Card {
+  key: string;
+  title: string;
+  sub: string;
+  when: string | null;
+  mailbox?: string;
+  /** A lead opens its page; a conversation opens in the list. */
+  href?: string;
+  address?: string;
+}
+
+// Everyone at once, in four piles by whose move it is. Leads and strangers sit
+// together on purpose: the question is "who is waiting on whom", not which
+// table a person happens to live in.
+function Board({
+  convos,
+  leads,
+  onOpen,
+}: {
+  convos: Conversation[];
+  leads: InboxData['leads'];
+  onOpen: (address: string) => void;
+}) {
+  const leadCard = (l: InboxData['leads'][number], when: string | null, sub?: string): Card => ({
+    key: `lead-${l.id}`,
+    title: l.company,
+    sub: sub || [l.contact_name, STAGE_LABEL[l.stage] || l.stage].filter(Boolean).join(' · '),
+    when,
+    href: `/admin/leads/${l.id}`,
+  });
+  const convoCard = (c: Conversation): Card => ({
+    key: `convo-${c.key}`,
+    title: c.latest.fromName || c.key,
+    sub: c.latest.subject,
+    when: c.latest.at,
+    mailbox: c.latest.mailbox,
+    address: c.key,
+  });
+  const newest = (a: Card, b: Card) => String(b.when || '').localeCompare(String(a.when || ''));
+
+  const waitingOnYou = leads.filter(awaitingReply);
+  const columns: { title: string; help: string; cards: Card[] }[] = [
+    {
+      title: 'Wrote to you',
+      help: 'Your move. They are waiting on an answer.',
+      cards: [
+        ...waitingOnYou.map((l) => leadCard(l, l.last_reply_at, 'Replied — answer them')),
+        ...convos.filter((c) => c.state === 'todo' || (c.state === 'working' && c.turn === 'yours')).map(convoCard),
+      ].sort(newest),
+    },
+    {
+      title: 'You reached out',
+      help: 'Their move. Nothing to do until they answer or the follow-up is due.',
+      cards: [
+        ...leads.filter((l) => l.stage === 'contacted' && !awaitingReply(l)).map((l) => leadCard(l, l.last_contacted_at)),
+        ...convos.filter((c) => c.state === 'working' && c.turn === 'theirs').map(convoCard),
+      ].sort(newest),
+    },
+    {
+      title: 'In conversation',
+      help: 'Talking, or a proposal is out.',
+      cards: [
+        ...leads
+          .filter((l) => (l.stage === 'engaged' || l.stage === 'proposal') && !awaitingReply(l))
+          .map((l) => leadCard(l, l.last_reply_at || l.last_contacted_at)),
+        ...convos.filter((c) => c.state === 'working' && c.turn === null).map(convoCard),
+      ].sort(newest),
+    },
+    {
+      title: 'Clients',
+      help: 'They have bought. Check in before they go cold.',
+      cards: leads
+        .filter((l) => l.stage === 'won')
+        .map((l) => leadCard(l, l.last_contacted_at, l.next_action_on ? `Check in ${day(l.next_action_on)}` : 'No check-in booked'))
+        .sort(newest),
+    },
+  ];
+
+  // "Dec 7" reads as this year. The newest date on the board is this year, so
+  // anything from another year says which.
+  const thisYear = columns
+    .flatMap((c) => c.cards.map((card) => String(card.when || '').slice(0, 4)))
+    .sort()
+    .pop();
+  const dated = (iso: string) => `${day(iso)}${iso.slice(0, 4) !== thisYear ? `, ${iso.slice(0, 4)}` : ''}`;
+
+  return (
+    <div className="board" aria-label="Everyone, by whose move it is">
+      {columns.map((col) => (
+        <section key={col.title} className="card" aria-label={col.title}>
+          <h2>
+            {col.title} <small>{col.cards.length}</small>
+          </h2>
+          <p className="cnote">{col.help}</p>
+          {col.cards.length ? (
+            <ul>
+              {col.cards.map((card) => {
+                const inner = (
+                  <>
+                    <b>{card.title}</b>
+                    <span className="sub">{card.sub}</span>
+                    <span className="when">
+                      {card.mailbox && <span className={`src ${card.mailbox}`}>{BOX_NAME[card.mailbox]}</span>}
+                      {card.when ? dated(card.when) : 'no contact yet'}
+                    </span>
+                  </>
+                );
+                return (
+                  <li key={card.key}>
+                    {card.href ? (
+                      <Link href={card.href}>{inner}</Link>
+                    ) : (
+                      <button type="button" onClick={() => onOpen(card.address || '')}>
+                        {inner}
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="empty-note">Nobody here.</p>
+          )}
+        </section>
+      ))}
+    </div>
   );
 }
 

@@ -4,9 +4,10 @@ import { useEffect, useRef } from 'react';
 
 /**
  * Re-runs `refresh` when you come back to the tab, so a page left open all day
- * is never showing this morning's numbers. At most once a minute.
+ * is never showing this morning's numbers — but no more than every ten
+ * minutes, so stepping away and back does not set everything reloading.
  */
-export function useRefreshOnFocus(refresh: () => void, minGapMs = 60_000) {
+export function useRefreshOnFocus(refresh: () => void, minGapMs = 10 * 60_000) {
   const saved = useRef(refresh);
   useEffect(() => {
     saved.current = refresh;

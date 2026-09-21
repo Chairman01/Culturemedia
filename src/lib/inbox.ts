@@ -13,6 +13,8 @@ import { readMail, syncMail, type MailSnapshot, type SyncReport } from './mail-s
 
 export interface InboxData {
   replies: LeadRow[];
+  /** Every lead, for the board: who you reached out to, who is a client. */
+  leads: LeadRow[];
   drafts: LeadDraftRow[];
   /** Incoming mail from both mailboxes (inbox + spam), newest first. */
   mail: Classified[];
@@ -41,6 +43,7 @@ function shape(
 ): InboxData {
   return {
     replies: snapshot.leads.filter(awaitingReply),
+    leads: snapshot.leads,
     drafts,
     mail: snapshot.incoming,
     mailboxes: snapshot.mailboxes,
@@ -73,6 +76,7 @@ export async function loadInboxQuick(): Promise<InboxData> {
   const [leads, drafts] = await Promise.all([listLeads(), listPendingDrafts()]);
   return {
     replies: (leads.data ?? []).filter(awaitingReply),
+    leads: leads.data ?? [],
     drafts: drafts.data ?? [],
     mail: [],
     mailboxes: [],
