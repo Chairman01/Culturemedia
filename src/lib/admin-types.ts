@@ -41,6 +41,11 @@ export interface OpsAction {
   priority?: number;
   due_on?: string | null;
   completed_at?: string | null;
+  /** Set on a job that comes round again: every N days from due_on (7 = weekly). */
+  repeat_days?: number | null;
+  /** The last time a repeating job was done; marking it done moves due_on on instead of closing it. */
+  last_done_on?: string | null;
+  times_done?: number | null;
 }
 
 export interface CalendarMonth extends MetricRow {
