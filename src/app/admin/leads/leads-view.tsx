@@ -162,7 +162,7 @@ export default function LeadsView({
       {adding && (
         <section className="card" aria-labelledby="add-h" style={{ marginBottom: 12 }}>
           <h2 id="add-h">Add a lead or client</h2>
-          <AddLeadForm onAdded={load} />
+          <AddLeadForm onAdded={updateFromMail} />
         </section>
       )}
 

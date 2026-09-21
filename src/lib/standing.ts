@@ -35,6 +35,9 @@ function daysAgo(iso: string, today: string): number {
 const span = (days: number) =>
   days === 0 ? 'today' : days === 1 ? 'yesterday' : days < 14 ? `${days} days ago` : days < 60 ? `${Math.round(days / 7)} weeks ago` : `${Math.round(days / 30)} months ago`;
 
+/** Days of silence after your email before it is worth writing again. */
+export const FOLLOW_UP_DAYS = 4;
+
 export function standingOf(lead: LeadRow, today: string): Standing {
   const theirs = lead.last_reply_at ? String(lead.last_reply_at) : '';
   const yours = lead.last_contacted_at ? String(lead.last_contacted_at) : '';
@@ -87,6 +90,19 @@ export function standingOf(lead: LeadRow, today: string): Standing {
     };
   }
 
+  // You wrote, they have gone quiet, and no later step is booked: that is a
+  // follow-up owed, not a lead to wait on forever.
+  if (yours && daysAgo(yours, today) >= FOLLOW_UP_DAYS && !(lead.next_action_on && lead.next_action_on > today)) {
+    const days = daysAgo(yours, today);
+    return {
+      group: 'move',
+      label: 'Follow up',
+      tone: 'warn',
+      text: `You wrote last, ${span(days)} (${nice(yours, today)}) — ${theirs ? 'no answer since' : 'no answer yet'}. Time to follow up.`,
+      rank: 1,
+    };
+  }
+
   if (yours) {
     const days = daysAgo(yours, today);
     return {
@@ -110,7 +126,10 @@ export function standingOf(lead: LeadRow, today: string): Standing {
 }
 
 export const GROUP_TITLE: Record<StandingGroup, { title: string; help: string }> = {
-  move: { title: 'Your move', help: 'They are waiting on you, or a step you set is due. Do these first.' },
+  move: {
+    title: 'Your move',
+    help: 'They are waiting on you, a step you set is due, or your last email has sat unanswered for a few days. Do these first.',
+  },
   fresh: { title: 'Not started', help: 'In your list, but no email has gone either way.' },
   waiting: { title: 'Waiting on them', help: 'You wrote last. Nothing to do until they answer or the next step comes due.' },
   customer: { title: 'Clients', help: 'They have bought. Keep a check-in date on each so nobody goes cold.' },

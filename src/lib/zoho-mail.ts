@@ -129,6 +129,7 @@ type RawMessage = {
   fromAddress?: string;
   sender?: string;
   toAddress?: string;
+  ccAddress?: string;
   subject?: string;
   summary?: string;
   receivedTime?: string;
@@ -183,7 +184,7 @@ export async function searchZoho(query: string, limit = 25): Promise<{ messages:
         folder: where?.kind ?? 'inbox',
         fromName: from.name || unescape(m.sender),
         fromAddress: from.address,
-        to: parseAddressList(m.toAddress),
+        to: [...parseAddressList(m.toAddress), ...parseAddressList(m.ccAddress)],
         subject: unescape(m.subject) || '(no subject)',
         summary: unescape(m.summary),
         at: toIso(m.receivedTime ?? m.sentDateInGMT),
@@ -283,7 +284,7 @@ export async function readZoho(limit = 100): Promise<MailboxResult> {
             folder,
             fromName: from.name || unescape(m.sender),
             fromAddress: from.address,
-            to: parseAddressList(m.toAddress),
+            to: [...parseAddressList(m.toAddress), ...parseAddressList(m.ccAddress)],
             subject: unescape(m.subject) || '(no subject)',
             summary: unescape(m.summary),
             at: toIso(m.receivedTime ?? m.sentDateInGMT),

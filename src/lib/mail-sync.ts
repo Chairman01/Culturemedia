@@ -15,12 +15,12 @@
 
 import 'server-only';
 
-import { classify, indexLeads, type Classified, type MailMessage } from './mail';
+import { classify, indexLeads, PERSONAL_DOMAINS, type Classified, type MailMessage } from './mail';
 import type { LeadRow } from './crm';
 import { listLeads } from './crm-admin';
-import { readGmail } from './gmail-imap';
+import { readGmail, searchGmail } from './gmail-imap';
 import { getClient } from './supabase-admin';
-import { readZoho, type MailboxResult } from './zoho-mail';
+import { readZoho, searchZoho, type MailboxResult } from './zoho-mail';
 
 export interface SyncReport {
   /** Leads newly marked as having replied. */
@@ -43,6 +43,13 @@ export interface MailSnapshot {
 const AUTO_REPLY =
   /^(re:\s*)?(auto(matic)?[- ]?(reply|response)|out of (the )?office|away from (my|the) (desk|office)|thank you for (contacting|reaching out|your (e-?mail|message|inquiry)))/i;
 
+// A lead with no mail history gets one look through the whole mailbox, because
+// the conversation usually happened before they were added. Each look is a few
+// requests, so only a handful per check.
+const MAX_LOOKUPS = 3;
+// A sent email is logged on the lead's timeline; after a long gap, not all of them.
+const MAX_LOGGED = 5;
+
 const ms = (iso: string | null | undefined) => (iso ? Date.parse(iso) || 0 : 0);
 
 // An email the engine sent shows up in Sent a moment after the engine stamped
@@ -50,7 +57,7 @@ const ms = (iso: string | null | undefined) => (iso ? Date.parse(iso) || 0 : 0);
 const SEND_SLACK_MS = 2 * 60 * 1000;
 
 /** Read both mailboxes and classify. Read-only: safe to call from a GET. */
-export async function readMail(): Promise<MailSnapshot & { sent: MailMessage[] }> {
+export async function readMail(): Promise<MailSnapshot & { sent: MailMessage[]; own: string[] }> {
   // The newest 100 per Zoho folder (one request each) and 60 per Gmail folder
   // (one request per message for its preview, so it costs more). The page
   // shows how far back each folder was read.
@@ -94,6 +101,7 @@ export async function readMail(): Promise<MailSnapshot & { sent: MailMessage[] }
     incoming,
     repliedTo,
     sent,
+    own: [...own],
     leads: leads.data ?? [],
     leadsError: leads.error,
   };
@@ -101,7 +109,10 @@ export async function readMail(): Promise<MailSnapshot & { sent: MailMessage[] }
 
 /** Apply what the mailboxes prove to the CRM. Idempotent. */
 export async function syncMail(): Promise<{ snapshot: MailSnapshot; report: SyncReport }> {
-  const { sent, ...snapshot } = await readMail();
+  const { sent, own: ownList, ...snapshot } = await readMail();
+  const own = new Set(ownList);
+  const index = indexLeads(snapshot.leads);
+  let lookups = 0;
   const report: SyncReport = { replies: [], contacted: [], errors: [] };
   const supabase = getClient();
   if (!supabase || snapshot.leadsError) {
@@ -115,10 +126,30 @@ export async function syncMail(): Promise<{ snapshot: MailSnapshot; report: Sync
 
     // Exact address only: a colleague on the same domain is shown as "probably
     // them" on the page, never written to the record.
-    const inbound = snapshot.incoming.find((m) => m.fromAddress === email && m.kind !== 'bounce');
-    const outbound = sent
-      .filter((m) => m.to.includes(email))
-      .sort((a, b) => b.at.localeCompare(a.at))[0];
+    let inbound = snapshot.incoming.find((m) => m.fromAddress === email && m.kind !== 'bounce');
+
+    // Mail you sent counts when it went to them, or to a colleague at the same
+    // company (To or Cc) — a reply to three people at Costco is contact with Costco.
+    const domain = email.split('@')[1] || '';
+    const company = domain && !PERSONAL_DOMAINS.has(domain) ? `@${domain}` : null;
+    const toThem = (m: MailMessage) => m.to.some((a) => a === email || (company !== null && a.endsWith(company)));
+    let outgoing = sent.filter(toThem);
+
+    // Nothing on file and nothing in the newest mail: look through the whole
+    // mailbox once. The conversation usually came before the lead did.
+    if (!inbound && !outgoing.length && !lead.last_contacted_at && !lead.last_reply_at && lookups < MAX_LOOKUPS) {
+      lookups += 1;
+      const [z, g] = await Promise.all([searchZoho(email, 15), searchGmail(email, 15)]);
+      const everything = [...z.messages, ...g.messages].filter((m) => m.at);
+      outgoing = everything.filter((m) => (m.folder === 'sent' || own.has(m.fromAddress)) && toThem(m));
+      const theirs = everything
+        .filter((m) => m.fromAddress === email)
+        .sort((a, b) => b.at.localeCompare(a.at))[0];
+      if (theirs) inbound = classify(theirs, index);
+    }
+
+    outgoing.sort((a, b) => a.at.localeCompare(b.at));
+    const outbound = outgoing[outgoing.length - 1];
 
     const lastContact = ms(lead.last_contacted_at);
     const lastReply = ms(lead.last_reply_at);
@@ -129,12 +160,18 @@ export async function syncMail(): Promise<{ snapshot: MailSnapshot; report: Sync
       if (outbound && ms(outbound.at) > lastContact + SEND_SLACK_MS) {
         patch.last_contacted_at = outbound.at;
         if (stage === 'new') patch.stage = stage = 'contacted';
-        await supabase.from('lead_events').insert({
-          lead_id: lead.id,
-          type: 'note',
-          body: `Email you sent from ${outbound.mailbox === 'gmail' ? 'Gmail' : 'Zoho'}: “${outbound.subject}”`,
-          meta: { kind: 'email', via: 'mail sync', messageId: outbound.id, at: outbound.at },
-        });
+        // Every email since the last one on file, oldest first, so a follow-up
+        // shows on the timeline as its own line rather than vanishing into the first.
+        const unlogged = outgoing.filter((m) => ms(m.at) > lastContact + SEND_SLACK_MS).slice(-MAX_LOGGED);
+        await supabase.from('lead_events').insert(
+          unlogged.map((m) => ({
+            lead_id: lead.id,
+            type: 'note',
+            body: `Email you sent from ${m.mailbox === 'gmail' ? 'Gmail' : 'Zoho'}: “${m.subject}”`,
+            meta: { kind: 'email', via: 'mail sync', messageId: m.id, at: m.at },
+            created_at: m.at,
+          })),
+        );
         report.contacted.push({ leadId: lead.id, company: lead.company, subject: outbound.subject });
       }
 
@@ -168,12 +205,16 @@ export async function syncMail(): Promise<{ snapshot: MailSnapshot; report: Sync
             from: inbound.fromAddress,
           },
         });
-        report.replies.push({
-          leadId: lead.id,
-          company: lead.company,
-          subject: inbound.subject,
-          folder: inbound.folder,
-        });
+        // Filling in history is not news: only announce a reply you have not
+        // already answered.
+        if (!outbound || ms(inbound.at) > ms(outbound.at)) {
+          report.replies.push({
+            leadId: lead.id,
+            company: lead.company,
+            subject: inbound.subject,
+            folder: inbound.folder,
+          });
+        }
       }
 
       if (Object.keys(patch).length) {
