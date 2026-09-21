@@ -21,6 +21,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildConversations, type Conversation, type ConvoStatus } from '@/lib/conversations';
 import { PARTNERSHIPS_URL, SEQUENCE_LABEL, STAGE_LABEL, awaitingReply } from '@/lib/crm';
 import type { InboxData } from '@/lib/inbox';
+import { INBOX_FRESH_MS, readSavedCheck, saveCheck } from '@/lib/inbox-cache';
 import type { Classified } from '@/lib/mail';
 import { PREFILL_KEY, type LeadPrefill } from '../_components/add-lead';
 import { day } from '../_components/format';
@@ -33,9 +34,6 @@ const WEBMAIL: Record<string, string> = {
 };
 const BOX_NAME: Record<string, string> = { zoho: 'Zoho', gmail: 'Gmail' };
 
-// The last check, kept for this browser session only (it holds email previews).
-export const INBOX_CACHE_KEY = 'cm-admin-inbox';
-export const INBOX_FRESH_MS = 60 * 60 * 1000;
 const clock = (at: number) =>
   new Date(at).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Edmonton' });
 
@@ -90,17 +88,15 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    try {
-      const saved = JSON.parse(sessionStorage.getItem(INBOX_CACHE_KEY) || 'null') as { at: number; data: InboxData } | null;
-      if (saved?.data?.mailboxes?.length && Array.isArray(saved.data.leads)) {
-        lastCheck.current = saved.at;
-        setData(saved.data);
-        setChecked(true);
-        setCheckedAt(clock(saved.at));
-        if (Date.now() - saved.at < INBOX_FRESH_MS) return;
-      }
-    } catch {
-      /* no saved check: read the mailboxes */
+    // A check saved by an earlier release is ignored (see inbox-cache.ts), so an
+    // update to the admin never leaves old rows on screen.
+    const saved = readSavedCheck<InboxData>();
+    if (saved?.data.mailboxes?.length && Array.isArray(saved.data.leads)) {
+      lastCheck.current = saved.at;
+      setData(saved.data);
+      setChecked(true);
+      setCheckedAt(clock(saved.at));
+      if (Date.now() - saved.at < INBOX_FRESH_MS) return;
     }
     void sync();
   }, [sync]);
@@ -108,11 +104,7 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   // Keep the saved check in step with what you do here (Done, Not spam, Not business).
   useEffect(() => {
     if (!checked || !lastCheck.current) return;
-    try {
-      sessionStorage.setItem(INBOX_CACHE_KEY, JSON.stringify({ at: lastCheck.current, data: { ...data, report: null } }));
-    } catch {
-      /* storage full or blocked: the page still works, it just checks again next time */
-    }
+    saveCheck({ ...data, report: null }, lastCheck.current);
   }, [data, checked]);
 
   const searchEverywhere = async () => {
