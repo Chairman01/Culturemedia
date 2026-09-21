@@ -16,7 +16,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { buildConversations, type Conversation, type ConvoStatus } from '@/lib/conversations';
 import { PARTNERSHIPS_URL, SEQUENCE_LABEL, STAGE_LABEL, awaitingReply } from '@/lib/crm';
@@ -24,6 +24,7 @@ import type { InboxData } from '@/lib/inbox';
 import { INBOX_FRESH_MS, readSavedCheck, saveCheck } from '@/lib/inbox-cache';
 import type { Classified } from '@/lib/mail';
 import { PREFILL_KEY, type LeadPrefill } from '../_components/add-lead';
+import { Detail } from '../_components/detail';
 import { day } from '../_components/format';
 import { AdminShell, PageHead } from '../_components/shell';
 import { Banner } from '../_components/ui';
@@ -33,6 +34,9 @@ const WEBMAIL: Record<string, string> = {
   gmail: 'https://mail.google.com/',
 };
 const BOX_NAME: Record<string, string> = { zoho: 'Zoho', gmail: 'Gmail' };
+
+// Every row can open its email, wherever on the page the row is drawn.
+const ReadContext = createContext<((m: Classified) => void) | null>(null);
 
 const clock = (at: number) =>
   new Date(at).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Edmonton' });
@@ -54,6 +58,30 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   // A search of the whole mailbox, not just what this page holds.
   const [deep, setDeep] = useState<{ q: string; results: Classified[]; notes: string[] } | null>(null);
   const [searching, setSearching] = useState(false);
+  // The email being read in full: its text arrives a moment after the panel opens.
+  const [reading, setReading] = useState<{ m: Classified; text: string | null; cut: boolean; error: string } | null>(null);
+
+  const readEmail = useCallback(async (m: Classified) => {
+    setReading({ m, text: null, cut: false, error: '' });
+    try {
+      const res = await fetch('/api/admin/inbox/message', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: m.id, folderId: m.folderId }),
+      });
+      const body = await res.json().catch(() => ({}));
+      // Only fill the panel that is still open on this email.
+      setReading((now) =>
+        now && now.m.id === m.id
+          ? res.ok && body.data
+            ? { m, text: String(body.data.text || ''), cut: Boolean(body.data.cut), error: '' }
+            : { m, text: null, cut: false, error: body.error || "Couldn't fetch that email." }
+          : now,
+      );
+    } catch {
+      setReading((now) => (now && now.m.id === m.id ? { m, text: null, cut: false, error: "Couldn't reach the server." } : now));
+    }
+  }, []);
   const [tab, setTab] = useState<ConvoStatus>('todo');
   const started = useRef(false);
   const router = useRouter();
@@ -301,6 +329,7 @@ export default function InboxView({ initial }: { initial: InboxData }) {
 
   return (
     <AdminShell>
+      <ReadContext.Provider value={readEmail}>
       <PageHead
         title="Inbox"
         help="Everyone waiting on you, from both mailboxes, spam included. Work down the page."
@@ -542,6 +571,11 @@ export default function InboxView({ initial }: { initial: InboxData }) {
                   <Link className="btn ghost" href={`/admin/leads/${lead.id}`}>
                     Open lead
                   </Link>
+                  {latest && (
+                    <button type="button" className="btn ghost" onClick={() => readEmail(latest)}>
+                      Read full email
+                    </button>
+                  )}
                 </p>
               </div>
             );
@@ -733,6 +767,37 @@ export default function InboxView({ initial }: { initial: InboxData }) {
       </div>
 
       {checked && data.mailboxes.some((b) => !b.connected || b.note) && <ConnectHelp data={data} />}
+
+      {reading && (
+        <Detail title={`Email · ${BOX_NAME[reading.m.mailbox]} · ${day(reading.m.at)}`} onClose={() => setReading(null)}>
+          <h3 className="mail-subject">{reading.m.subject || '(no subject)'}</h3>
+          <p className="mail-from">
+            {reading.m.folder === 'sent' ? 'You sent this' : 'From'}{' '}
+            <b>{reading.m.fromName || reading.m.fromAddress}</b>
+            {reading.m.fromName ? ` · ${reading.m.fromAddress}` : ''}
+          </p>
+          {reading.error ? (
+            <p className="fmsg crit">{reading.error}</p>
+          ) : reading.text === null ? (
+            <p className="empty-note">Fetching the email from {BOX_NAME[reading.m.mailbox]}…</p>
+          ) : (
+            <>
+              <pre className="mail-full">{reading.text || 'This email has no text — it may be only images or an attachment.'}</pre>
+              {reading.cut && <p className="cnote">This is a long email; the rest is in {BOX_NAME[reading.m.mailbox]}.</p>}
+            </>
+          )}
+          <p className="cnote">
+            Shown as plain text, so images and attachments do not appear — and the sender cannot tell you opened
+            it. Reading it here does not mark it read in {BOX_NAME[reading.m.mailbox]}.
+          </p>
+          <p className="acts-row">
+            <a className="btn" href={reading.m.link || WEBMAIL[reading.m.mailbox]} target="_blank" rel="noopener noreferrer">
+              {reading.m.folder === 'sent' ? 'Open' : 'Reply'} in {BOX_NAME[reading.m.mailbox]}
+            </a>
+          </p>
+        </Detail>
+      )}
+      </ReadContext.Provider>
     </AdminShell>
   );
 }
@@ -782,6 +847,7 @@ function MailRow({
   /** The owner hid this sender. */
   muted?: boolean;
 }) {
+  const read = useContext(ReadContext);
   const label = KIND_LABEL[m.kind];
   // Still wearing the spam warning: in the spam folder and not vouched for.
   const flagged = m.folder === 'spam' && !trusted;
@@ -854,6 +920,11 @@ function MailRow({
         {onTrust && m.folder === 'spam' && !trusted && (
           <button type="button" className="btn ghost" onClick={() => onTrust(true)} disabled={busy}>
             {busy ? 'Saving…' : 'Not spam'}
+          </button>
+        )}
+        {read && (
+          <button type="button" className="btn ghost" onClick={() => read(m)}>
+            Read full email
           </button>
         )}
         {onMute && !m.leadId && (

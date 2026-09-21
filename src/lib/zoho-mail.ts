@@ -148,6 +148,17 @@ const SKIP_FOLDERS = /^(drafts?|trash|templates?|outbox|snoozed|scheduled|archiv
 // Enough extra folders for any real mailbox, few enough to stay quick.
 const MAX_OTHER_FOLDERS = 10;
 
+/** The account's API root and auth headers, for one-off reads such as a single email's text. */
+export async function zohoSession(): Promise<{ api: string; headers: Record<string, string> } | null> {
+  const token = await accessToken();
+  if (!token) return null;
+  const headers = { Authorization: `Zoho-oauthtoken ${token}` };
+  const res = await fetch(`${MAIL_HOST}/api/accounts`, { headers, cache: 'no-store' });
+  if (!res.ok) return null;
+  const account = ((await res.json()).data || [])[0] as { accountId: string } | undefined;
+  return account ? { api: `${MAIL_HOST}/api/accounts/${account.accountId}`, headers } : null;
+}
+
 /**
  * Search the whole Zoho mailbox — every folder, any age — for a word, name or
  * address. The page only holds the newest mail; this is how an older email is
@@ -186,6 +197,7 @@ export async function searchZoho(query: string, limit = 25): Promise<{ messages:
       messages.push({
         id: `zoho:search:${m.messageId ?? ''}`,
         link: permalink(m.folderId, m.messageId),
+        ...(m.folderId ? { folderId: String(m.folderId) } : {}),
         mailbox: 'zoho',
         folder: where?.kind ?? 'inbox',
         fromName: from.name || unescape(m.sender),
@@ -287,6 +299,7 @@ export async function readZoho(limit = 100): Promise<MailboxResult> {
           mine.push({
             id: `zoho:${m.messageId ?? ''}`,
             link: permalink(m.folderId || folderId, m.messageId),
+            ...(m.folderId || folderId ? { folderId: String(m.folderId || folderId) } : {}),
             mailbox: 'zoho',
             folder,
             fromName: from.name || unescape(m.sender),
