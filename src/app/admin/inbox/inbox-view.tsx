@@ -7,7 +7,8 @@
 //   4. Worth a look                    — payments, bounces, "please remove me"
 //   5. Everything else                 — collapsed; spam is included so nothing hides
 // Opening the page checks both mailboxes (Zoho and Gmail: inbox, spam, sent)
-// and records what they prove. It never sends, deletes, moves or marks mail.
+// and records what they prove. It never sends, deletes, moves or marks mail —
+// including "Not spam", which is remembered here rather than in the mailbox.
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -33,6 +34,7 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   const [checked, setChecked] = useState(false);
   const [problem, setProblem] = useState('');
   const [stopping, setStopping] = useState<string | null>(null);
+  const [trusting, setTrusting] = useState<string | null>(null);
   const started = useRef(false);
   const router = useRouter();
 
@@ -97,6 +99,37 @@ export default function InboxView({ initial }: { initial: InboxData }) {
       await sync();
     } finally {
       setStopping(null);
+    }
+  };
+
+  // Vouching for a sender only changes what this page shows: the mail grants are
+  // read-only, so the message stays exactly where it is in Zoho or Gmail.
+  const isTrusted = (m: Classified) => data.trusted.includes(m.fromAddress.toLowerCase());
+
+  const trustSender = async (m: Classified, trust: boolean) => {
+    if (trusting) return;
+    setTrusting(m.id);
+    setProblem('');
+    try {
+      const res = await fetch('/api/admin/inbox/trust', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: m.fromAddress, trusted: trust }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setProblem(body.error || "Couldn't save that.");
+        return;
+      }
+      const address = m.fromAddress.toLowerCase();
+      setData((d) => ({
+        ...d,
+        trusted: trust ? [...d.trusted, address] : d.trusted.filter((e) => e !== address),
+      }));
+    } catch {
+      setProblem("Couldn't reach the server.");
+    } finally {
+      setTrusting(null);
     }
   };
 
@@ -235,7 +268,22 @@ export default function InboxView({ initial }: { initial: InboxData }) {
           3 · New people asking about advertising <small>{checked ? inquiries.length || 'none' : '…'}</small>
         </h2>
         {inquiries.length ? (
-          inquiries.map((m) => <MailRow key={m.id} m={m} onAdd={() => addAsLead(m)} />)
+          <>
+            <p className="cnote" style={{ margin: '0 0 6px' }}>
+              Strangers who mentioned advertising, rates, sponsorship, an event or a collaboration —
+              from either mailbox, spam included. Add the real ones as leads and leave the rest.
+            </p>
+            {inquiries.map((m) => (
+              <MailRow
+                key={m.id}
+                m={m}
+                onAdd={() => addAsLead(m)}
+                onTrust={(trust) => trustSender(m, trust)}
+                trusted={isTrusted(m)}
+                busy={trusting === m.id}
+              />
+            ))}
+          </>
         ) : (
           <p className="empty-note">
             {checked
@@ -256,7 +304,9 @@ export default function InboxView({ initial }: { initial: InboxData }) {
               m={m}
               onStop={m.kind === 'stop' && m.leadId && !data.stopped.includes(m.leadId) ? () => stopEmailing(m) : undefined}
               stopped={Boolean(m.leadId && data.stopped.includes(m.leadId))}
-              stopping={stopping === m.leadId}
+              onTrust={(trust) => trustSender(m, trust)}
+              trusted={isTrusted(m)}
+              busy={trusting === m.id || stopping === m.leadId}
             />
           ))}
         </section>
@@ -269,7 +319,15 @@ export default function InboxView({ initial }: { initial: InboxData }) {
           </summary>
           {rest.length ? (
             rest.map((m) => (
-              <MailRow key={m.id} m={m} onAdd={m.kind === 'other' ? () => addAsLead(m) : undefined} quiet />
+              <MailRow
+                key={m.id}
+                m={m}
+                onAdd={m.kind === 'other' ? () => addAsLead(m) : undefined}
+                onTrust={(trust) => trustSender(m, trust)}
+                trusted={isTrusted(m)}
+                busy={trusting === m.id}
+                quiet
+              />
             ))
           ) : (
             <p className="empty-note">Nothing else recent.</p>
@@ -296,63 +354,79 @@ function MailRow({
   m,
   onAdd,
   onStop,
+  onTrust,
+  trusted,
   stopped,
-  stopping,
+  busy,
   quiet,
 }: {
   m: Classified;
   onAdd?: () => void;
   onStop?: () => void;
+  /** Mark this sender safe, or put the warning back. */
+  onTrust?: (trust: boolean) => void;
+  /** The owner has already vouched for this sender. */
+  trusted?: boolean;
   /** Already marked unsubscribed. */
   stopped?: boolean;
-  stopping?: boolean;
+  busy?: boolean;
   quiet?: boolean;
 }) {
   const label = KIND_LABEL[m.kind];
+  // Still wearing the spam warning: in the spam folder and not vouched for.
+  const flagged = m.folder === 'spam' && !trusted;
   return (
-    <div className={`mail${m.unread && !quiet ? ' unread' : ''}`}>
+    <article className={`mail${m.unread && !quiet ? ' unread' : ''}${flagged ? ' flagged' : ''}`}>
       <div className="top">
-        <span className="who">
-          {m.fromName || m.fromAddress}
-          {m.leadCompany && <span className="chip ok" style={{ marginLeft: 8 }}>{m.leadCompany}</span>}
-        </span>
-        <span className="muted">
-          {BOX_NAME[m.mailbox]}
-          {m.folder === 'spam' && <span className="chip warn" style={{ marginLeft: 6 }}>in spam</span>} · {day(m.at)}
+        <span className="who">{m.fromName || m.fromAddress}</span>
+        <span className="when">
+          {BOX_NAME[m.mailbox]} · {day(m.at)}
         </span>
       </div>
-      <p className="subj">{m.subject}</p>
+      {/* The address itself: a friendly display name is the easy half to fake. */}
+      {m.fromName ? <p className="addr">{m.fromAddress}</p> : null}
+      <p className="subj">{m.subject || '(no subject)'}</p>
       {m.summary && !quiet && <p className="sum">{m.summary}</p>}
-      <p className="acts-row">
+      <p className="tags">
         <span className={`chip ${label.tone}`} title={m.why}>
           {label.text}
         </span>
+        {m.leadCompany && <span className="chip ok">{m.leadCompany}</span>}
+        {flagged && <span className="chip warn">Found in spam</span>}
+        {m.folder === 'spam' && trusted && <span className="chip none">You marked this not spam</span>}
+        {stopped && <span className="chip none">Unsubscribed — no more emails</span>}
+      </p>
+      <p className="acts-row">
+        {onAdd && (
+          <button type="button" className="btn" onClick={onAdd}>
+            Add as lead
+          </button>
+        )}
+        {onStop && (
+          <button type="button" className="btn" onClick={onStop} disabled={busy}>
+            {busy ? 'Saving…' : 'Stop emailing them'}
+          </button>
+        )}
+        {m.kind === 'money' && (
+          <Link className="btn" href="/admin/revenue">
+            Record it in Revenue
+          </Link>
+        )}
         {m.leadId && (
           <Link className="btn ghost" href={`/admin/leads/${m.leadId}`}>
             Open lead
           </Link>
         )}
-        {onAdd && (
-          <button type="button" onClick={onAdd}>
-            Add as lead
+        {onTrust && m.folder === 'spam' && (
+          <button type="button" className="btn ghost" onClick={() => onTrust(!trusted)} disabled={busy}>
+            {busy ? 'Saving…' : trusted ? 'Back to spam' : 'Not spam'}
           </button>
-        )}
-        {onStop && (
-          <button type="button" onClick={onStop} disabled={stopping}>
-            {stopping ? 'Saving…' : 'Stop emailing them'}
-          </button>
-        )}
-        {stopped && <span className="chip none">Unsubscribed — no more emails</span>}
-        {m.kind === 'money' && (
-          <Link className="btn ghost" href="/admin/revenue">
-            Record it in Revenue
-          </Link>
         )}
         <a className="btn ghost" href={WEBMAIL[m.mailbox]} target="_blank" rel="noopener noreferrer">
           Open {BOX_NAME[m.mailbox]}
         </a>
       </p>
-    </div>
+    </article>
   );
 }
 
