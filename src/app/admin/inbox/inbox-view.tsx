@@ -541,7 +541,7 @@ export default function InboxView({ initial }: { initial: InboxData }) {
                 <p className="acts-row">
                   <a
                     className="btn"
-                    href={WEBMAIL[latest?.mailbox || 'zoho']}
+                    href={latest?.link || WEBMAIL[latest?.mailbox || 'zoho']}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -878,8 +878,14 @@ function MailRow({
             {muted ? 'Bring back' : 'Not business'}
           </button>
         )}
-        <a className="btn ghost" href={WEBMAIL[m.mailbox]} target="_blank" rel="noopener noreferrer">
-          Open {BOX_NAME[m.mailbox]}
+        <a
+          className="btn ghost"
+          href={m.link || WEBMAIL[m.mailbox]}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={m.link ? `Opens this email in ${BOX_NAME[m.mailbox]}` : undefined}
+        >
+          {m.link ? `Open in ${BOX_NAME[m.mailbox]}` : `Open ${BOX_NAME[m.mailbox]}`}
         </a>
         {convo && onStatus && (
           <span className="seg state" role="group" aria-label="Where this conversation stands">
