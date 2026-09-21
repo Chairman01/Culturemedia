@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 
 import type { OpsAction } from '@/lib/admin-types';
+import { repeatLabel } from '@/lib/alerts';
 import { day } from './format';
 import type { StatusChip } from './format';
 
@@ -137,8 +138,13 @@ export function ActionRow({
       <span className="t" title={action.detail}>
         {action.title}
       </span>
-      <button type="button" disabled={busy || disabled} onClick={() => onDone(Number(action.id))}>
-        {busy ? 'Saving…' : 'Mark done'}
+      <button
+        type="button"
+        disabled={busy || disabled}
+        onClick={() => onDone(Number(action.id))}
+        title={action.repeat_days ? 'Records it and brings the job back for its next round' : undefined}
+      >
+        {busy ? 'Saving…' : action.repeat_days === 7 ? 'Done for this week' : action.repeat_days ? 'Done for this round' : 'Mark done'}
       </button>
       <span className="m">
         <span className={`owner${action.owner === 'you' ? ' you' : ''}`}>{action.owner}</span>
@@ -149,6 +155,8 @@ export function ActionRow({
           </span>
         )}
         {action.status === 'in_progress' && <span className="chip warn">In progress</span>}
+        {repeatLabel(action) && <span className="chip none">{repeatLabel(action)}</span>}
+        {action.repeat_days && action.last_done_on ? <span>last done {day(action.last_done_on)}</span> : null}
       </span>
     </li>
   );

@@ -38,7 +38,7 @@ export default async function TodayPage() {
   const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
   const all = leads.data ?? [];
   const actions = scorecard.data?.actions ?? [];
-  const mine = ownPriorities(actions);
+  const mine = ownPriorities(actions, today);
   // Your own actions only: the bar should measure the list underneath it.
   const mineDone = actions.filter((a) => a.status === 'done' && /you/i.test(a.owner)).length;
 

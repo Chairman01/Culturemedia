@@ -9,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import type { OpsAction, SalesTotals } from '@/lib/admin-types';
-import type { Alert } from '@/lib/alerts';
+import { repeatLabel, type Alert } from '@/lib/alerts';
 import { buildConversations, type SenderMark } from '@/lib/conversations';
 import { INBOX_FRESH_MS, readSavedCheck, saveCheck } from '@/lib/inbox-cache';
 import type { Classified } from '@/lib/mail';
@@ -299,10 +299,12 @@ export default function TodayView({
                       )}
                       {a.owner !== 'you' && <span className="owner">{a.owner}</span>}
                       {a.status === 'in_progress' && <span className="chip warn">In progress</span>}
+                      {repeatLabel(a) && <span className="chip none">{repeatLabel(a)}</span>}
+                      {a.repeat_days && a.last_done_on ? <span>last done {day(a.last_done_on)}</span> : null}
                     </span>
                   </div>
                   <button type="button" disabled={busyId !== null} onClick={() => markDone(Number(a.id))}>
-                    {busyId === Number(a.id) ? 'Saving…' : 'Mark done'}
+                    {busyId === Number(a.id) ? 'Saving…' : a.repeat_days === 7 ? 'Done for this week' : a.repeat_days ? 'Done for this round' : 'Mark done'}
                   </button>
                 </li>
               );

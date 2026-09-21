@@ -31,10 +31,33 @@ function daysSince(date: string, today: string): number {
 const ago = (days: number) =>
   days >= 60 ? `over ${Math.floor(days / 30)} months ago` : days >= 14 ? `${Math.floor(days / 7)} weeks ago` : `${days} days ago`;
 
-/** Priorities the owner has to do (not Claude's), most important first. */
-export function ownPriorities(actions: OpsAction[]): OpsAction[] {
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/** "Every Wednesday", "Every 14 days" — or '' for a one-off. */
+export function repeatLabel(action: Pick<OpsAction, 'repeat_days' | 'due_on'>): string {
+  const every = Number(action.repeat_days) || 0;
+  if (!every) return '';
+  if (every % 7 === 0 && action.due_on) {
+    const d = action.due_on;
+    const weekday = WEEKDAYS[new Date(Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10)))).getUTCDay()];
+    return every === 7 ? `Every ${weekday}` : `Every ${every / 7} weeks, ${weekday}`;
+  }
+  return every === 1 ? 'Every day' : `Every ${every} days`;
+}
+
+/** How long before its day a repeating job appears on Today. */
+const SHOW_AHEAD_DAYS = 1;
+
+/**
+ * Priorities the owner has to do (not Claude's), most important first. With
+ * `today`, a repeating job done for this round stays off the list until the day
+ * before it is due again — otherwise next Wednesday's job would sit at the top
+ * of Today all week, already done.
+ */
+export function ownPriorities(actions: OpsAction[], today?: string): OpsAction[] {
   return actions
     .filter((a) => (a.status === 'todo' || a.status === 'in_progress') && /you/i.test(a.owner))
+    .filter((a) => !today || !a.repeat_days || !a.due_on || daysSince(a.due_on, today) >= -SHOW_AHEAD_DAYS)
     .sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999));
 }
 
