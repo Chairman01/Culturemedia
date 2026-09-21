@@ -37,6 +37,7 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   const [stopping, setStopping] = useState<string | null>(null);
   const [trusting, setTrusting] = useState<string | null>(null);
   const [marking, setMarking] = useState<string | null>(null);
+  const [muting, setMuting] = useState<string | null>(null);
   const [tab, setTab] = useState<ConvoStatus>('todo');
   const started = useRef(false);
   const router = useRouter();
@@ -136,6 +137,38 @@ export default function InboxView({ initial }: { initial: InboxData }) {
     }
   };
 
+  // A hidden sender is never something to do: a newsletter, a product update.
+  // Unlike Done, it stays quiet when they write again. Never applied to a lead.
+  const isMuted = (m: Classified) => data.muted.includes(m.fromAddress.toLowerCase());
+  const hidden = (m: Classified) => isMuted(m) && !m.leadId;
+
+  const muteSender = async (m: Classified, mute: boolean) => {
+    if (muting) return;
+    setMuting(m.id);
+    setProblem('');
+    try {
+      const res = await fetch('/api/admin/inbox/mute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: m.fromAddress, muted: mute }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setProblem(body.error || "Couldn't save that.");
+        return;
+      }
+      const address = m.fromAddress.toLowerCase();
+      setData((d) => ({
+        ...d,
+        muted: mute ? [...d.muted, address] : d.muted.filter((e) => e !== address),
+      }));
+    } catch {
+      setProblem("Couldn't reach the server.");
+    } finally {
+      setMuting(null);
+    }
+  };
+
   // Where a conversation stands is kept on our side, with the time you said so:
   // a message that arrives after "done" brings the conversation back by itself.
   const setStatus = async (c: Conversation, status: ConvoStatus) => {
@@ -163,7 +196,7 @@ export default function InboxView({ initial }: { initial: InboxData }) {
 
   // Strangers, one row per person rather than one per message.
   const convos = buildConversations(
-    data.mail.filter((m) => m.kind === 'inquiry' || m.kind === 'other'),
+    data.mail.filter((m) => (m.kind === 'inquiry' || m.kind === 'other') && !hidden(m)),
     data.marks,
     data.repliedTo,
   );
@@ -176,8 +209,8 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   const shown = tab === 'todo' ? todo : tab === 'working' ? working : finished;
   // People who wrote about something the rules don't recognise, not yet dealt with.
   const quietPeople = convos.filter((c) => c.state === 'todo' && !c.asked);
-  const noise = data.mail.filter((m) => m.kind === 'noise');
-  const look = data.mail.filter((m) => ['money', 'bounce', 'stop'].includes(m.kind));
+  const noise = data.mail.filter((m) => m.kind === 'noise' || hidden(m));
+  const look = data.mail.filter((m) => ['money', 'bounce', 'stop'].includes(m.kind) && !hidden(m));
   const fromLeads = data.mail.filter((m) => m.kind === 'lead_reply');
   const report = data.report;
   const changed = report ? report.replies.length + report.contacted.length : 0;
@@ -313,7 +346,8 @@ export default function InboxView({ initial }: { initial: InboxData }) {
             <p className="cnote" style={{ margin: '0 0 10px' }}>
               One row per person, from either mailbox, spam included. A conversation moves to In
               progress by itself once your Sent folder shows you replied, and comes back from Done
-              if they write again.
+              if they write again. Not a person at all? <b>Hide sender</b> files a newsletter or product
+              update under Everything else for good.
             </p>
             <div className="ctabs" role="group" aria-label="Which conversations to show">
               {(
@@ -336,9 +370,10 @@ export default function InboxView({ initial }: { initial: InboxData }) {
                 onAdd={() => addAsLead(c.latest)}
                 onTrust={(trust) => trustSender(c.latest, trust)}
                 trusted={isTrusted(c.latest)}
-                busy={trusting === c.latest.id || marking === c.key}
+                busy={trusting === c.latest.id || marking === c.key || muting === c.latest.id}
                 convo={c}
                 onStatus={(status) => setStatus(c, status)}
+                onMute={(mute) => muteSender(c.latest, mute)}
               />
               ))
             ) : (
@@ -369,7 +404,8 @@ export default function InboxView({ initial }: { initial: InboxData }) {
               stopped={Boolean(m.leadId && data.stopped.includes(m.leadId))}
               onTrust={(trust) => trustSender(m, trust)}
               trusted={isTrusted(m)}
-              busy={trusting === m.id || stopping === m.leadId}
+              busy={trusting === m.id || stopping === m.leadId || muting === m.id}
+              onMute={m.leadId ? undefined : (mute) => muteSender(m, mute)}
             />
           ))}
         </section>
@@ -378,7 +414,7 @@ export default function InboxView({ initial }: { initial: InboxData }) {
       {checked && (
         <details className="card guide">
           <summary>
-            Everything else — {quietPeople.length} from people, {noise.length} automated
+            Everything else — {quietPeople.length} from people, {noise.length} automated or hidden
           </summary>
           {quietPeople.length + noise.length ? (
             <>
@@ -389,9 +425,10 @@ export default function InboxView({ initial }: { initial: InboxData }) {
                 onAdd={() => addAsLead(c.latest)}
                 onTrust={(trust) => trustSender(c.latest, trust)}
                 trusted={isTrusted(c.latest)}
-                busy={trusting === c.latest.id || marking === c.key}
+                busy={trusting === c.latest.id || marking === c.key || muting === c.latest.id}
                 convo={c}
                 onStatus={(status) => setStatus(c, status)}
+                onMute={(mute) => muteSender(c.latest, mute)}
                 quiet
               />
               ))}
@@ -401,7 +438,9 @@ export default function InboxView({ initial }: { initial: InboxData }) {
                   m={m}
                   onTrust={(trust) => trustSender(m, trust)}
                   trusted={isTrusted(m)}
-                  busy={trusting === m.id}
+                  busy={trusting === m.id || muting === m.id}
+                  onMute={hidden(m) ? (mute) => muteSender(m, mute) : undefined}
+                  muted={hidden(m)}
                   quiet
                 />
               ))}
@@ -440,6 +479,8 @@ function MailRow({
   quiet,
   convo,
   onStatus,
+  onMute,
+  muted,
 }: {
   m: Classified;
   onAdd?: () => void;
@@ -455,6 +496,10 @@ function MailRow({
   /** Set when the row stands for a whole conversation with this sender. */
   convo?: Conversation;
   onStatus?: (status: ConvoStatus) => void;
+  /** Hide this sender for good, or bring them back. */
+  onMute?: (mute: boolean) => void;
+  /** The owner hid this sender. */
+  muted?: boolean;
 }) {
   const label = KIND_LABEL[m.kind];
   // Still wearing the spam warning: in the spam folder and not vouched for.
@@ -481,6 +526,7 @@ function MailRow({
         {flagged && <span className="chip warn">Found in spam</span>}
         {m.folder === 'spam' && trusted && <span className="chip none">You marked this not spam</span>}
         {stopped && <span className="chip none">Unsubscribed — no more emails</span>}
+        {muted && <span className="chip none">You hid this sender</span>}
         {convo?.turn === 'theirs' && convo.repliedAt && (
           <span className="chip ok">You replied {day(convo.repliedAt)} · waiting on them</span>
         )}
@@ -518,6 +564,11 @@ function MailRow({
         {onTrust && m.folder === 'spam' && (
           <button type="button" className="btn ghost" onClick={() => onTrust(!trusted)} disabled={busy}>
             {busy ? 'Saving…' : trusted ? 'Back to spam' : 'Not spam'}
+          </button>
+        )}
+        {onMute && !m.leadId && (
+          <button type="button" className="btn ghost" onClick={() => onMute(!muted)} disabled={busy}>
+            {muted ? 'Show again' : 'Hide sender'}
           </button>
         )}
         <a className="btn ghost" href={WEBMAIL[m.mailbox]} target="_blank" rel="noopener noreferrer">

@@ -86,6 +86,9 @@ function toMessage(msg: FetchMessageObject, folder: Folder, preview: string): Ma
     summary: preview,
     at: date && !Number.isNaN(date.getTime()) ? date.toISOString() : '',
     unread: !msg.flags?.has('\\Seen'),
+    // Gmail requires List-Unsubscribe of anyone sending in bulk, so its presence
+    // is the most reliable sign that nobody typed this message to you.
+    bulk: /^(list-unsubscribe|list-id):|^precedence:\s*(bulk|list|junk)/im.test(msg.headers ? msg.headers.toString('utf8') : ''),
   };
 }
 
@@ -139,7 +142,14 @@ export async function readGmail(limit = 40): Promise<MailboxResult> {
 
         // Pass 1: headers and structure. Pass 2: the first bytes of each text part.
         const found: FetchMessageObject[] = [];
-        for await (const msg of client.fetch(range, { uid: true, envelope: true, flags: true, internalDate: true, bodyStructure: true })) {
+        for await (const msg of client.fetch(range, {
+          uid: true,
+          envelope: true,
+          flags: true,
+          internalDate: true,
+          bodyStructure: true,
+          headers: ['list-unsubscribe', 'list-id', 'precedence'],
+        })) {
           found.push(msg);
         }
         for (const msg of found) {

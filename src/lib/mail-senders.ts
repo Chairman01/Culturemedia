@@ -27,6 +27,8 @@ export interface SenderCalls {
   trusted: string[];
   /** Conversation status by lower-cased address. */
   marks: Record<string, SenderMark>;
+  /** Lower-cased addresses the owner hid: never something to act on. */
+  muted: string[];
 }
 
 export async function listSenders(): Promise<AdminResult<SenderCalls>> {
@@ -35,14 +37,15 @@ export async function listSenders(): Promise<AdminResult<SenderCalls>> {
 
   const { data, error } = await supabase
     .from('mail_senders')
-    .select('email, trusted, status, status_at')
+    .select('email, trusted, muted, status, status_at')
     .limit(5000);
   if (error) return fail('listSenders', error);
 
-  const calls: SenderCalls = { trusted: [], marks: {} };
+  const calls: SenderCalls = { trusted: [], marks: {}, muted: [] };
   for (const row of data ?? []) {
     const email = String(row.email).toLowerCase();
     if (row.trusted) calls.trusted.push(email);
+    if (row.muted) calls.muted.push(email);
     if (row.status && row.status_at && STATUSES.includes(row.status as ConvoStatus)) {
       calls.marks[email] = { status: row.status as ConvoStatus, at: String(row.status_at) };
     }
@@ -73,6 +76,21 @@ export async function setSenderTrust(
     { onConflict: 'email' },
   );
   if (error) return fail('setSenderTrust', error);
+  return { data: 'saved', error: null };
+}
+
+/** Hide a sender from the Inbox for good (a newsletter, a product update), or bring them back. */
+export async function setSenderMuted(rawEmail: unknown, muted: boolean): Promise<AdminResult<'saved'>> {
+  const supabase = getClient();
+  if (!supabase) return { data: null, error: NOT_CONFIGURED };
+
+  const email = clean(rawEmail);
+  if (!EMAIL.test(email)) return { data: null, error: "That doesn't look like an email address." };
+
+  const { error } = await supabase
+    .from('mail_senders')
+    .upsert({ email, muted, updated_at: new Date().toISOString() }, { onConflict: 'email' });
+  if (error) return fail('setSenderMuted', error);
   return { data: 'saved', error: null };
 }
 
