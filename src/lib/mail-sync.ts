@@ -34,6 +34,8 @@ export interface MailSnapshot {
   mailboxes: Omit<MailboxResult, 'messages'>[];
   /** Incoming mail (inbox + spam), newest first, classified. */
   incoming: Classified[];
+  /** When you last emailed each address, from the Sent folders: address → ISO time. */
+  repliedTo: Record<string, string>;
   leads: LeadRow[];
   leadsError: string | null;
 }
@@ -62,6 +64,15 @@ export async function readMail(): Promise<MailSnapshot & { sent: MailMessage[] }
     .map((m) => classify(m, index))
     .sort((a, b) => b.at.localeCompare(a.at));
 
+  const sent = all.filter((m) => m.folder === 'sent' || own.has(m.fromAddress));
+  const repliedTo: Record<string, string> = {};
+  for (const m of sent) {
+    for (const to of m.to) {
+      const address = to.toLowerCase();
+      if (ms(m.at) > ms(repliedTo[address])) repliedTo[address] = m.at;
+    }
+  }
+
   return {
     mailboxes: [zoho, gmail].map((box) => ({
       mailbox: box.mailbox,
@@ -71,7 +82,8 @@ export async function readMail(): Promise<MailSnapshot & { sent: MailMessage[] }
       folders: box.folders,
     })),
     incoming,
-    sent: all.filter((m) => m.folder === 'sent' || own.has(m.fromAddress)),
+    repliedTo,
+    sent,
     leads: leads.data ?? [],
     leadsError: leads.error,
   };

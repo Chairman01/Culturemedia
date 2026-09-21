@@ -1504,7 +1504,55 @@
   margin-top: 12px;
 }
 
+/* Which conversations to show: the three piles. */
+.adm .ctabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 4px;
+}
+
+.adm .ctabs button {
+  font-size: 13.5px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border-color: var(--rule-hard);
+  color: var(--ink-2);
+}
+
+.adm .ctabs button b {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.adm .ctabs button[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+}
+
+/* The per-conversation switch sits apart from the action buttons. */
+.adm .mail .seg.state {
+  margin-left: auto;
+  border-radius: 8px;
+}
+
+.adm .mail .seg.state button {
+  font-size: 12.5px;
+  padding: 8px 12px;
+}
+
 @media (max-width: 600px) {
+  .adm .mail .seg.state {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .adm .mail .seg.state button {
+    flex: 1 1 0;
+  }
+
   .adm .mail .acts-row .btn {
     flex: 1 1 auto;
     justify-content: center;
