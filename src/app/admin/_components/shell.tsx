@@ -19,9 +19,9 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 
 const NAV = [
-  { href: '/admin', label: 'Today', icon: House, exact: true },
+  { href: '/admin', label: 'Today', icon: House, exact: true, badge: 'urgent' },
   { href: '/admin/leads', label: 'Leads', icon: Users },
-  { href: '/admin/inbox', label: 'Inbox', icon: Inbox, badge: true },
+  { href: '/admin/inbox', label: 'Inbox', icon: Inbox, badge: 'waiting' },
   { href: '/admin/packages', label: 'Packages', icon: Package },
   { href: '/admin/revenue', label: 'Revenue', icon: CircleDollarSign },
   { href: '/admin/scorecard', label: 'Scorecard', icon: ChartColumn },
@@ -30,7 +30,7 @@ const NAV = [
 
 export function AdminShell({ children, bare = false }: { children: ReactNode; bare?: boolean }) {
   const pathname = usePathname() || '';
-  const [waiting, setWaiting] = useState<number | null>(null);
+  const [counts, setCounts] = useState<{ waiting: number; urgent: number }>({ waiting: 0, urgent: 0 });
 
   // Replies to answer + emails to approve, so the Inbox can't be missed from
   // any page. A failed fetch just means no badge.
@@ -40,7 +40,12 @@ export function AdminShell({ children, bare = false }: { children: ReactNode; ba
     fetch('/api/admin/summary', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
-        if (alive && d) setWaiting((Number(d.replies) || 0) + (Number(d.drafts) || 0));
+        if (alive && d) {
+          setCounts({
+            waiting: (Number(d.replies) || 0) + (Number(d.drafts) || 0),
+            urgent: Number(d.urgent) || 0,
+          });
+        }
       })
       .catch(() => {});
     return () => {
@@ -74,7 +79,7 @@ export function AdminShell({ children, bare = false }: { children: ReactNode; ba
               <Link key={item.href} href={item.href} aria-current={active ? 'page' : undefined}>
                 <Icon size={18} strokeWidth={2} aria-hidden="true" />
                 <span>{item.label}</span>
-                {'badge' in item && waiting ? <b className="count">{waiting}</b> : null}
+                {'badge' in item && counts[item.badge] ? <b className="count">{counts[item.badge]}</b> : null}
               </Link>
             );
           })}

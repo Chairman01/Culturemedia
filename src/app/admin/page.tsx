@@ -1,5 +1,6 @@
 import { requireAdminPage } from '@/lib/admin-auth';
-import { awaitingReply, goingCold, isCustomer, isFollowable, needsOf } from '@/lib/crm';
+import { buildAlerts, ownPriorities } from '@/lib/alerts';
+import { awaitingReply, isCustomer, isFollowable, needsOf } from '@/lib/crm';
 import { listLeads, listPendingDrafts, outreachWeek } from '@/lib/crm-admin';
 import { summarise } from '@/lib/revenue';
 import { listExpenses, listInvoices } from '@/lib/revenue-admin';
@@ -15,8 +16,8 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-// /admin — the page a working day starts on: what is waiting, what to send,
-// who to add, and whether the week is on track.
+// /admin — the page a working day starts on: what is slipping, the three daily
+// things, your priorities, and whether the week is on track.
 export default async function TodayPage() {
   await requireAdminPage();
 
@@ -36,6 +37,10 @@ export default async function TodayPage() {
   const [y, m, d] = today.split('-').map(Number);
   const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
   const all = leads.data ?? [];
+  const actions = scorecard.data?.actions ?? [];
+  const mine = ownPriorities(actions);
+  // Your own actions only: the bar should measure the list underneath it.
+  const mineDone = actions.filter((a) => a.status === 'done' && /you/i.test(a.owner)).length;
 
   return (
     <TodayView
@@ -43,11 +48,14 @@ export default async function TodayPage() {
       todayLabel={`${WEEKDAYS[weekday]}, ${MONTHS[m - 1]} ${d}`}
       isWeekend={weekday === 0 || weekday === 6}
       totals={sales.data?.totals ?? null}
-      setup={(sales.data?.setup ?? []).filter((a) => a.status !== 'done')}
+      alerts={buildAlerts({ invoices: invoices.data ?? [], leads: all, actions, today })}
+      priorities={mine}
+      done={mineDone}
+      total={mine.length + mineDone}
+      claudeOpen={actions.filter((a) => (a.status === 'todo' || a.status === 'in_progress') && !/you/i.test(a.owner)).length}
       replies={all.filter(awaitingReply).length}
       drafts={(drafts.data ?? []).length}
       blocked={all.filter((l) => needsOf(l).length > 0).length}
-      cold={all.filter((l) => goingCold(l, today)).length}
       due={all
         // Customers too: a booked check-in is a next step like any other.
         .filter((l) => isFollowable(l) && l.next_action_on && l.next_action_on <= today)

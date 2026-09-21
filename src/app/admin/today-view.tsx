@@ -9,12 +9,13 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 import type { OpsAction, SalesTotals } from '@/lib/admin-types';
+import type { Alert } from '@/lib/alerts';
 import { STAGE_LABEL } from '@/lib/crm';
 import type { OutreachDay } from '@/lib/crm-admin';
 import { day, money } from './_components/format';
 import { AdminShell, PageHead } from './_components/shell';
 import { useRefreshOnFocus } from './_components/use-refresh';
-import { ActionRow, Banner, Tile } from './_components/ui';
+import { Banner, Tile } from './_components/ui';
 
 const MRR_TARGET = 5000;
 const SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
@@ -24,11 +25,14 @@ export default function TodayView({
   todayLabel,
   isWeekend,
   totals,
-  setup,
+  alerts,
+  priorities,
+  done,
+  total,
+  claudeOpen,
   replies,
   drafts,
   blocked,
-  cold,
   due,
   week,
   revenue,
@@ -40,12 +44,17 @@ export default function TodayView({
   todayLabel: string;
   isWeekend: boolean;
   totals: SalesTotals | null;
-  setup: OpsAction[];
+  /** Worked out from the books and the CRM: things that are slipping. */
+  alerts: Alert[];
+  /** Open priorities that are yours to do, most important first. */
+  priorities: OpsAction[];
+  /** Your priorities already finished, and the two counts together. */
+  done: number;
+  total: number;
+  claudeOpen: number;
   replies: number;
   drafts: number;
   blocked: number;
-  /** Customers with no check-in booked and no contact in six months. */
-  cold: number;
   due: { id: string; company: string; on: string; stage: string; customer: boolean }[];
   week: OutreachDay[];
   error: string | null;
@@ -54,6 +63,8 @@ export default function TodayView({
   const [busyId, setBusyId] = useState<number | null>(null);
   const [banner, setBanner] = useState(error || '');
   const [mailNote, setMailNote] = useState('');
+  const [mailAlerts, setMailAlerts] = useState<Alert[]>([]);
+  const [showAll, setShowAll] = useState(false);
   const checkedMail = useRef(false);
 
   // Opening the admin checks both mailboxes once, quietly. If a lead replied
@@ -64,6 +75,33 @@ export default function TodayView({
     fetch('/api/admin/inbox/sync', { method: 'POST', cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((body) => {
+        // A mailbox that is not connected is mail nobody is checking.
+        const boxes = (body?.data?.mailboxes ?? []) as { mailbox: string; connected: boolean; note: string | null }[];
+        const name = (b: { mailbox: string }) => (b.mailbox === 'gmail' ? 'Gmail' : 'Zoho');
+        const off = boxes.filter((b) => !b.connected);
+        const partly = boxes.filter((b) => b.connected && b.note);
+        setMailAlerts([
+          ...(off.length
+            ? [
+                {
+                  id: 'mail-off',
+                  tone: 'warn' as const,
+                  title: `${off.map(name).join(' and ')} ${off.length === 1 ? 'is' : 'are'} not connected, so mail there is not being checked`,
+                  detail: 'Replies, inquiries and payments sent there will not show up here. The Inbox page says what each one needs.',
+                  href: '/admin/inbox',
+                  cta: 'Fix it',
+                },
+              ]
+            : []),
+          ...partly.map((b) => ({
+            id: `mail-${b.mailbox}`,
+            tone: 'warn' as const,
+            title: `${name(b)} is only partly connected`,
+            detail: String(b.note),
+            href: '/admin/inbox',
+            cta: 'Fix it',
+          })),
+        ]);
         const report = body?.data?.report;
         if (!report) return;
         const parts = [
@@ -116,6 +154,31 @@ export default function TodayView({
       <Banner tone="crit">{banner}</Banner>
       <Banner>{mailNote}</Banner>
 
+      {[...alerts, ...mailAlerts].length > 0 && (
+        <section className="card needs" aria-labelledby="n-h">
+          <h2 id="n-h">
+            Needs you <small>{[...alerts, ...mailAlerts].length}</small>
+          </h2>
+          {[...alerts, ...mailAlerts].map((a) => (
+            <div key={a.id} className={`need ${a.tone}`}>
+              <div>
+                <b>{a.title}</b>
+                <p>{a.detail}</p>
+              </div>
+              {a.href.startsWith('#') ? (
+                <a className="btn ghost" href={a.href}>
+                  {a.cta}
+                </a>
+              ) : (
+                <Link className="btn ghost" href={a.href}>
+                  {a.cta}
+                </Link>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+
       <ol className="steps">
         <Step
           n={1}
@@ -156,6 +219,58 @@ export default function TodayView({
           cta="Add a lead"
         />
       </ol>
+
+      <section className="card" id="priorities" aria-labelledby="p-h" style={{ marginBottom: 12 }}>
+        <h2 id="p-h">
+          Your priorities{' '}
+          <small>
+            {total ? `${done} of ${total} done` : 'none yet'}
+            {claudeOpen ? ` · Claude has ${claudeOpen} more` : ''} ·{' '}
+            <Link href="/admin/scorecard">all on the Scorecard</Link>
+          </small>
+        </h2>
+        <div className="progress" aria-hidden="true">
+          <i style={{ width: total ? `${((100 * done) / total).toFixed(1)}%` : 0 }} />
+        </div>
+        {priorities.length ? (
+          <ol className="prio">
+            {(showAll ? priorities : priorities.slice(0, 5)).map((a, i) => {
+              const overdue = Boolean(a.due_on && a.due_on < today);
+              return (
+                <li key={a.id}>
+                  <span className="n">{i + 1}</span>
+                  <div>
+                    <b>{a.title}</b>
+                    {a.detail && <p>{a.detail}</p>}
+                    <span className="m">
+                      {a.due_on && (
+                        <span className={`due ${overdue ? 'over' : ''}`}>
+                          {overdue ? 'Overdue · ' : 'Due '}
+                          {day(a.due_on)}
+                        </span>
+                      )}
+                      {a.owner !== 'you' && <span className="owner">{a.owner}</span>}
+                      {a.status === 'in_progress' && <span className="chip warn">In progress</span>}
+                    </span>
+                  </div>
+                  <button type="button" disabled={busyId !== null} onClick={() => markDone(Number(a.id))}>
+                    {busyId === Number(a.id) ? 'Saving…' : 'Mark done'}
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        ) : (
+          <p className="empty-note">Nothing open. Priorities are added on the Scorecard.</p>
+        )}
+        {priorities.length > 5 && (
+          <p className="acts-row" style={{ marginTop: 10 }}>
+            <button type="button" onClick={() => setShowAll((s) => !s)}>
+              {showAll ? 'Show the top 5' : `Show all ${priorities.length}`}
+            </button>
+          </p>
+        )}
+      </section>
 
       <section className="card" aria-labelledby="w-h" style={{ marginBottom: 12 }}>
         <h2 id="w-h">
@@ -205,11 +320,14 @@ export default function TodayView({
         />
       </div>
 
-      <div className="grid2">
-        <section className="card" aria-labelledby="d-h">
+      <section className="card" aria-labelledby="d-h">
           <h2 id="d-h">
-            Next steps due <small>{due.length || 'none'}</small>
+            People to contact <small>{due.length ? `${due.length} due` : 'none due'}</small>
           </h2>
+          <p className="cnote" style={{ margin: '0 0 10px' }}>
+            Leads whose next step is booked for today or earlier. Open one, send the note, then set
+            the next date — that date is what brings them back here instead of going quiet.
+          </p>
           <ul className="srows">
             {due.length ? (
               due.map((l) => (
@@ -222,17 +340,24 @@ export default function TodayView({
                       {l.customer ? 'Past customer — check in' : STAGE_LABEL[l.stage] || l.stage}
                     </span>
                   </span>
-                  <b className={l.on < today ? 'crit' : ''}>{day(l.on)}</b>
+                  <b className={l.on < today ? 'crit' : ''}>
+                    {l.on < today ? 'Overdue · ' : ''}
+                    {day(l.on)}
+                  </b>
                 </li>
               ))
             ) : (
-              <li className="empty-note">Nothing due. Set a “next step” date on a lead to see it here.</li>
+              <li className="empty-note">
+                Nobody is due today. Every lead with a next-step date appears here on the day, so
+                this is empty only when nobody is waiting on you.
+              </li>
             )}
           </ul>
-          {cold > 0 && (
-            <p className="acts-row" style={{ marginTop: 10 }}>
-              <Link className="btn ghost" href="/admin/leads?show=cold">
-                {cold} past {cold === 1 ? 'customer has' : 'customers have'} no check-in booked
+          {due.length > 0 && (
+            <p className="acts-row" style={{ marginTop: 12 }}>
+              {/* One name, not a list to choose from: the whole point is to start. */}
+              <Link className="btn" href={`/admin/leads/${due[0].id}`}>
+                Start with {due[0].company}
               </Link>
             </p>
           )}
@@ -243,34 +368,7 @@ export default function TodayView({
               </Link>
             </p>
           )}
-        </section>
-
-        <section className="card" aria-labelledby="s-h">
-          <h2 id="s-h">
-            One-time setup <small>{setup.length ? `${setup.length} left` : 'done'}</small>
-          </h2>
-          <ul className="acts">
-            {setup.length ? (
-              setup.map((a, i) => (
-                <ActionRow
-                  key={a.id}
-                  action={a}
-                  n={i + 1}
-                  today={today}
-                  onDone={markDone}
-                  busy={busyId === Number(a.id)}
-                  disabled={busyId !== null}
-                />
-              ))
-            ) : (
-              <li>
-                <span />
-                <span className="muted">All set.</span>
-              </li>
-            )}
-          </ul>
-        </section>
-      </div>
+      </section>
     </AdminShell>
   );
 }
