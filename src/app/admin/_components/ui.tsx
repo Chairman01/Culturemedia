@@ -17,22 +17,31 @@ export function Tile({
   foot,
   spark,
   title,
+  onOpen,
 }: {
   label: string;
   value: ReactNode;
   foot?: ReactNode;
   spark?: ReactNode;
   title?: string;
+  /** Makes the whole tile a button that opens what is behind the number. */
+  onOpen?: () => void;
 }) {
-  return (
-    <div className="tile">
-      <span className="l" title={title}>
+  const body = (
+    <>
+      <span className="l" title={onOpen ? undefined : title}>
         {label}
       </span>
       <span className="v">{value}</span>
       {spark ?? <span />}
       <span className="foot">{foot}</span>
-    </div>
+    </>
+  );
+  if (!onOpen) return <div className="tile">{body}</div>;
+  return (
+    <button type="button" className="tile open" onClick={onOpen} title="See what is behind this number">
+      {body}
+    </button>
   );
 }
 

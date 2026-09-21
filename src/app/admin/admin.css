@@ -1637,6 +1637,206 @@
   margin-top: 12px;
 }
 
+/* ── a number you can open ─────────────────────────────────────────────────── */
+
+.adm button.tile {
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  padding: 12px 14px 10px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease;
+}
+
+.adm button.tile:hover,
+.adm button.tile:focus-visible {
+  background: var(--surface);
+  border-color: var(--ink);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+  transform: translateY(-1px);
+}
+
+.adm button.tile .l::after {
+  content: ' ›';
+  color: var(--muted);
+}
+
+.adm .rowbtn {
+  font: inherit;
+  font-weight: 500;
+  color: inherit;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--rule-hard);
+  text-underline-offset: 3px;
+}
+
+.adm .rowbtn.strong {
+  font-weight: 700;
+}
+
+.adm .rowbtn:hover {
+  background: none;
+  text-decoration-color: var(--ink);
+}
+
+.adm dialog.statpanel {
+  margin: auto;
+  width: min(680px, calc(100vw - 32px));
+  max-height: min(86vh, 900px);
+  padding: 0;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+}
+
+.adm dialog.statpanel::backdrop {
+  background: rgba(10, 10, 10, 0.38);
+}
+
+.adm .statpanel-in {
+  padding: 22px 24px 24px;
+}
+
+.adm dialog.statpanel header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.adm dialog.statpanel h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.adm dialog.statpanel .hero {
+  margin: 6px 0 0;
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.adm dialog.statpanel h3 {
+  margin: 20px 0 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.adm dialog.statpanel .explain {
+  margin: 10px 0 14px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+.adm dialog.statpanel .facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 10px;
+}
+
+.adm dialog.statpanel .facts > div {
+  background: var(--sunken);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.adm dialog.statpanel .facts dt {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.adm dialog.statpanel .facts dd {
+  margin: 2px 0 0;
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.adm dialog.statpanel .facts small {
+  display: block;
+  font-family: var(--font-admin), system-ui, sans-serif;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.adm .statpanel-scroll {
+  overflow-x: auto;
+}
+
+.adm .statpanel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.adm .statpanel-table th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 6px 8px 6px 0;
+  border-bottom: 1px solid var(--rule-hard);
+}
+
+.adm .statpanel-table td {
+  padding: 8px 8px 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.adm .statpanel-table .r {
+  text-align: right;
+  padding-right: 0;
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Number columns sit flush right, so the column after one needs its own gap. */
+.adm .statpanel-table th + th,
+.adm .statpanel-table td + td {
+  padding-left: 18px;
+}
+
+.adm .statpanel-table tbody tr:hover td {
+  background: var(--sunken);
+}
+
+.adm .statpanel-table tfoot td {
+  font-weight: 700;
+  border-bottom: 0;
+  border-top: 1px solid var(--rule-hard);
+}
+
+@media (max-width: 600px) {
+  .adm dialog.statpanel .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .adm .statpanel-in {
+    padding: 18px 16px 20px;
+  }
+}
+
 /* Which conversations to show: the three piles. */
 .adm .ctabs {
   display: flex;

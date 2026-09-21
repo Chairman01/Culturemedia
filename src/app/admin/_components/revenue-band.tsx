@@ -5,12 +5,13 @@
 // last year. It follows the page's currency switch.
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 import type { Scorecard } from '@/lib/admin-types';
 import { SOURCE_COLOR, growth, summarise, type Currency, type Expense, type Invoice } from '@/lib/revenue';
 import { cash } from './format';
 import { RevenueColumns } from './revenue-chart';
+import { RevenueDetail, type RevenueTopic } from './revenue-detail';
 
 export function RevenueBand({
   sc,
@@ -32,6 +33,7 @@ export function RevenueBand({
     () => summarise(invoices, sc, today, { currency, expenses }),
     [invoices, sc, today, currency, expenses],
   );
+  const [topic, setTopic] = useState<RevenueTopic | null>(null);
   const margin = s.ytd.total > 0 ? Math.round((s.ytdKept / s.ytd.total) * 100) : null;
   const g = growth(s.ytd.total, s.ytdLastYear.total);
   const adsShare = s.ytd.total > 0 ? (s.ytd.ads / s.ytd.total) * 100 : 0;
@@ -64,22 +66,30 @@ export function RevenueBand({
         </div>
         <ul className="srows">
           <li>
-            <span>Partnerships &amp; retainers</span>
+            <button type="button" className="rowbtn" onClick={() => setTopic('partnerships')}>
+              Partnerships &amp; retainers
+            </button>
             <b>{cash(s.ytd.partnerships, currency)}</b>
           </li>
           <li>
-            <span>Ads (Mediavine + AdSense)</span>
+            <button type="button" className="rowbtn" onClick={() => setTopic('ads')}>
+              Ads (Mediavine + AdSense)
+            </button>
             <b>{cash(s.ytd.ads, currency)}</b>
           </li>
           {s.expensesSince && (
             <>
               <li>
-                <span>Expenses</span>
+                <button type="button" className="rowbtn" onClick={() => setTopic('expenses')}>
+                  Expenses
+                </button>
                 <b className="soft">{cash(-s.ytdExpenses, currency)}</b>
               </li>
               <li>
                 <span>
-                  <strong>Kept after expenses</strong>
+                  <button type="button" className="rowbtn strong" onClick={() => setTopic('kept')}>
+                    Kept after expenses
+                  </button>
                   {margin !== null && <span className="sub-line">{margin}% of what came in</span>}
                 </span>
                 <b className={s.ytdKept >= 0 ? 'ok' : 'crit'}>{cash(s.ytdKept, currency)}</b>
@@ -87,6 +97,10 @@ export function RevenueBand({
             </>
           )}
         </ul>
+        <p className="cnote" style={{ margin: '8px 0 0' }}>Click any line to see what is behind it.</p>
+        {topic && (
+          <RevenueDetail topic={topic} s={s} invoices={invoices} currency={currency} onClose={() => setTopic(null)} />
+        )}
         {linkToRevenue && (
           <Link className="btn ghost" href="/admin/revenue">
             Open revenue
