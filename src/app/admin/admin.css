@@ -1837,12 +1837,118 @@
   }
 }
 
+/* ── leads: readable rows, in piles by whose move it is ────────────────────── */
+
+.adm .lgroup {
+  margin-bottom: 12px;
+}
+
+.adm .lgroup > .cnote {
+  margin: 2px 0 6px;
+}
+
+.adm a.lrow {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 16px 12px;
+  margin: 0 -12px;
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.12s ease;
+}
+
+.adm a.lrow + a.lrow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 1px;
+  background: var(--rule);
+}
+
+.adm a.lrow:hover,
+.adm a.lrow:focus-visible {
+  background: var(--sunken);
+}
+
+.adm a.lrow:hover::before,
+.adm a.lrow:hover + a.lrow::before {
+  background: transparent;
+}
+
+.adm .lrow .top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+
+.adm .lrow b {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.adm .lrow .who {
+  font-size: 13px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.adm .lrow .stands {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  margin-top: 2px;
+}
+
+.adm .lrow .facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.adm .lrow .facts .num {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.adm .lrow .facts .over {
+  color: var(--crit);
+  font-weight: 700;
+}
+
 /* ── inbox: last checked, whole-mailbox search, the board ──────────────────── */
 
 .adm .checked-at {
   font-size: 12.5px;
   color: var(--muted);
   margin-right: 10px;
+}
+
+.adm .allfrom {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin: 0 0 6px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--sunken);
+  font-size: 14px;
+}
+
+.adm .allfrom b {
+  overflow-wrap: anywhere;
 }
 
 .adm .deep {

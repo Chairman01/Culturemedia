@@ -10,13 +10,13 @@ import {
   DEAL_LABEL,
   SEQUENCE_LABEL,
   STAGE_LABEL,
-  awaitingReply,
   goingCold,
   isCustomer,
   isOpen,
   needsOf,
   type LeadRow,
 } from '@/lib/crm';
+import { GROUP_ORDER, GROUP_TITLE, standingOf, type Standing, type StandingGroup } from '@/lib/standing';
 import { AddLeadForm } from '../_components/add-lead';
 import { day, money, num } from '../_components/format';
 import { AdminShell, PageHead } from '../_components/shell';
@@ -42,6 +42,7 @@ export default function LeadsView({
   const [filter, setFilter] = useState<Filter>(initialFilter);
   const [query, setQuery] = useState('');
   const [adding, setAdding] = useState(openAdd);
+  const [checking, setChecking] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -92,12 +93,64 @@ export default function LeadsView({
       );
   }, [leads, filter, query, today]);
 
+  // The same leads, in piles by whose move it is, most pressing first.
+  const grouped = useMemo(() => {
+    const piles: Record<StandingGroup, { lead: LeadRow; standing: Standing }[]> = {
+      move: [],
+      fresh: [],
+      waiting: [],
+      customer: [],
+      closed: [],
+    };
+    for (const lead of shown) {
+      const standing = standingOf(lead, today);
+      piles[standing.group].push({ lead, standing });
+    }
+    for (const pile of Object.values(piles)) pile.sort((a, b) => a.standing.rank - b.standing.rank);
+    return piles;
+  }, [shown, today]);
+
+  // Who wrote last comes from the mailboxes. Read them now, then reload the leads.
+  const updateFromMail = async () => {
+    if (checking) return;
+    setChecking(true);
+    try {
+      const res = await fetch('/api/admin/inbox/sync', { method: 'POST', cache: 'no-store' });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError("Couldn't check your mailboxes. Try again in a minute.");
+        return;
+      }
+      try {
+        if (body?.data) {
+          sessionStorage.setItem('cm-admin-inbox', JSON.stringify({ at: Date.now(), data: { ...body.data, report: null } }));
+        }
+      } catch {
+        /* storage blocked: the Inbox just checks again itself */
+      }
+      await load();
+    } catch {
+      setError("Couldn't reach the server.");
+    } finally {
+      setChecking(false);
+    }
+  };
+
   return (
     <AdminShell>
       <PageHead
         title="Leads"
-        help="Everyone you could sell to, and everyone who has bought. Click a company to update it, log a call or start its emails."
+        help="Everyone you could sell to, and everyone who has bought — sorted by whose move it is. Each line says who wrote last. Click a company to update it, log a call or start its emails."
       >
+        <button
+          type="button"
+          className="btn ghost"
+          onClick={updateFromMail}
+          disabled={checking}
+          title="Read Zoho and Gmail now, so 'who wrote last' is up to the minute"
+        >
+          {checking ? 'Checking mail…' : 'Update from mail'}
+        </button>
         <button type="button" className="btn" onClick={() => setAdding((a) => !a)}>
           <Plus size={16} aria-hidden="true" />
           {adding ? 'Close' : 'Add a lead'}
@@ -137,83 +190,68 @@ export default function LeadsView({
         />
       </div>
 
-      <section className="card">
-        <div className="tw" style={{ marginTop: 0 }}>
-          <table>
-            <thead>
-              <tr>
-                <th>Company</th>
-                <th>Stage</th>
-                <th>Buying</th>
-                <th>Value</th>
-                <th>Emails</th>
-                <th>Last contact</th>
-                <th>Next step</th>
-                <th>Needs</th>
-              </tr>
-            </thead>
-            <tbody>
-              {shown.length ? (
-                shown.map((lead) => <Row key={lead.id} lead={lead} today={today} />)
-              ) : (
-                <tr>
-                  <td colSpan={8} className="l muted">
-                    {leads.length
-                      ? 'Nothing matches.'
-                      : 'No leads yet. Add your first one — one a weekday is the whole plan.'}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {shown.length ? (
+        GROUP_ORDER.map((group) => {
+          const rows = grouped[group];
+          if (!rows.length) return null;
+          return (
+            <section key={group} className="card lgroup" aria-label={GROUP_TITLE[group].title}>
+              <h2>
+                {GROUP_TITLE[group].title} <small>{rows.length}</small>
+              </h2>
+              <p className="cnote">{GROUP_TITLE[group].help}</p>
+              {rows.map(({ lead, standing }) => (
+                <Row key={lead.id} lead={lead} standing={standing} today={today} />
+              ))}
+            </section>
+          );
+        })
+      ) : (
+        <section className="card">
+          <p className="empty-note">
+            {leads.length ? 'Nothing matches.' : 'No leads yet. Add your first one — one a weekday is the whole plan.'}
+          </p>
+        </section>
+      )}
     </AdminShell>
   );
 }
 
-function Row({ lead, today }: { lead: LeadRow; today: string }) {
+function Row({ lead, standing, today }: { lead: LeadRow; standing: Standing; today: string }) {
   const needs = needsOf(lead);
   const term = num(lead.term_months);
   const value = num(lead.deal_value);
-  const valueText = value === null ? '—' : term ? `${money(value / term)}/mo × ${term}` : money(value);
+  const valueText = value === null ? null : term ? `${money(value / term)}/mo × ${term}` : money(value);
   const who = [lead.contact_name, lead.email].filter(Boolean).join(' · ');
   const overdue = Boolean(lead.next_action_on && lead.next_action_on < today && isOpen(lead));
 
   return (
-    <tr>
-      <td className="co">
-        <Link href={`/admin/leads/${lead.id}`}>
-          <b>{lead.company}</b>
-          <span>{who || lead.city || ''}</span>
-        </Link>
-      </td>
-      <td className="l">
+    <Link className="lrow" href={`/admin/leads/${lead.id}`}>
+      <span className="top">
+        <b>{lead.company}</b>
+        <span className={`chip ${standing.tone}`}>{standing.label}</span>
+      </span>
+      {(who || lead.city) && <span className="who">{who || lead.city}</span>}
+      {/* The one line that answers "where are we with them?" */}
+      <span className="stands">{standing.text}</span>
+      <span className="facts">
         <span className={`pill ${lead.stage}`}>{STAGE_LABEL[lead.stage] || lead.stage}</span>
-        {awaitingReply(lead) && <span className="chip warn" style={{ marginLeft: 6 }}>Replied</span>}
-      </td>
-      <td className="l">{DEAL_LABEL[lead.deal_type || ''] || '—'}</td>
-      <td>{valueText}</td>
-      <td className="l">
-        {lead.sequence_key ? (
-          `${SEQUENCE_LABEL[lead.sequence_key] || lead.sequence_key} · step ${lead.sequence_step + 1}`
-        ) : (
-          <span className="muted">—</span>
+        {lead.deal_type && <span>{DEAL_LABEL[lead.deal_type] || lead.deal_type}</span>}
+        {valueText && <span className="num">{valueText}</span>}
+        {lead.sequence_key && (
+          <span>
+            Emails: {SEQUENCE_LABEL[lead.sequence_key] || lead.sequence_key} · step {lead.sequence_step + 1}
+          </span>
         )}
-      </td>
-      <td>{day(lead.last_contacted_at)}</td>
-      <td style={overdue ? { color: 'var(--crit)', fontWeight: 700 } : undefined}>
-        {lead.next_action_on ? day(lead.next_action_on) : '—'}
-      </td>
-      <td className="l">
-        {needs.length ? (
-          <span className="flag">{needs.join(' · ')}</span>
-        ) : goingCold(lead, today) ? (
-          <span className="flag">a check-in date</span>
-        ) : (
-          <span className="muted">—</span>
+        {lead.next_action_on && (
+          <span className={overdue ? 'over' : undefined}>
+            Next step {overdue ? 'was due ' : ''}
+            {day(lead.next_action_on)}
+          </span>
         )}
-      </td>
-    </tr>
+        {needs.length > 0 && <span className="flag">Needs {needs.join(' · ')}</span>}
+        {!needs.length && goingCold(lead, today) && <span className="flag">Needs a check-in date</span>}
+      </span>
+    </Link>
   );
 }

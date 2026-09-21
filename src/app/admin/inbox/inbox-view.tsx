@@ -3,7 +3,8 @@
 // The Inbox: everyone waiting on you, in the order to deal with them.
 //   1. Leads who wrote back            — answer these first
 //   2. Emails drafted for approval     — then send today's outreach
-//   3. Conversations with new people   — one row per person: to do, in progress, done
+//   3. Conversations                   — one row per person who wrote, sales or not:
+//                                         to do, in progress, done
 //   4. Worth a look                    — payments, bounces, "please remove me"
 //   5. Everything else                 — collapsed; spam is included so nothing hides
 // The page keeps its last check for the browser session: coming back to it
@@ -280,15 +281,26 @@ export default function InboxView({ initial }: { initial: InboxData }) {
     data.marks,
     data.repliedTo,
   );
-  const todo = convos.filter((c) => c.state === 'todo' && c.asked);
+  // A found email's conversation, so search results carry the same switch as the list.
+  const convoOf = (m: Classified) => convos.find((c) => c.key === m.fromAddress.toLowerCase());
+  // Every match from one address, and not a lead: offer to clear the lot.
+  const oneSender =
+    found.length && !found[0].leadId && found.every((m) => m.fromAddress === found[0].fromAddress) ? found[0] : null;
+
+  // Everyone who wrote, not only people asking about ads: a complaint or a
+  // question about the site needs an answer too. Complaints first, then sales.
+  const weight = (c: Conversation) => (c.urgent ? 0 : c.asked ? 1 : 2);
+  const todo = convos
+    .filter((c) => c.state === 'todo')
+    .sort((a, b) => weight(a) - weight(b) || b.latest.at.localeCompare(a.latest.at));
   // Your move first: a conversation waiting on them can sit, one waiting on you can't.
   const working = convos
     .filter((c) => c.state === 'working')
     .sort((a, b) => Number(b.turn === 'yours') - Number(a.turn === 'yours'));
   const finished = convos.filter((c) => c.state === 'done');
   const shown = tab === 'todo' ? todo : tab === 'working' ? working : finished;
-  // People who wrote about something the rules don't recognise, not yet dealt with.
-  const quietPeople = convos.filter((c) => c.state === 'todo' && !c.asked);
+  // Nobody is tucked away any more: every person is in To do until you say otherwise.
+  const quietPeople: Conversation[] = [];
   const noise = mail.filter((m) => m.kind === 'noise' || hidden(m));
   const look = mail.filter((m) => ['money', 'bounce', 'stop'].includes(m.kind) && !hidden(m));
   const fromLeads = data.mail.filter((m) => m.kind === 'lead_reply');
@@ -397,6 +409,21 @@ export default function InboxView({ initial }: { initial: InboxData }) {
               <h2 id="f-h">
                 Found <small>{found.length || 'nothing'}</small>
               </h2>
+              {oneSender && found.length > 1 && (
+                <p className="allfrom">
+                  <span>
+                    All {found.length} of these are from <b>{oneSender.fromAddress}</b>.
+                  </span>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => muteSender(oneSender, !hidden(oneSender))}
+                    disabled={muting !== null}
+                  >
+                    {hidden(oneSender) ? 'Bring them all back' : `Not business — clear all ${found.length}`}
+                  </button>
+                </p>
+              )}
               {found.length ? (
                 found.map((m) => (
                   <MailRow
@@ -405,6 +432,11 @@ export default function InboxView({ initial }: { initial: InboxData }) {
                     onAdd={!m.leadId && m.kind !== 'bounce' ? () => addAsLead(m) : undefined}
                     trusted={isTrusted(m)}
                     muted={hidden(m)}
+                    onTrust={(trust) => trustSender(m, trust)}
+                    onMute={m.leadId || m.folder === 'sent' ? undefined : (mute) => muteSender(m, mute)}
+                    busy={trusting === m.id || muting === m.id || marking === m.fromAddress.toLowerCase()}
+                    convo={convoOf(m)}
+                    onStatus={convoOf(m) ? (status) => setStatus(convoOf(m) as Conversation, status) : undefined}
                   />
                 ))
               ) : (
@@ -428,8 +460,13 @@ export default function InboxView({ initial }: { initial: InboxData }) {
                           key={m.id}
                           m={m}
                           onAdd={!m.leadId && m.folder !== 'sent' && m.kind !== 'bounce' ? () => addAsLead(m) : undefined}
-                          trusted={isTrusted(m)}
-                          muted={hidden(m)}
+                    trusted={isTrusted(m)}
+                    muted={hidden(m)}
+                    onTrust={(trust) => trustSender(m, trust)}
+                    onMute={m.leadId || m.folder === 'sent' ? undefined : (mute) => muteSender(m, mute)}
+                    busy={trusting === m.id || muting === m.id || marking === m.fromAddress.toLowerCase()}
+                    convo={convoOf(m)}
+                    onStatus={convoOf(m) ? (status) => setStatus(convoOf(m) as Conversation, status) : undefined}
                         />
                       ))
                     ) : (
@@ -567,12 +604,13 @@ export default function InboxView({ initial }: { initial: InboxData }) {
 
       <section className="card" aria-labelledby="n-h" style={{ marginBottom: 12 }}>
         <h2 id="n-h">
-          3 · Conversations with new people <small>{checked ? `${todo.length} to do` : '…'}</small>
+          3 · Conversations <small>{checked ? `${todo.length} to do` : '…'}</small>
         </h2>
         {checked ? (
           <>
             <p className="cnote" style={{ margin: '0 0 10px' }}>
-              One row per person, from either mailbox, spam included. A conversation moves to In
+              One row per person who wrote to you — about advertising or anything else — from either
+              mailbox, spam included. A conversation moves to In
               progress by itself once your Sent folder shows you replied, and comes back from Done
               if they write again. Not about Culture Media — a newsletter, a personal email, a
               product update? <b>Not business</b> takes that sender off this page for good; the list at the
@@ -608,7 +646,7 @@ export default function InboxView({ initial }: { initial: InboxData }) {
             ) : (
               <p className="empty-note">
                 {tab === 'todo'
-                  ? 'Nobody waiting. Strangers who mention advertising, rates, sponsorship, an event or a collaboration land here.'
+                  ? 'Nobody waiting. Everyone who writes to you lands here, whatever it is about.'
                   : tab === 'working'
                     ? 'Nothing in progress. Mark a conversation In progress, or just reply to it — the next mail check moves it here.'
                     : 'Nothing finished yet. Done conversations wait here, and come back to To do by themselves if the person writes again.'}
@@ -779,6 +817,11 @@ function MailRow({
         {m.folderName && <span className="chip none">Filed under “{m.folderName}”</span>}
         {m.folder === 'spam' && trusted && <span className="chip none">You marked this not spam</span>}
         {stopped && <span className="chip none">Unsubscribed — no more emails</span>}
+        {(convo?.urgent || m.urgent) && convo?.state !== 'done' && (
+          <span className="chip crit" title="It mentions permission, copyright, a complaint, a correction or money owed">
+            Reads like a complaint or legal notice · answer it
+          </span>
+        )}
         {muted && <span className="chip none">Marked not business</span>}
         {m.folder === 'sent' && <span className="chip none">You sent this</span>}
         {convo?.turn === 'theirs' && convo.repliedAt && (
