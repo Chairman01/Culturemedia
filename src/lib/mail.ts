@@ -21,6 +21,10 @@ export interface MailMessage {
   /** ISO timestamp the message arrived or was sent. */
   at: string;
   unread: boolean;
+  /** The mailbox's own name for the folder when it is not Inbox, Spam or Sent (Zoho's "Newsletter"). */
+  folderName?: string;
+  /** The message carries bulk-mail headers (List-Unsubscribe, List-Id, Precedence: bulk). */
+  bulk?: boolean;
 }
 
 export type MailKind =
@@ -63,7 +67,18 @@ const AUTOMATED_LOCAL =
 // count as noise when the message is not asking about advertising.
 const SHARED_LOCAL = /^(team|support|billing|receipts?|invoices?|accounts?|security|admin|system)\b/i;
 const AUTOMATED_DOMAIN =
-  /(^|\.)(facebookmail\.com|linkedin\.com|instagram\.com|twitter\.com|x\.com|tiktok\.com|youtube\.com|google\.com|accounts\.google\.com|apple\.com|amazon\.(ca|com)|paypal\.(ca|com)|intuit\.com|stripe\.com|shopify\.com|canva\.com|mailchimp\.com|substack\.com|medium\.com|vercel\.com|github\.com|supabase\.(com|io)|zoho\.com|zohomail\.com|mediavine\.com|godaddy\.com|wix\.com|squarespace\.com|meta\.com|calendly\.com|zoom\.us|dropbox\.com|slack\.com|notion\.so|openai\.com|anthropic\.com)$/i;
+  /(^|\.)(resend\.com|sendgrid\.(net|com)|mailchimpapp\.com|mcsv\.net|klaviyo\.com|constantcontact\.com|hubspot(email)?\.(com|net)|beehiiv\.com|eventbrite\.(ca|com)|lu\.ma|typeform\.com|figma\.com|loom\.com|atlassian\.(com|net)|cloudflare\.com|namecheap\.com|waveapps\.com|hootsuite\.com|later\.com|buffer\.com|semrush\.com|ahrefs\.com|producthunt\.com|facebookmail\.com|linkedin\.com|instagram\.com|twitter\.com|x\.com|tiktok\.com|youtube\.com|google\.com|accounts\.google\.com|apple\.com|amazon\.(ca|com)|paypal\.(ca|com)|intuit\.com|stripe\.com|shopify\.com|canva\.com|mailchimp\.com|substack\.com|medium\.com|vercel\.com|github\.com|supabase\.(com|io)|zoho\.com|zohomail\.com|mediavine\.com|godaddy\.com|wix\.com|squarespace\.com|meta\.com|calendly\.com|zoom\.us|dropbox\.com|slack\.com|notion\.so|openai\.com|anthropic\.com)$/i;
+
+// The sending domain starts with a label only bulk mail uses: updates.resend.com,
+// news.example.com, em1234.brand.com.
+const BULK_SUBDOMAIN =
+  /^(updates?|news|newsletters?|e|em\d*|email|emails|mailer|mailing|marketing|notifications?|notify|send|sender|bounces?|campaigns?|click|engage|announce(ments)?|events|community|digest|promo|offers)\./i;
+// Wording only a mailing platform adds. Kept narrow on purpose: "you're invited"
+// and "join us" are how a local business announces a grand opening, and that is
+// a lead. Only tested on strangers: a lead who writes "unsubscribe" is handled
+// above as a stop request.
+const BULK_TEXT =
+  /\bunsubscribe\b|view (this )?(email )?in (your |a )?browser|you are receiving this|you received this (email|message) because|manage (your )?(email )?preferences|update your preferences|no longer wish to receive|email preferences|all rights reserved/i;
 
 const MONEY =
   /e-?transfer|interac|payment (received|sent|confirmation|of)|you('ve| have) (received|been paid)|sent you (money|\$)|deposit(ed)?\b|invoice\b|receipt\b|remittance|payout|paid\b/i;
@@ -135,13 +150,23 @@ export function classify(m: MailMessage, index: ReturnType<typeof indexLeads>): 
   const automated =
     AUTOMATED_LOCAL.test(local) ||
     AUTOMATED_DOMAIN.test(domain) ||
+    BULK_SUBDOMAIN.test(domain) ||
+    Boolean(m.bulk) ||
+    BULK_TEXT.test(text) ||
     (SHARED_LOCAL.test(local) && !asksAboutAds);
 
   // Money first: payment notices come from automated senders and still matter.
   if (MONEY.test(text) && (automated || /interac|e-?transfer/i.test(text))) {
     return done('money', 'Mentions a payment, e-transfer, invoice or receipt');
   }
-  if (automated) return done('noise', 'Automated sender (no-reply, newsletter or a platform notification)');
+  if (automated) {
+    return done(
+      'noise',
+      m.bulk || BULK_TEXT.test(text) || BULK_SUBDOMAIN.test(domain)
+        ? 'Sent in bulk (a newsletter, invitation or product update), not written to you'
+        : 'Automated sender (no-reply, newsletter or a platform notification)',
+    );
+  }
 
   if (asksAboutAds) return done('inquiry', 'A person asking about advertising, features, rates or an event');
   if (MONEY.test(text)) return done('money', 'Mentions a payment, invoice or receipt');

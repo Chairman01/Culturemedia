@@ -1,4 +1,7 @@
-// Read-only view of the Zoho mailbox: Inbox, Spam and Sent.
+// Read-only view of the Zoho mailbox: Inbox, Spam, Sent, and every other folder
+// mail can land in. Zoho files a lot by itself ("Newsletter", "Notification")
+// and owners make their own folders; mail there never reaches the Inbox, so
+// reading the Inbox alone quietly misses it.
 //
 // The site's Zoho grant is read-only, so this can list what arrived and nothing
 // more: it cannot send, reply, delete or mark as read. Sending stays with the
@@ -14,6 +17,21 @@ import { loadTokens, saveTokens } from '@/app/api/zoho/callback/route';
 
 import type { Folder, MailMessage } from './mail';
 
+export interface FolderCheck {
+  /** The folder's name as the mailbox shows it. */
+  name: string;
+  count: number;
+  /** ISO time of the oldest message read: mail older than this is not on the page. */
+  since: string | null;
+}
+
+/** Oldest `at` among messages, for a FolderCheck. */
+export function oldestOf(messages: MailMessage[]): string | null {
+  let oldest: string | null = null;
+  for (const m of messages) if (m.at && (!oldest || m.at < oldest)) oldest = m.at;
+  return oldest;
+}
+
 export interface MailboxResult {
   mailbox: 'zoho' | 'gmail';
   /** The address, for display. */
@@ -23,6 +41,8 @@ export interface MailboxResult {
   note: string | null;
   /** Folders that were actually read. */
   folders: Folder[];
+  /** What was read, folder by folder, so the owner can see the coverage. */
+  checked: FolderCheck[];
   messages: MailMessage[];
 }
 
@@ -112,14 +132,19 @@ type RawMessage = {
 };
 
 const FOLDER_TYPES: Record<string, Folder> = { inbox: 'inbox', spam: 'spam', sent: 'sent' };
+// Never incoming mail worth reading.
+const SKIP_FOLDERS = /^(drafts?|trash|templates?|outbox|snoozed|scheduled|archive)$/i;
+// Enough extra folders for any real mailbox, few enough to stay quick.
+const MAX_OTHER_FOLDERS = 10;
 
-export async function readZoho(limit = 40): Promise<MailboxResult> {
+export async function readZoho(limit = 100): Promise<MailboxResult> {
   const base: MailboxResult = {
     mailbox: 'zoho',
     label: 'Zoho Mail',
     connected: false,
     note: null,
     folders: [],
+    checked: [],
     messages: [],
   };
 
@@ -140,6 +165,8 @@ export async function readZoho(limit = 40): Promise<MailboxResult> {
     // Folder ids. Without the folders scope this call is refused and we fall
     // back to the default view, which is the Inbox.
     const wanted = new Map<Folder, string | null>();
+    // Everything else mail can land in: read as incoming, labelled with its name.
+    const others: { id: string; name: string }[] = [];
     const foldersRes = await fetch(`${api}/folders`, { headers, cache: 'no-store' });
     if (foldersRes.ok) {
       const folders: Array<{ folderId?: string; folderType?: string; folderName?: string }> =
@@ -147,6 +174,9 @@ export async function readZoho(limit = 40): Promise<MailboxResult> {
       for (const f of folders) {
         const kind = FOLDER_TYPES[String(f.folderType || f.folderName || '').toLowerCase()];
         if (kind && f.folderId && !wanted.has(kind)) wanted.set(kind, String(f.folderId));
+        else if (!kind && f.folderId && f.folderName && !SKIP_FOLDERS.test(f.folderName) && !SKIP_FOLDERS.test(String(f.folderType || ''))) {
+          if (others.length < MAX_OTHER_FOLDERS) others.push({ id: String(f.folderId), name: f.folderName });
+        }
       }
     }
     const limitedToInbox = !wanted.has('inbox');
@@ -154,12 +184,23 @@ export async function readZoho(limit = 40): Promise<MailboxResult> {
 
     const messages: MailMessage[] = [];
     const read: Folder[] = [];
+    const checked: FolderCheck[] = [];
     let firstError: string | null = null;
 
+    const jobs: { folder: Folder; folderId: string | null; name: string; take: number }[] = [
+      ...[...wanted.entries()].map(([folder, folderId]) => ({
+        folder,
+        folderId,
+        name: folder[0].toUpperCase() + folder.slice(1),
+        take: limit,
+      })),
+      ...others.map((o) => ({ folder: 'inbox' as Folder, folderId: o.id, name: o.name, take: Math.min(limit, 50) })),
+    ];
+
     await Promise.all(
-      [...wanted.entries()].map(async ([folder, folderId]) => {
+      jobs.map(async ({ folder, folderId, name, take }) => {
         const params = new URLSearchParams({
-          limit: String(limit),
+          limit: String(take),
           sortBy: 'date',
           sortorder: 'false',
           includeto: 'true',
@@ -167,13 +208,15 @@ export async function readZoho(limit = 40): Promise<MailboxResult> {
         if (folderId) params.set('folderId', folderId);
         const res = await fetch(`${api}/messages/view?${params}`, { headers, cache: 'no-store' });
         if (!res.ok) {
-          firstError ??= `Zoho answered ${res.status} for the ${folder} folder.`;
+          firstError ??= `Zoho answered ${res.status} for the ${name} folder.`;
           return;
         }
-        read.push(folder);
+        if (!read.includes(folder)) read.push(folder);
+        const mine: MailMessage[] = [];
+        const custom = !wanted.has(folder) || wanted.get(folder) !== folderId;
         for (const m of ((await res.json()).data || []) as RawMessage[]) {
           const from = parseAddress(m.fromAddress);
-          messages.push({
+          mine.push({
             id: `zoho:${m.messageId ?? ''}`,
             mailbox: 'zoho',
             folder,
@@ -184,10 +227,16 @@ export async function readZoho(limit = 40): Promise<MailboxResult> {
             summary: unescape(m.summary),
             at: toIso(m.receivedTime ?? m.sentDateInGMT),
             unread: String(m.status) === '0',
+            ...(custom ? { folderName: name } : {}),
           });
         }
+        messages.push(...mine);
+        checked.push({ name, count: mine.length, since: oldestOf(mine) });
       }),
     );
+    // Inbox, Spam, Sent first, then the rest by name.
+    const rank = (n: string) => ['Inbox', 'Spam', 'Sent'].indexOf(n);
+    checked.sort((a, b) => (rank(a.name) < 0 ? 9 : rank(a.name)) - (rank(b.name) < 0 ? 9 : rank(b.name)) || a.name.localeCompare(b.name));
 
     if (!read.length) return { ...base, label, note: firstError || 'Zoho returned nothing.' };
     return {
@@ -195,6 +244,7 @@ export async function readZoho(limit = 40): Promise<MailboxResult> {
       label,
       connected: true,
       folders: read,
+      checked,
       messages,
       note: limitedToInbox
         ? 'Reading the Inbox only. Reconnect Zoho once to also check Spam and Sent.'

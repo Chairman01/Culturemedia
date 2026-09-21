@@ -21,6 +21,8 @@ export interface InboxData {
   stopped: string[];
   /** Addresses the owner marked "not spam", lower-case, so they stop being flagged. */
   trusted: string[];
+  /** Addresses you hid: newsletters and updates that are never something to do. */
+  muted: string[];
   /** Where you left each conversation, by lower-case address. */
   marks: Record<string, SenderMark>;
   /** When you last emailed each address, read from the Sent folders. */
@@ -44,6 +46,7 @@ function shape(
     mailboxes: snapshot.mailboxes,
     stopped: snapshot.leads.filter((l) => l.unsubscribed_at).map((l) => l.id),
     trusted: calls?.trusted ?? [],
+    muted: calls?.muted ?? [],
     marks: calls?.marks ?? {},
     repliedTo: snapshot.repliedTo,
     report,
@@ -75,6 +78,7 @@ export async function loadInboxQuick(): Promise<InboxData> {
     mailboxes: [],
     stopped: [],
     trusted: [],
+    muted: [],
     marks: {},
     repliedTo: {},
     report: null,
