@@ -774,7 +774,7 @@ function MailRow({
   m: Classified;
   onAdd?: () => void;
   onStop?: () => void;
-  /** Mark this sender safe, or put the warning back. */
+  /** Mark this sender safe. One way: the row offers no "back to spam". */
   onTrust?: (trust: boolean) => void;
   /** The owner has already vouched for this sender. */
   trusted?: boolean;
@@ -858,9 +858,10 @@ function MailRow({
             Open lead
           </Link>
         )}
-        {onTrust && m.folder === 'spam' && (
-          <button type="button" className="btn ghost" onClick={() => onTrust(!trusted)} disabled={busy}>
-            {busy ? 'Saving…' : trusted ? 'Back to spam' : 'Not spam'}
+        {/* Once vouched for, the question is settled: no button to put it back. */}
+        {onTrust && m.folder === 'spam' && !trusted && (
+          <button type="button" className="btn ghost" onClick={() => onTrust(true)} disabled={busy}>
+            {busy ? 'Saving…' : 'Not spam'}
           </button>
         )}
         {onMute && !m.leadId && (
