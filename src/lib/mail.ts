@@ -21,6 +21,8 @@ export interface MailMessage {
   /** ISO timestamp the message arrived or was sent. */
   at: string;
   unread: boolean;
+  /** Zoho's id for the folder the message sits in: needed to fetch its full text. */
+  folderId?: string;
   /** Web address that opens this one email in the mailbox's own site. */
   link?: string;
   /** The mailbox's own name for the folder when it is not Inbox, Spam or Sent (Zoho's "Newsletter"). */

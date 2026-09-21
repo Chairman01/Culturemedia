@@ -1926,6 +1926,37 @@
   font-weight: 700;
 }
 
+/* ── inbox: reading one email in full ───────────────────────────────────────── */
+
+.adm dialog.statpanel .mail-subject {
+  margin: 8px 0 2px;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.adm .mail-from {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.adm .mail-full {
+  margin: 0 0 10px;
+  padding: 16px 18px;
+  max-height: 56vh;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: inherit;
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--ink);
+  background: var(--sunken);
+  border-radius: 10px;
+}
+
 /* ── inbox: last checked, whole-mailbox search, the board ──────────────────── */
 
 .adm .checked-at {

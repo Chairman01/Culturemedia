@@ -11,6 +11,7 @@ import 'server-only';
 import { ImapFlow, type FetchMessageObject, type MessageStructureObject } from 'imapflow';
 
 import type { Folder, MailMessage } from './mail';
+import { decodeBody, htmlToText, tidy } from './mail-text';
 import { oldestOf, type FolderCheck, type MailboxResult } from './zoho-mail';
 
 const PREVIEW_BYTES = 1800;
@@ -108,6 +109,67 @@ function toMessage(msg: FetchMessageObject, folder: Folder, preview: string): Ma
     // is the most reliable sign that nobody typed this message to you.
     bulk: /^(list-unsubscribe|list-id):|^precedence:\s*(bulk|list|junk)/im.test(msg.headers ? msg.headers.toString('utf8') : ''),
   };
+}
+
+// Plenty for any email a person wrote; a cap so a huge newsletter cannot stall the page.
+const FULL_BYTES = 400_000;
+
+/**
+ * The whole text of one Gmail message. `fromSearch` ids were numbered inside
+ * All Mail, the others inside the folder they were read from. Opened read-only,
+ * so reading it here does not mark it read in Gmail.
+ */
+export async function readGmailBody(
+  folder: Folder,
+  uid: number,
+  fromSearch: boolean,
+): Promise<{ text: string; cut: boolean } | { error: string }> {
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
+  if (!user || !pass) return { error: 'Gmail is not connected.' };
+
+  const client = new ImapFlow({
+    host: 'imap.gmail.com',
+    port: 993,
+    secure: true,
+    auth: { user, pass: pass.replace(/\s+/g, '') },
+    logger: false,
+    socketTimeout: 20000,
+  });
+  client.on('error', (err: unknown) => console.error('[admin] Gmail IMAP error', err));
+
+  try {
+    await client.connect();
+    let path = 'INBOX';
+    const wanted = folder === 'spam' ? '\\Junk' : folder === 'sent' ? '\\Sent' : fromSearch ? '\\All' : null;
+    if (wanted) {
+      const box = (await client.list()).find((b) => b.specialUse === wanted);
+      if (!box) return { error: 'Could not find that folder in Gmail.' };
+      path = box.path;
+    }
+
+    const lock = await client.getMailboxLock(path, { readOnly: true });
+    try {
+      const shape = await client.fetchOne(String(uid), { bodyStructure: true }, { uid: true });
+      const part = shape ? findTextPart(shape.bodyStructure) : null;
+      if (!part) return { error: 'That email has no text to show (it may be only an attachment or an image).' };
+      const one = await client.fetchOne(String(uid), { bodyParts: [{ key: part.part, maxLength: FULL_BYTES }] }, { uid: true });
+      const raw = decodeBody(one ? one.bodyParts?.get(part.part) : undefined, part.encoding);
+      if (!raw) return { error: 'Gmail did not hand over that email. It may have been moved or deleted.' };
+      return tidy(part.html ? htmlToText(raw) : raw);
+    } finally {
+      lock.release();
+    }
+  } catch (err) {
+    console.error('[admin] Gmail body read failed', err);
+    return { error: 'Could not reach Gmail.' };
+  } finally {
+    try {
+      await client.logout();
+    } catch {
+      /* already closed */
+    }
+  }
 }
 
 /**
