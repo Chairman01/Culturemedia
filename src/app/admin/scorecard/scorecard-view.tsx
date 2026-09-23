@@ -508,6 +508,10 @@ export default function ScorecardView({
                 : ''}
             </small>
           </h2>
+          <p className="cnote" style={{ margin: '0 0 10px' }}>
+            Page-by-page earnings, searches within reach and titles to fix are on{' '}
+            <Link href="/admin/content">Content</Link>.
+          </p>
           <ul className="ins">
             {insights.length ? (
               insights.slice(0, 6).map((i, idx) => {
