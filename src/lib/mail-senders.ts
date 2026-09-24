@@ -9,11 +9,13 @@
 import 'server-only';
 
 import type { ConvoStatus, SenderMark } from './conversations';
+import type { FileAs } from './filing';
 import { getClient, NOT_CONFIGURED, type AdminResult } from './supabase-admin';
 
 // Deliberately loose: this only decides what we are willing to store.
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const STATUSES: ConvoStatus[] = ['todo', 'working', 'done'];
+const CATEGORIES: FileAs[] = ['partnership', 'retainer', 'story', 'client', 'platform'];
 
 function fail<T>(where: string, error: unknown): AdminResult<T> {
   console.error(`[admin] ${where} failed`, error);
@@ -29,6 +31,8 @@ export interface SenderCalls {
   marks: Record<string, SenderMark>;
   /** Lower-cased addresses the owner hid: never something to act on. */
   muted: string[];
+  /** What each sender is filed as, by lower-cased address. */
+  categories: Record<string, FileAs>;
 }
 
 export async function listSenders(): Promise<AdminResult<SenderCalls>> {
@@ -37,15 +41,16 @@ export async function listSenders(): Promise<AdminResult<SenderCalls>> {
 
   const { data, error } = await supabase
     .from('mail_senders')
-    .select('email, trusted, muted, status, status_at')
+    .select('email, trusted, muted, status, status_at, category')
     .limit(5000);
   if (error) return fail('listSenders', error);
 
-  const calls: SenderCalls = { trusted: [], marks: {}, muted: [] };
+  const calls: SenderCalls = { trusted: [], marks: {}, muted: [], categories: {} };
   for (const row of data ?? []) {
     const email = String(row.email).toLowerCase();
     if (row.trusted) calls.trusted.push(email);
     if (row.muted) calls.muted.push(email);
+    if (row.category && CATEGORIES.includes(row.category as FileAs)) calls.categories[email] = row.category as FileAs;
     if (row.status && row.status_at && STATUSES.includes(row.status as ConvoStatus)) {
       calls.marks[email] = { status: row.status as ConvoStatus, at: String(row.status_at) };
     }
@@ -77,6 +82,28 @@ export async function setSenderTrust(
   );
   if (error) return fail('setSenderTrust', error);
   return { data: 'saved', error: null };
+}
+
+/**
+ * File a sender as a partnership lead, retainer lead, story, client or platform,
+ * or clear the filing with null. Filing someone also brings them back from Not
+ * business: choosing what they are is a decision that they matter.
+ */
+export async function setSenderCategory(rawEmail: unknown, rawCategory: unknown): Promise<AdminResult<FileAs | null>> {
+  const supabase = getClient();
+  if (!supabase) return { data: null, error: NOT_CONFIGURED };
+
+  const email = clean(rawEmail);
+  if (!EMAIL.test(email)) return { data: null, error: "That doesn't look like an email address." };
+  const category = rawCategory === null || rawCategory === '' ? null : (String(rawCategory) as FileAs);
+  if (category !== null && !CATEGORIES.includes(category)) return { data: null, error: 'Pick one of the listed kinds.' };
+
+  const at = new Date().toISOString();
+  const row: Record<string, unknown> = { email, category, category_at: category ? at : null, updated_at: at };
+  if (category) row.muted = false;
+  const { error } = await supabase.from('mail_senders').upsert(row, { onConflict: 'email' });
+  if (error) return fail('setSenderCategory', error);
+  return { data: category, error: null };
 }
 
 /** Hide a sender from the Inbox for good (a newsletter, a product update), or bring them back. */

@@ -69,11 +69,8 @@ const STOP =
 // Never a person: these local parts are noise whatever the message says.
 const AUTOMATED_LOCAL =
   /^(no-?reply|do-?not-?reply|donotreply|recommendations?|suggestions?|discover|notifications?|notify|newsletter|news|updates?|mailer|bounces?|alerts?|digest|marketing|promo(tions)?|deals|offers)\b/i;
-// Usually a system, sometimes a small business's shared inbox — so these only
-// count as noise when the message is not asking about advertising.
-const SHARED_LOCAL = /^(team|support|billing|receipts?|invoices?|accounts?|security|admin|system)\b/i;
 const AUTOMATED_DOMAIN =
-  /(^|\.)(pinterest\.(com|ca)|quora\.com|reddit(mail)?\.com|nextdoor\.(com|ca)|spotify\.com|netflix\.com|uber\.com|doordash\.com|skipthedishes\.com|airbnb\.(com|ca)|indeed\.com|glassdoor\.(com|ca)|microsoft\.com|bing\.com|office365\.com|resend\.com|sendgrid\.(net|com)|mailchimpapp\.com|mcsv\.net|klaviyo\.com|constantcontact\.com|hubspot(email)?\.(com|net)|beehiiv\.com|eventbrite\.(ca|com)|lu\.ma|typeform\.com|figma\.com|loom\.com|atlassian\.(com|net)|cloudflare\.com|namecheap\.com|waveapps\.com|hootsuite\.com|later\.com|buffer\.com|semrush\.com|ahrefs\.com|producthunt\.com|facebookmail\.com|linkedin\.com|instagram\.com|twitter\.com|x\.com|tiktok\.com|youtube\.com|google\.com|accounts\.google\.com|apple\.com|amazon\.(ca|com)|paypal\.(ca|com)|intuit\.com|stripe\.com|shopify\.com|canva\.com|mailchimp\.com|substack\.com|medium\.com|vercel\.com|github\.com|supabase\.(com|io)|zoho\.com|zohomail\.com|mediavine\.com|godaddy\.com|wix\.com|squarespace\.com|meta\.com|calendly\.com|zoom\.us|dropbox\.com|slack\.com|notion\.so|openai\.com|anthropic\.com)$/i;
+  /(^|\.)(pinterest\.(com|ca)|quora\.com|reddit(mail)?\.com|nextdoor\.(com|ca)|spotify\.com|netflix\.com|uber\.com|doordash\.com|skipthedishes\.com|airbnb\.(com|ca)|indeed\.com|glassdoor\.(com|ca)|microsoft\.com|bing\.com|office365\.com|resend\.com|sendgrid\.(net|com)|mailchimpapp\.com|mcsv\.net|klaviyo\.com|constantcontact\.com|hubspot(email)?\.(com|net)|beehiiv\.com|eventbrite\.(ca|com)|lu\.ma|typeform\.com|figma\.com|loom\.com|atlassian\.(com|net)|cloudflare\.com|namecheap\.com|waveapps\.com|hootsuite\.com|later\.com|buffer\.com|semrush\.com|ahrefs\.com|producthunt\.com|facebookmail\.com|linkedin\.com|instagram\.com|twitter\.com|x\.com|tiktok\.com|youtube\.com|google\.com|accounts\.google\.com|apple\.com|amazon\.(ca|com)|paypal\.(ca|com)|intuit\.com|stripe\.com|shopify\.com|canva\.com|mailchimp\.com|substack\.com|medium\.com|vercel\.com|github\.com|supabase\.(com|io)|zoho\.com|zohomail\.com|godaddy\.com|wix\.com|squarespace\.com|meta\.com|calendly\.com|zoom\.us|dropbox\.com|slack\.com|notion\.so|openai\.com|anthropic\.com)$/i;
 
 // The sending domain starts with a label only bulk mail uses: updates.resend.com,
 // news.example.com, em1234.brand.com.
@@ -161,13 +158,21 @@ export function classify(m: MailMessage, index: ReturnType<typeof indexLeads>): 
   }
 
   const asksAboutAds = INQUIRY.test(text);
+  // A person, whatever the address: a helpdesk agent ("Lauren Funari from
+  // Mediavine") or a reply in a thread you started. A no-reply address or real
+  // bulk-mail headers still win.
+  const namedAgent = /^[A-Z][\p{L}'’.-]+(?: [A-Z][\p{L}'’.-]+)+ from \S/u.test(m.fromName.trim());
+  const threadReply = /^\s*(re|fw|fwd)\s*:/i.test(m.subject) && !m.bulk && !BULK_TEXT.test(text);
+  const person = (namedAgent || threadReply) && !AUTOMATED_LOCAL.test(local);
+  // support@, admin@, team@ are how small organisations write too, so a shared
+  // address alone no longer makes an email automated.
   const automated =
-    AUTOMATED_LOCAL.test(local) ||
-    AUTOMATED_DOMAIN.test(domain) ||
-    BULK_SUBDOMAIN.test(domain) ||
-    Boolean(m.bulk) ||
-    BULK_TEXT.test(text) ||
-    (SHARED_LOCAL.test(local) && !asksAboutAds);
+    !person &&
+    (AUTOMATED_LOCAL.test(local) ||
+      AUTOMATED_DOMAIN.test(domain) ||
+      BULK_SUBDOMAIN.test(domain) ||
+      Boolean(m.bulk) ||
+      BULK_TEXT.test(text));
 
   // Money first: payment notices come from automated senders and still matter.
   if (MONEY.test(text) && (automated || /interac|e-?transfer/i.test(text))) {

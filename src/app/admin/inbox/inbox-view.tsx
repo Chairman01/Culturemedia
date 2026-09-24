@@ -19,12 +19,14 @@ import { useRouter } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { buildConversations, type Conversation, type ConvoStatus } from '@/lib/conversations';
+import type { FileAs } from '@/lib/filing';
 import { PARTNERSHIPS_URL, SEQUENCE_LABEL, STAGE_LABEL, awaitingReply } from '@/lib/crm';
 import type { InboxData } from '@/lib/inbox';
 import { INBOX_FRESH_MS, readSavedCheck, saveCheck } from '@/lib/inbox-cache';
 import type { Classified } from '@/lib/mail';
 import { PREFILL_KEY, type LeadPrefill } from '../_components/add-lead';
 import { Detail } from '../_components/detail';
+import { AllMail, type FileChoice } from './all-mail';
 import { day } from '../_components/format';
 import { AdminShell, PageHead } from '../_components/shell';
 import { Banner } from '../_components/ui';
@@ -34,6 +36,7 @@ const WEBMAIL: Record<string, string> = {
   gmail: 'https://mail.google.com/',
 };
 const BOX_NAME: Record<string, string> = { zoho: 'Zoho', gmail: 'Gmail' };
+const VIEW_KEY = 'cm-admin-inbox-view';
 
 // Every row can open its email, wherever on the page the row is drawn.
 const ReadContext = createContext<((m: Classified) => void) | null>(null);
@@ -52,7 +55,18 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   const [muting, setMuting] = useState<string | null>(null);
   const [box, setBox] = useState<'all' | 'zoho' | 'gmail'>('all');
   const [find, setFind] = useState('');
-  const [view, setView] = useState<'list' | 'board'>('list');
+  // All mail is where the page opens: nothing is hidden there. The choice is
+  // remembered per browser; a link to #approve always lands on Needs you.
+  const [view, setViewState] = useState<'needs' | 'all' | 'board'>('all');
+  const setView = (v: 'needs' | 'all' | 'board') => {
+    setViewState(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      /* not remembered: fine */
+    }
+  };
+  const [filing, setFiling] = useState<string | null>(null);
   const [checkedAt, setCheckedAt] = useState('');
   const lastCheck = useRef(0);
   // A search of the whole mailbox, not just what this page holds.
@@ -129,6 +143,24 @@ export default function InboxView({ initial }: { initial: InboxData }) {
     void sync();
   }, [sync]);
 
+  useEffect(() => {
+    let next: 'needs' | 'all' | 'board' | null = null;
+    if (window.location.hash === '#approve') next = 'needs';
+    else {
+      try {
+        const saved = localStorage.getItem(VIEW_KEY);
+        if (saved === 'needs' || saved === 'all' || saved === 'board') next = saved;
+      } catch {
+        /* default view */
+      }
+    }
+    // Deferred so the first render matches the server's, then switches.
+    if (next) {
+      const v = next;
+      queueMicrotask(() => setViewState(v));
+    }
+  }, []);
+
   // Keep the saved check in step with what you do here (Done, Not spam, Not business).
   useEffect(() => {
     if (!checked || !lastCheck.current) return;
@@ -160,8 +192,9 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   };
 
   // Hand the sender to the add-a-lead form without putting them in a URL.
-  const addAsLead = (m: Classified) => {
+  const addAsLead = (m: Classified, dealType?: string) => {
     const prefill: LeadPrefill = {
+      ...(dealType ? { deal_type: dealType } : {}),
       company: m.companyGuess,
       contact_name: m.fromName,
       email: m.fromAddress,
@@ -228,6 +261,41 @@ export default function InboxView({ initial }: { initial: InboxData }) {
   // Unlike Done, it stays quiet when they write again. Never applied to a lead.
   const isMuted = (m: Classified) => data.muted.includes(m.fromAddress.toLowerCase());
   const hidden = (m: Classified) => isMuted(m) && !m.leadId;
+
+  // File a sender (partnership lead, story…), mark them not business, or clear it.
+  const fileSender = async (m: Classified, choice: FileChoice) => {
+    const address = m.fromAddress.toLowerCase();
+    if (choice === 'notbusiness') return muteAddress(address, true, m.id);
+    if (filing) return;
+    const wasMuted = data.muted.includes(address);
+    // Clearing an unfiled, not-business sender just brings them back.
+    if (choice === '' && wasMuted && !data.categories[address]) return muteAddress(address, false, m.id);
+    setFiling(address);
+    setProblem('');
+    try {
+      const res = await fetch('/api/admin/inbox/category', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: address, category: choice || null }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setProblem(body.error || "Couldn't file that.");
+        return;
+      }
+      setData((d) => {
+        const categories = { ...d.categories };
+        if (choice) categories[address] = choice as FileAs;
+        else delete categories[address];
+        // Filing someone brings them back from Not business (the server does the same).
+        return { ...d, categories, muted: choice ? d.muted.filter((e) => e !== address) : d.muted };
+      });
+    } catch {
+      setProblem("Couldn't reach the server.");
+    } finally {
+      setFiling(null);
+    }
+  };
 
   const muteSender = (m: Classified, mute: boolean) => muteAddress(m.fromAddress, mute, m.id);
 
@@ -362,8 +430,9 @@ export default function InboxView({ initial }: { initial: InboxData }) {
         <>
           <details className="covered">
             <summary>
-              What was checked — {data.mailboxes.reduce((n, b) => n + b.checked.length, 0)} folders,{' '}
-              {data.mailboxes.reduce((n, b) => n + b.checked.reduce((k, f) => k + f.count, 0), 0)} emails
+              What was checked — {data.mail.length} received,{' '}
+              {data.mailboxes.reduce((n, b) => n + b.checked.filter((f) => f.name === 'Sent').reduce((k, f) => k + f.count, 0), 0)} sent, from{' '}
+              {data.mailboxes.reduce((n, b) => n + b.checked.length, 0)} folders
             </summary>
             <ul>
               {data.mailboxes
@@ -374,16 +443,20 @@ export default function InboxView({ initial }: { initial: InboxData }) {
                       <span className={`src ${b.mailbox}`}>{BOX_NAME[b.mailbox]}</span>
                       <b>{f.name}</b>
                       <span>
-                        {f.count ? `${f.count} newest, back to ${day(f.since)}` : 'empty'}
+                        {!f.count
+                          ? 'empty'
+                          : f.complete
+                            ? `all ${f.count} — the whole folder, back to ${day(f.since)}`
+                            : `newest ${f.count}${f.total ? ` of ${f.total}` : ''}, back to ${day(f.since)}`}
                       </span>
                     </li>
                   )),
                 )}
             </ul>
             <p className="cnote">
-              The page holds the newest mail in each folder. An email older than the date shown is
-              not on this page — open the mailbox for it. Every folder is read, including the ones
-              Zoho files mail into by itself.
+              “All” means every email in that folder is on this page. Where it says “newest”, older
+              emails are still in your mailbox: type a name in Find an email and press Enter to search
+              the whole mailbox. Every folder is read, including the ones Zoho files mail into by itself.
             </p>
           </details>
 
@@ -412,12 +485,20 @@ export default function InboxView({ initial }: { initial: InboxData }) {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') void searchEverywhere();
               }}
-              placeholder="Find an email — a name, company or any words, then press Enter"
+              placeholder="Find an email — a name or any words, then Enter"
               aria-label="Find an email"
             />
             <div className="seg" role="group" aria-label="How to lay the page out">
-              <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>
-                List
+              <button type="button" aria-pressed={view === 'all'} onClick={() => setView('all')} title="Every email, nothing hidden">
+                All mail
+              </button>
+              <button
+                type="button"
+                aria-pressed={view === 'needs'}
+                onClick={() => setView('needs')}
+                title="Replies to answer, emails to approve, conversations to do"
+              >
+                Needs you {data.replies.length + data.drafts.length + todo.length || ''}
               </button>
               <button type="button" aria-pressed={view === 'board'} onClick={() => setView('board')}>
                 Board
@@ -430,7 +511,12 @@ export default function InboxView({ initial }: { initial: InboxData }) {
               <h2 id="f-h">
                 Found <small>{found.length || 'nothing'}</small>
               </h2>
-              {oneSender && found.length > 1 && (
+              {view === 'all' && (
+                <p className="cnote" style={{ margin: '0 0 6px' }}>
+                  All mail below is narrowed to {found.length} {found.length === 1 ? 'email' : 'emails'} matching “{find.trim()}”.
+                </p>
+              )}
+              {view !== 'all' && oneSender && found.length > 1 && (
                 <p className="allfrom">
                   <span>
                     All {found.length} of these are from <b>{oneSender.fromAddress}</b>.
@@ -445,7 +531,7 @@ export default function InboxView({ initial }: { initial: InboxData }) {
                   </button>
                 </p>
               )}
-              {found.length ? (
+              {view === 'all' ? null : found.length ? (
                 found.map((m) => (
                   <MailRow
                     key={m.id}
@@ -530,7 +616,7 @@ export default function InboxView({ initial }: { initial: InboxData }) {
           convos={convos}
           leads={data.leads}
           onOpen={(address) => {
-            setView('list');
+            setView('all');
             setFind(address);
             setDeep(null);
             window.scrollTo({ top: 0 });
@@ -538,7 +624,31 @@ export default function InboxView({ initial }: { initial: InboxData }) {
         />
       )}
 
-      <div hidden={view === 'board'}>
+      {checked && view === 'all' && (
+        <AllMail
+          mail={mail}
+          leads={data.leads}
+          categories={data.categories}
+          muted={data.muted}
+          marks={data.marks}
+          repliedTo={data.repliedTo}
+          needle={needle.length >= 2 ? needle : ''}
+          busy={filing || muting || marking}
+          boxName={BOX_NAME}
+          webmail={WEBMAIL}
+          onRead={readEmail}
+          onFile={fileSender}
+          onStatus={setStatus}
+          onAdd={addAsLead}
+        />
+      )}
+      {!checked && view === 'all' && (
+        <section className="card" style={{ marginBottom: 12 }}>
+          <p className="empty-note">Checking both mailboxes — inbox, spam and every folder…</p>
+        </section>
+      )}
+
+      <div hidden={view !== 'needs'}>
       <section className="card" aria-labelledby="r-h" style={{ marginBottom: 12 }}>
         <h2 id="r-h">
           1 · Replies to answer <small>{data.replies.length || 'none'}</small>
