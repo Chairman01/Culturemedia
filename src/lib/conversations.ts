@@ -11,6 +11,7 @@
 //
 // Pure functions, no server imports: the Inbox page runs this in the browser.
 
+import { companyDomainOf } from './filing';
 import type { Classified } from './mail';
 
 export type ConvoStatus = 'todo' | 'working' | 'done';
@@ -91,6 +92,48 @@ export function buildConversations(
       repliedAt,
       reopened,
     });
+  }
+  return out;
+}
+
+// ─── threads ──────────────────────────────────────────────────────────────────
+
+/** "Re: Fwd: For Immediate Release: X" → "for immediate release: x". */
+export function threadSubject(subject: string): string {
+  return subject
+    .replace(/^(\s*(re|fw|fwd|aw|sv|tr|rv|wg)(\s*\[\d+\])?\s*:\s*)+/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+export interface Thread {
+  key: string;
+  /** Newest first. */
+  messages: Classified[];
+}
+
+/**
+ * One email chain, one row: the same subject once "Re:" and "Fwd:" are taken
+ * off, with the same person — or anyone at the same company, so a colleague
+ * joining the chain does not split it. An email without a real subject stands
+ * alone rather than gathering every "(no subject)" together. `mail` is newest
+ * first, and each thread keeps that order.
+ */
+export function groupThreads(mail: Classified[]): Thread[] {
+  const byKey = new Map<string, Thread>();
+  const out: Thread[] = [];
+  for (const m of mail) {
+    const subject = threadSubject(m.subject);
+    const party = companyDomainOf(m.fromAddress) ?? m.fromAddress.toLowerCase();
+    const key = !subject || subject === '(no subject)' ? `id:${m.id}` : `${party}|${subject}`;
+    const thread = byKey.get(key);
+    if (thread) thread.messages.push(m);
+    else {
+      const next = { key, messages: [m] };
+      byKey.set(key, next);
+      out.push(next);
+    }
   }
   return out;
 }
