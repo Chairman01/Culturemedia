@@ -194,7 +194,10 @@ export function AllMail({
                     </span>
                   )}
                   {!f.filed && f.suggested && <span className="chip hint">Looks like: {FILE_LABEL[f.suggested]}</span>}
-                  {m.urgent && <span className="chip crit">Complaint or legal · answer it</span>}
+                  {/* "Answer it" only while it is unanswered: once you have replied, or closed it, the tag goes. */}
+                  {m.urgent && !(c && (c.state === 'done' || c.turn === 'theirs')) && (
+                    <span className="chip crit">Complaint or legal · answer it</span>
+                  )}
                   {m.kind === 'money' && <span className="chip ok">Payment</span>}
                   {m.kind === 'bounce' && <span className="chip crit">Bounced</span>}
                   {f.pile === 'automated' && <span className="chip none">Automated</span>}

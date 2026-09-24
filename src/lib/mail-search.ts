@@ -10,6 +10,7 @@ import 'server-only';
 import { listLeads } from './crm-admin';
 import { searchGmail } from './gmail-imap';
 import { classify, indexLeads, type Classified } from './mail';
+import { ownTest } from './mail-sync';
 import { searchZoho } from './zoho-mail';
 
 export interface MailSearch {
@@ -25,14 +26,13 @@ export async function searchMail(rawQuery: unknown): Promise<MailSearch | { erro
 
   const [zoho, gmail, leads] = await Promise.all([searchZoho(query), searchGmail(query), listLeads()]);
   const index = indexLeads(leads.data ?? []);
-  const own = new Set(
-    [process.env.CRM_SENDER_EMAIL, process.env.GMAIL_USER].map((a) => String(a || '').toLowerCase()).filter((a) => a.includes('@')),
-  );
+  // Your Zoho address comes back with the search, so your own domain is known too.
+  const isOwn = ownTest([zoho.account, process.env.CRM_SENDER_EMAIL, process.env.GMAIL_USER]);
 
   const results = [...zoho.messages, ...gmail.messages]
     .filter((m) => m.at)
     // Mail you wrote shows up in a whole-mailbox search too: label it as sent.
-    .map((m) => classify(own.has(m.fromAddress) ? { ...m, folder: 'sent' as const } : m, index))
+    .map((m) => classify(isOwn(m.fromAddress) ? { ...m, folder: 'sent' as const } : m, index))
     .sort((a, b) => b.at.localeCompare(a.at));
 
   return { results, notes: [zoho.note, gmail.note].filter((n): n is string => Boolean(n)) };

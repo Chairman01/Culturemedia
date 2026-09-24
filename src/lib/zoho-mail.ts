@@ -168,15 +168,21 @@ export async function zohoSession(): Promise<{ api: string; headers: Record<stri
  * address. The page only holds the newest mail; this is how an older email is
  * found. Read-only, like everything else here.
  */
-export async function searchZoho(query: string, limit = 25): Promise<{ messages: MailMessage[]; note: string | null }> {
+export async function searchZoho(
+  query: string,
+  limit = 25,
+): Promise<{ messages: MailMessage[]; note: string | null; account?: string }> {
   const token = await accessToken();
   if (!token) return { messages: [], note: null };
   const headers = { Authorization: `Zoho-oauthtoken ${token}` };
   try {
     const accountsRes = await fetch(`${MAIL_HOST}/api/accounts`, { headers, cache: 'no-store' });
     if (!accountsRes.ok) return { messages: [], note: 'Zoho refused the connection. Reconnect it.' };
-    const account = ((await accountsRes.json()).data || [])[0] as { accountId: string } | undefined;
+    const account = ((await accountsRes.json()).data || [])[0] as
+      | { accountId: string; primaryEmailAddress?: string; mailboxAddress?: string }
+      | undefined;
     if (!account) return { messages: [], note: null };
+    const address = account.primaryEmailAddress || account.mailboxAddress || undefined;
     const api = `${MAIL_HOST}/api/accounts/${account.accountId}`;
 
     // Folder names, so a result can say where the email is sitting.
@@ -214,7 +220,7 @@ export async function searchZoho(query: string, limit = 25): Promise<{ messages:
         ...(where && !where.kind ? { folderName: where.name } : {}),
       });
     }
-    return { messages, note: null };
+    return { messages, note: null, account: address };
   } catch (err) {
     console.error('[admin] Zoho search failed', err);
     return { messages: [], note: 'Could not reach Zoho Mail to search it.' };

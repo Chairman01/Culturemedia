@@ -98,10 +98,14 @@ export function buildConversations(
 
 // ─── threads ──────────────────────────────────────────────────────────────────
 
-/** "Re: Fwd: For Immediate Release: X" → "for immediate release: x". */
+/**
+ * "Re: [Spam] Fwd: For Immediate Release: X" → "for immediate release: x". Tags a
+ * mail server adds in square brackets ([Spam], [External]) come off with the
+ * reply and forward prefixes, or a chain splits the moment one reply is tagged.
+ */
 export function threadSubject(subject: string): string {
   return subject
-    .replace(/^(\s*(re|fw|fwd|aw|sv|tr|rv|wg)(\s*\[\d+\])?\s*:\s*)+/i, '')
+    .replace(/^(\s*((re|fw|fwd|aw|sv|tr|rv|wg)(\s*\[\d+\])?\s*:|\[[^\]]{1,24}\]))+\s*/i, '')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();
