@@ -11,20 +11,23 @@ import { useMemo, useState } from 'react';
 
 import { buildConversations, type Conversation, type ConvoStatus, type SenderMark } from '@/lib/conversations';
 import type { LeadRow } from '@/lib/crm';
-import { FILE_AS, FILE_LABEL, fileOf, type FileAs, type Filing, type Pile } from '@/lib/filing';
+import { FILE_AS, FILE_LABEL, companyDomainOf, fileOf, type FileAs, type Filing, type Pile } from '@/lib/filing';
 import type { Classified } from '@/lib/mail';
 import { day } from '../_components/format';
 
-export type FileChoice = FileAs | 'notbusiness' | '';
+export type FileChoice = FileAs | 'notbusiness' | 'notbusiness-domain' | '';
 
 const PAGE = 50;
 
-const PILES: { k: Pile | 'all'; label: string; help: string }[] = [
-  { k: 'all', label: 'All', help: 'Every email except senders marked not business.' },
+type View = Pile | 'all' | 'everything';
+
+const PILES: { k: View; label: string; help: string }[] = [
+  { k: 'all', label: 'Business mail', help: 'Everything except automated mail and senders you marked not business.' },
   { k: 'unfiled', label: 'Not filed yet', help: 'From people, not filed yet. Work through these once and the piles take care of themselves.' },
   ...FILE_AS.map((f) => ({ k: f.k as Pile, label: f.plural, help: f.help })),
   { k: 'automated', label: 'Automated', help: 'Notifications, receipts and newsletters nobody typed to you.' },
-  { k: 'notbusiness', label: 'Not business', help: 'Senders you marked not business.' },
+  { k: 'notbusiness', label: 'Not business', help: 'Senders and companies you marked not business.' },
+  { k: 'everything', label: 'Everything', help: 'Every email the check found, nothing left out.' },
 ];
 
 const STATE_LABEL: Record<ConvoStatus, string> = { todo: 'To do', working: 'In progress', done: 'Done' };
@@ -66,11 +69,11 @@ export function AllMail({
   onStatus: (c: Conversation, status: ConvoStatus) => void;
   onAdd: (m: Classified, dealType?: string) => void;
 }) {
-  const [pile, setPile] = useState<Pile | 'all'>('all');
+  const [pile, setPile] = useState<View>('all');
   const [limit, setLimit] = useState(PAGE);
 
   const filed = useMemo(() => {
-    const ctx = { categories, muted: new Set(muted), leads: new Map(leads.map((l) => [l.id, l])) };
+    const ctx = { categories, muted, leads: new Map(leads.map((l) => [l.id, l])) };
     return new Map<string, Filing>(mail.map((m) => [m.id, fileOf(m, ctx)]));
   }, [mail, categories, muted, leads]);
 
@@ -85,10 +88,11 @@ export function AllMail({
   }, [mail, marks, repliedTo]);
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = { all: 0 };
+    const c: Record<string, number> = { all: 0, everything: 0 };
     for (const f of filed.values()) {
       c[f.pile] = (c[f.pile] || 0) + 1;
-      if (f.pile !== 'notbusiness') c.all += 1;
+      c.everything += 1;
+      if (f.pile !== 'notbusiness' && f.pile !== 'automated') c.all += 1;
     }
     return c;
   }, [filed]);
@@ -98,7 +102,7 @@ export function AllMail({
   const list = mail.filter((m) => {
     const f = filed.get(m.id);
     if (!f) return false;
-    if (pile === 'all' ? f.pile === 'notbusiness' : f.pile !== pile) return false;
+    if (pile === 'all' ? f.pile === 'notbusiness' || f.pile === 'automated' : pile !== 'everything' && f.pile !== pile) return false;
     return matches(m);
   });
   const shown = list.slice(0, limit);
@@ -110,8 +114,9 @@ export function AllMail({
         All mail <small>{mail.length} received · newest first</small>
       </h2>
       <p className="cnote" style={{ margin: '0 0 10px' }}>
-        Every email the last check found, from both mailboxes, spam included — nothing is hidden here. File a
-        sender once and all their mail follows: that is how the piles fill. Click any email to read it.
+        Business mail from both mailboxes, spam included. Automated mail and anything you marked not business
+        sit in their own piles along the top — out of the way, never lost. File a sender once and all their mail
+        follows. Click any email to read it.
       </p>
 
       <div className="ctabs piles" role="group" aria-label="Which pile to show">
@@ -139,7 +144,8 @@ export function AllMail({
             const key = m.fromAddress.toLowerCase();
             const c = convoOf.get(key);
             const saving = busy === key;
-            const value: FileChoice = f.filed ?? (f.pile === 'notbusiness' ? 'notbusiness' : '');
+            const value: FileChoice = f.filed ?? (f.mutedBy ? (f.mutedBy.startsWith('@') ? 'notbusiness-domain' : 'notbusiness') : '');
+            const company = companyDomainOf(key);
             const deal = DEAL_FOR[(f.filed ?? f.suggested) as FileAs];
             return (
               <article key={m.id} className={`arow${m.unread ? ' unread' : ''}${f.pile === 'notbusiness' ? ' dim' : ''}`}>
@@ -157,6 +163,11 @@ export function AllMail({
                   {m.kind === 'money' && <span className="chip ok">Payment</span>}
                   {m.kind === 'bounce' && <span className="chip crit">Bounced</span>}
                   {f.pile === 'automated' && <span className="chip none">Automated</span>}
+                  {f.mutedBy && (
+                    <span className="chip none">
+                      Not business{f.mutedBy.startsWith('@') ? ` · all of ${f.mutedBy.slice(1)}` : ''}
+                    </span>
+                  )}
                   {m.folder === 'spam' && <span className="chip warn">Found in spam</span>}
                   {m.folderName && <span className="chip none">In “{m.folderName}”</span>}
                   <span className="a-when">{day(m.at)}</span>
@@ -181,7 +192,8 @@ export function AllMail({
                         {!f.filed && f.suggested === o.k ? ' (suggested)' : ''}
                       </option>
                     ))}
-                    <option value="notbusiness">Not business</option>
+                    <option value="notbusiness">Not business — just this sender</option>
+                    {company && <option value="notbusiness-domain">Not business — everything from {company}</option>}
                   </select>
                   {c && (
                     <span className="seg state" role="group" aria-label="Where this conversation stands">

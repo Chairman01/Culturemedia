@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { OpsAction, SalesTotals } from '@/lib/admin-types';
 import { repeatLabel, type Alert } from '@/lib/alerts';
 import { buildConversations, type SenderMark } from '@/lib/conversations';
+import { muteEntryFor } from '@/lib/filing';
 import { INBOX_FRESH_MS, readSavedCheck, saveCheck } from '@/lib/inbox-cache';
 import type { Classified } from '@/lib/mail';
 import { STAGE_LABEL } from '@/lib/crm';
@@ -98,10 +99,10 @@ export default function TodayView({
           repliedTo?: Record<string, string>;
           muted?: string[];
         };
-        const notBusiness = new Set(inbox.muted ?? []);
+        const notBusiness = inbox.muted ?? [];
         const pressing = buildConversations(
           (inbox.mail ?? []).filter(
-            (m) => (m.kind === 'inquiry' || m.kind === 'other') && !(notBusiness.has(m.fromAddress.toLowerCase()) && !m.leadId),
+            (m) => (m.kind === 'inquiry' || m.kind === 'other') && !(muteEntryFor(m.fromAddress, notBusiness) && !m.leadId),
           ),
           inbox.marks ?? {},
           inbox.repliedTo ?? {},
