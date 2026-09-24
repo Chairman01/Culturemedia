@@ -8,6 +8,7 @@ import { awaitingReply, type LeadDraftRow, type LeadRow } from './crm';
 import { listLeads, listPendingDrafts } from './crm-admin';
 import type { Classified } from './mail';
 import type { SenderMark } from './conversations';
+import type { FileAs } from './filing';
 import { listSenders, type SenderCalls } from './mail-senders';
 import { readMail, syncMail, type MailSnapshot, type SyncReport } from './mail-sync';
 
@@ -25,6 +26,8 @@ export interface InboxData {
   trusted: string[];
   /** Addresses you hid: newsletters and updates that are never something to do. */
   muted: string[];
+  /** What each sender is filed as — partnership lead, story… — by lower-case address. */
+  categories: Record<string, FileAs>;
   /** Where you left each conversation, by lower-case address. */
   marks: Record<string, SenderMark>;
   /** When you last emailed each address, read from the Sent folders. */
@@ -50,6 +53,7 @@ function shape(
     stopped: snapshot.leads.filter((l) => l.unsubscribed_at).map((l) => l.id),
     trusted: calls?.trusted ?? [],
     muted: calls?.muted ?? [],
+    categories: calls?.categories ?? {},
     marks: calls?.marks ?? {},
     repliedTo: snapshot.repliedTo,
     report,
@@ -83,6 +87,7 @@ export async function loadInboxQuick(): Promise<InboxData> {
     stopped: [],
     trusted: [],
     muted: [],
+    categories: {},
     marks: {},
     repliedTo: {},
     report: null,

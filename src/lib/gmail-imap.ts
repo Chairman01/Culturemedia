@@ -246,7 +246,7 @@ export async function searchGmail(query: string, limit = 25): Promise<{ messages
   }
 }
 
-export async function readGmail(limit = 40): Promise<MailboxResult> {
+export async function readGmail(limit = 200): Promise<MailboxResult> {
   const user = process.env.GMAIL_USER;
   const pass = process.env.GMAIL_APP_PASSWORD;
   const base: MailboxResult = {
@@ -295,12 +295,11 @@ export async function readGmail(limit = 40): Promise<MailboxResult> {
         read.push(folder);
         const name = folder[0].toUpperCase() + folder.slice(1);
         if (!total) {
-          checked.push({ name, count: 0, since: null });
+          checked.push({ name, count: 0, since: null, complete: true, total: 0 });
           continue;
         }
-        // Each inbox message costs a second trip for its preview, so spam — rarely
-        // more than a handful worth seeing — gets a shorter window.
-        const take = folder === 'spam' ? Math.min(limit, 30) : limit;
+        // Spam is rarely more than a handful worth seeing, so it gets a shorter window.
+        const take = folder === 'spam' ? Math.min(limit, 60) : limit;
         const range = `${Math.max(1, total - take + 1)}:*`;
         const before = messages.length;
 
@@ -317,23 +316,37 @@ export async function readGmail(limit = 40): Promise<MailboxResult> {
         })) {
           found.push(msg);
         }
-        for (const msg of found) {
-          // Sent mail only needs its recipients and date; skip the extra trip.
-          const part = folder === 'sent' ? null : findTextPart(msg.bodyStructure);
-          let preview = '';
-          if (part) {
-            const one = await client.fetchOne(
-              String(msg.uid),
-              { bodyParts: [{ key: part.part, maxLength: PREVIEW_BYTES }] },
-              { uid: true },
-            );
-            const buffer = one ? one.bodyParts?.get(part.part) : undefined;
-            preview = previewOf(buffer, part.encoding, part.html);
+        // Previews: messages whose text sits in the same MIME part are fetched
+        // together, so 200 emails cost a handful of trips instead of 200. Sent
+        // mail only needs its recipients and date.
+        const partOf = new Map<number, { part: string; encoding: string; html: boolean }>();
+        const byPart = new Map<string, number[]>();
+        if (folder !== 'sent') {
+          for (const msg of found) {
+            const part = findTextPart(msg.bodyStructure);
+            if (!part) continue;
+            partOf.set(msg.uid, part);
+            const uids = byPart.get(part.part);
+            if (uids) uids.push(msg.uid);
+            else byPart.set(part.part, [msg.uid]);
           }
-          messages.push(toMessage(msg, folder, preview));
         }
+        const previews = new Map<number, string>();
+        for (const [key, uids] of byPart) {
+          for (let i = 0; i < uids.length; i += 100) {
+            for await (const one of client.fetch(
+              uids.slice(i, i + 100).join(','),
+              { uid: true, bodyParts: [{ key, maxLength: PREVIEW_BYTES }] },
+              { uid: true },
+            )) {
+              const part = partOf.get(one.uid);
+              if (part) previews.set(one.uid, previewOf(one.bodyParts?.get(key), part.encoding, part.html));
+            }
+          }
+        }
+        for (const msg of found) messages.push(toMessage(msg, folder, previews.get(msg.uid) || ''));
         const mine = messages.slice(before);
-        checked.push({ name, count: mine.length, since: oldestOf(mine) });
+        checked.push({ name, count: mine.length, since: oldestOf(mine), complete: total <= take, total });
       } finally {
         lock.release();
       }

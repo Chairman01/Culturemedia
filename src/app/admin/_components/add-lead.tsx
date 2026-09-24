@@ -16,6 +16,8 @@ export interface LeadPrefill {
   consent_basis?: string;
   sequence_key?: string;
   notes?: string;
+  /** one_time, retainer… — from how the email was filed on the Inbox page. */
+  deal_type?: string;
 }
 
 export const PREFILL_KEY = 'cm-admin-lead-prefill';
@@ -35,7 +37,9 @@ export function AddLeadForm({ onAdded }: { onAdded: (id: string | null) => void 
       const raw = sessionStorage.getItem(PREFILL_KEY);
       if (!raw) return;
       sessionStorage.removeItem(PREFILL_KEY);
-      setPrefill(JSON.parse(raw) as LeadPrefill);
+      const parsed = JSON.parse(raw) as LeadPrefill;
+      setPrefill(parsed);
+      if (parsed.deal_type) setDealType(parsed.deal_type);
       setFormKey((k) => k + 1);
     } catch {
       /* no prefill */

@@ -23,6 +23,10 @@ export interface FolderCheck {
   count: number;
   /** ISO time of the oldest message read: mail older than this is not on the page. */
   since: string | null;
+  /** Every email in the folder was read, not just the newest. */
+  complete: boolean;
+  /** How many emails the folder holds, when the mailbox says. */
+  total: number | null;
 }
 
 /** Oldest `at` among messages, for a FolderCheck. */
@@ -217,7 +221,7 @@ export async function searchZoho(query: string, limit = 25): Promise<{ messages:
   }
 }
 
-export async function readZoho(limit = 100): Promise<MailboxResult> {
+export async function readZoho(limit = 200): Promise<MailboxResult> {
   const base: MailboxResult = {
     mailbox: 'zoho',
     label: 'Zoho Mail',
@@ -313,7 +317,8 @@ export async function readZoho(limit = 100): Promise<MailboxResult> {
           });
         }
         messages.push(...mine);
-        checked.push({ name, count: mine.length, since: oldestOf(mine) });
+        // Fewer back than asked for means the folder ran out: all of it is here.
+        checked.push({ name, count: mine.length, since: oldestOf(mine), complete: mine.length < take, total: null });
       }),
     );
     // Inbox, Spam, Sent first, then the rest by name.

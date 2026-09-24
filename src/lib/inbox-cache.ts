@@ -10,7 +10,7 @@
 // saved check from before it is ignored.
 
 export const INBOX_CACHE_KEY = 'cm-admin-inbox';
-export const INBOX_CACHE_VERSION = 4;
+export const INBOX_CACHE_VERSION = 5;
 export const INBOX_FRESH_MS = 60 * 60 * 1000;
 
 export interface SavedCheck<T> {
