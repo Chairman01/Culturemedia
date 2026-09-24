@@ -16,7 +16,7 @@ import { getClient, NOT_CONFIGURED, type AdminResult } from './supabase-admin';
 // Deliberately loose: this only decides what we are willing to store.
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const STATUSES: ConvoStatus[] = ['todo', 'working', 'done'];
-const CATEGORIES: FileAs[] = ['partnership', 'retainer', 'story', 'client', 'platform'];
+const CATEGORIES: FileAs[] = ['mediavine', 'partnership', 'retainer', 'story', 'client', 'platform'];
 
 function fail<T>(where: string, error: unknown): AdminResult<T> {
   console.error(`[admin] ${where} failed`, error);

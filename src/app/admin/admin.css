@@ -2243,6 +2243,12 @@
 }
 
 /* One quiet colour per pile, so a filed sender reads at a glance. */
+/* The main revenue partner reads as the strongest tag on the page. */
+.adm .chip.file.mediavine {
+  background: var(--ink);
+  color: var(--surface);
+}
+
 .adm .chip.file.partnership {
   background: #fdeee6;
   color: #9a3c0f;

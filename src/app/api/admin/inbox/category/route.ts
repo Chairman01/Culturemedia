@@ -5,8 +5,9 @@ import { setSenderCategory } from '@/lib/mail-senders';
 
 export const dynamic = 'force-dynamic';
 
-// POST /api/admin/inbox/category — { email, category } — file a sender as a
-// partnership lead, retainer lead, story, client or platform (null clears it).
+// POST /api/admin/inbox/category — { email, category } — file a sender as
+// Mediavine, a partnership lead, retainer lead, story, client or platform
+// (null clears it).
 // Stored on our side only: nothing is moved, labelled or archived in Zoho or Gmail.
 export async function POST(request: Request) {
   const denied = await requireAdminApi();

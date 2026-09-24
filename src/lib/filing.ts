@@ -10,9 +10,10 @@
 import { isCustomer, type LeadRow } from './crm';
 import { PERSONAL_DOMAINS, type Classified } from './mail';
 
-export type FileAs = 'partnership' | 'retainer' | 'story' | 'client' | 'platform';
+export type FileAs = 'mediavine' | 'partnership' | 'retainer' | 'story' | 'client' | 'platform';
 
 export const FILE_AS: { k: FileAs; label: string; plural: string; help: string }[] = [
+  { k: 'mediavine', label: 'Mediavine', plural: 'Mediavine', help: 'Your ad revenue partner: payments, account updates and your account manager. Files itself.' },
   { k: 'partnership', label: 'Partnership lead', plural: 'Partnership leads', help: 'Could pay for a feature, a campaign or a sponsorship.' },
   { k: 'retainer', label: 'Retainer lead', plural: 'Retainer leads', help: 'Could pay every month.' },
   { k: 'story', label: 'Story for Culture Alberta', plural: 'Stories', help: 'A press release, a tip or news worth writing up.' },
@@ -34,9 +35,20 @@ const STORY =
   /press release|media release|news release|for immediate release|media advisory|story (idea|tip|pitch)|follow[- ]up story|press preview|media pass|embargo|announce|is pleased to|launch(es|ing)?\b|forthcoming|showcase|award|nominees?|grand opening|opening (day|soon)|festival|you previously covered|would love (for you )?to (cover|feature|share)/i;
 // Accounts the business runs on.
 const PLATFORM =
-  /(^|\.)(mediavine|raptive|comscore|zoho|zohomail|zohoaccounts|zohostore|google|bidsandtenders|resend|vercel|supabase|godaddy|stripe|paypal|interac|payments\.interac)\.(com|ca|net|io)$|(^|\.)gov\.ab\.ca$|(^|\.)canada\.ca$/i;
+  /(^|\.)(raptive|comscore|zoho|zohomail|zohoaccounts|zohostore|google|bidsandtenders|resend|vercel|supabase|godaddy|stripe|paypal|interac|payments\.interac)\.(com|ca|net|io)$|(^|\.)gov\.ab\.ca$|(^|\.)canada\.ca$/i;
 
 const domainOf = (address: string) => (address.split('@')[1] || '').toLowerCase();
+
+/**
+ * Mail from Mediavine, the main ad-revenue partner: their own domain, or a
+ * sender named for them ("Lauren Funari from Mediavine", a payment service
+ * sending "on behalf of Mediavine"). It files itself, automated or not, so
+ * payment notices and account updates all land in one place.
+ */
+export function isMediavine(m: Pick<Classified, 'fromAddress' | 'fromName'>): boolean {
+  const d = domainOf(m.fromAddress);
+  return d === 'mediavine.com' || d.endsWith('.mediavine.com') || /\bmediavine\b/i.test(m.fromName);
+}
 
 // Second-level labels that are not a company: gov.ab.ca, co.uk, com.au.
 const SHARED_SUFFIX = /^(ab|bc|mb|nb|nl|ns|nt|nu|on|pe|qc|sk|yt|gc|co|com|org|net|gov|edu|ac)\.[a-z]{2}$/;
@@ -119,6 +131,7 @@ export function fileOf(
   if (byHand) return { ...none, pile: byHand, filed: byHand };
   const mutedBy = muteEntryFor(key, ctx.muted);
   if (mutedBy && !lead) return { ...none, pile: 'notbusiness', mutedBy };
+  if (isMediavine(m)) return { ...none, pile: 'mediavine', filed: 'mediavine' };
   if (lead) {
     const f = fileOfLead(lead);
     return { ...none, pile: f, filed: f, fromLead: true };
