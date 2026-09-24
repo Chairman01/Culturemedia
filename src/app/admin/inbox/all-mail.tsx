@@ -9,7 +9,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
-import { buildConversations, type Conversation, type ConvoStatus, type SenderMark } from '@/lib/conversations';
+import { buildConversations, groupThreads, type Conversation, type ConvoStatus, type SenderMark } from '@/lib/conversations';
 import type { LeadRow } from '@/lib/crm';
 import { FILE_AS, FILE_LABEL, companyDomainOf, fileOf, type FileAs, type Filing, type Pile } from '@/lib/filing';
 import type { Classified } from '@/lib/mail';
@@ -71,11 +71,23 @@ export function AllMail({
 }) {
   const [pile, setPile] = useState<View>('all');
   const [limit, setLimit] = useState(PAGE);
+  // Threads whose earlier emails are showing.
+  const [open, setOpen] = useState<Set<string>>(() => new Set());
+  const toggle = (key: string) =>
+    setOpen((now) => {
+      const next = new Set(now);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   const filed = useMemo(() => {
     const ctx = { categories, muted, leads: new Map(leads.map((l) => [l.id, l])) };
     return new Map<string, Filing>(mail.map((m) => [m.id, fileOf(m, ctx)]));
   }, [mail, categories, muted, leads]);
+
+  // One row per email chain. A thread sits in the pile of its newest email.
+  const threads = useMemo(() => groupThreads(mail), [mail]);
 
   // Where each conversation stands, for anyone who is a person.
   const convoOf = useMemo(() => {
@@ -89,21 +101,23 @@ export function AllMail({
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: 0, everything: 0 };
-    for (const f of filed.values()) {
+    for (const t of threads) {
+      const f = filed.get(t.messages[0].id);
+      if (!f) continue;
       c[f.pile] = (c[f.pile] || 0) + 1;
       c.everything += 1;
       if (f.pile !== 'notbusiness' && f.pile !== 'automated') c.all += 1;
     }
     return c;
-  }, [filed]);
+  }, [threads, filed]);
 
   const matches = (m: Classified) =>
     !needle || `${m.fromName} ${m.fromAddress} ${m.subject} ${m.summary}`.toLowerCase().includes(needle);
-  const list = mail.filter((m) => {
-    const f = filed.get(m.id);
+  const list = threads.filter((t) => {
+    const f = filed.get(t.messages[0].id);
     if (!f) return false;
     if (pile === 'all' ? f.pile === 'notbusiness' || f.pile === 'automated' : pile !== 'everything' && f.pile !== pile) return false;
-    return matches(m);
+    return t.messages.some(matches);
   });
   const shown = list.slice(0, limit);
   const current = PILES.find((p) => p.k === pile);
@@ -111,12 +125,16 @@ export function AllMail({
   return (
     <section className="card" aria-labelledby="all-h" style={{ marginBottom: 12 }}>
       <h2 id="all-h">
-        All mail <small>{mail.length} received · newest first</small>
+        All mail{' '}
+        <small>
+          {threads.length} conversations · {mail.length} emails · newest first
+        </small>
       </h2>
       <p className="cnote" style={{ margin: '0 0 10px' }}>
         Business mail from both mailboxes, spam included. Automated mail and anything you marked not business
         sit in their own piles along the top — out of the way, never lost. File a sender once and all their mail
-        follows. Click any email to read it.
+        follows. Emails in the same chain are one row — click “2 emails” to see the earlier ones, or any email to
+        read it.
       </p>
 
       <div className="ctabs piles" role="group" aria-label="Which pile to show">
@@ -139,7 +157,10 @@ export function AllMail({
 
       {shown.length ? (
         <div className="alist">
-          {shown.map((m) => {
+          {shown.map((t) => {
+            const m = t.messages[0];
+            const earlier = t.messages.slice(1);
+            const isOpen = open.has(t.key);
             const f = filed.get(m.id) as Filing;
             const key = m.fromAddress.toLowerCase();
             const c = convoOf.get(key);
@@ -148,10 +169,24 @@ export function AllMail({
             const company = companyDomainOf(key);
             const deal = DEAL_FOR[(f.filed ?? f.suggested) as FileAs];
             return (
-              <article key={m.id} className={`arow${m.unread ? ' unread' : ''}${f.pile === 'notbusiness' ? ' dim' : ''}`}>
+              <article
+                key={t.key}
+                className={`arow${t.messages.some((x) => x.unread) ? ' unread' : ''}${f.pile === 'notbusiness' ? ' dim' : ''}`}
+              >
                 <div className="a-top">
                   <span className="a-who">{m.fromName || m.fromAddress}</span>
                   <span className={`src ${m.mailbox}`}>{boxName[m.mailbox]}</span>
+                  {earlier.length > 0 && (
+                    <button
+                      type="button"
+                      className="chip thread"
+                      aria-expanded={isOpen}
+                      onClick={() => toggle(t.key)}
+                      title={isOpen ? 'Hide the earlier emails' : 'Show the earlier emails in this chain'}
+                    >
+                      {t.messages.length} emails {isOpen ? '▴' : '▾'}
+                    </button>
+                  )}
                   {f.filed && (
                     <span className={`chip file ${f.filed}`}>
                       {FILE_LABEL[f.filed]}
@@ -177,6 +212,19 @@ export function AllMail({
                   <b>{m.subject || '(no subject)'}</b>
                   {m.summary && <span>{m.summary}</span>}
                 </button>
+                {isOpen && (
+                  <ol className="a-thread" aria-label="Earlier emails in this chain">
+                    {earlier.map((x) => (
+                      <li key={x.id}>
+                        <button type="button" onClick={() => onRead(x)} title="Read this email">
+                          <span className="a-when">{day(x.at)}</span>
+                          <b>{x.fromName || x.fromAddress}</b>
+                          <span>{x.summary || x.subject}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                )}
                 <div className="a-acts">
                   <select
                     className="fileas"

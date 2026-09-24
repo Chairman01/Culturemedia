@@ -2079,13 +2079,16 @@
   padding: 6px 11px;
 }
 
+/* minmax(0, 1fr): a row may never be wider than the card, whatever it holds. */
 .adm .alist {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .adm .arow {
   position: relative;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 3px;
   padding: 12px 10px;
   margin: 0 -10px;
@@ -2224,7 +2227,12 @@
   padding: 7px 10px;
 }
 
+/* A select sizes itself to its longest option ("everything from a-long-domain.com"),
+   which on a phone pushed the whole row off the screen. */
 .adm select.fileas {
+  max-width: 100%;
+  min-width: 0;
+  text-overflow: ellipsis;
   font: inherit;
   font-size: 12.5px;
   font-weight: 600;
@@ -2234,6 +2242,85 @@
   background: var(--surface);
   color: var(--ink);
   cursor: pointer;
+}
+
+/* "3 emails": opens the rest of the chain under the newest one. */
+.adm button.chip.thread {
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.adm button.chip.thread[aria-expanded='true'],
+.adm button.chip.thread:hover {
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.adm .a-thread {
+  list-style: none;
+  margin: 4px 0 2px;
+  padding: 0 0 0 14px;
+  border-left: 2px solid var(--rule-hard);
+  display: grid;
+  gap: 2px;
+}
+
+.adm .a-thread button {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+
+.adm .a-thread button:hover,
+.adm .a-thread button:focus-visible {
+  background: var(--surface);
+}
+
+.adm .a-thread .a-when {
+  margin: 0;
+  font-size: 12px;
+}
+
+.adm .a-thread b {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.adm .a-thread span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-2);
+}
+
+@media (max-width: 600px) {
+  .adm .a-thread button {
+    grid-template-columns: auto 1fr;
+  }
+
+  .adm .a-thread span:last-child {
+    grid-column: 1 / -1;
+  }
 }
 
 .adm .chip.hint {
@@ -2283,6 +2370,12 @@
   .adm select.fileas {
     flex: 1 1 100%;
   }
+}
+
+/* A row of filter buttons scrolls on its own rather than widening the page. */
+.adm .toolbar .seg {
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 /* ── inbox: reading one email in full ───────────────────────────────────────── */
