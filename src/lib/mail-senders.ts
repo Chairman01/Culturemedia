@@ -10,12 +10,13 @@ import 'server-only';
 
 import type { ConvoStatus, SenderMark } from './conversations';
 import type { FileAs } from './filing';
+import { PERSONAL_DOMAINS } from './mail';
 import { getClient, NOT_CONFIGURED, type AdminResult } from './supabase-admin';
 
 // Deliberately loose: this only decides what we are willing to store.
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const STATUSES: ConvoStatus[] = ['todo', 'working', 'done'];
-const CATEGORIES: FileAs[] = ['partnership', 'retainer', 'story', 'client', 'platform'];
+const CATEGORIES: FileAs[] = ['mediavine', 'partnership', 'retainer', 'story', 'client', 'platform'];
 
 function fail<T>(where: string, error: unknown): AdminResult<T> {
   console.error(`[admin] ${where} failed`, error);
@@ -112,7 +113,12 @@ export async function setSenderMuted(rawEmail: unknown, muted: boolean): Promise
   if (!supabase) return { data: null, error: NOT_CONFIGURED };
 
   const email = clean(rawEmail);
-  if (!EMAIL.test(email)) return { data: null, error: "That doesn't look like an email address." };
+  // "@pinterest.com" means everything that company sends, from any address.
+  const company = /^@[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(email);
+  if (!company && !EMAIL.test(email)) return { data: null, error: "That doesn't look like an email address." };
+  if (company && PERSONAL_DOMAINS.has(email.slice(1))) {
+    return { data: null, error: `That would hide everyone who writes from ${email.slice(1)}. Mark the one sender instead.` };
+  }
 
   const { error } = await supabase
     .from('mail_senders')

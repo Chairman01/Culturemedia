@@ -19,7 +19,7 @@ import { useRouter } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 
 import { buildConversations, type Conversation, type ConvoStatus } from '@/lib/conversations';
-import type { FileAs } from '@/lib/filing';
+import { companyDomainOf, muteEntryFor, type FileAs } from '@/lib/filing';
 import { PARTNERSHIPS_URL, SEQUENCE_LABEL, STAGE_LABEL, awaitingReply } from '@/lib/crm';
 import type { InboxData } from '@/lib/inbox';
 import { INBOX_FRESH_MS, readSavedCheck, saveCheck } from '@/lib/inbox-cache';
@@ -259,17 +259,23 @@ export default function InboxView({ initial }: { initial: InboxData }) {
 
   // A hidden sender is never something to do: a newsletter, a product update.
   // Unlike Done, it stays quiet when they write again. Never applied to a lead.
-  const isMuted = (m: Classified) => data.muted.includes(m.fromAddress.toLowerCase());
-  const hidden = (m: Classified) => isMuted(m) && !m.leadId;
+  // Matches the sender's own address, or "@company.com" for their whole company.
+  const isMuted = (m: Classified) => Boolean(muteEntryFor(m.fromAddress, data.muted));
+  // Filing a sender by hand beats a company-wide Not business.
+  const hidden = (m: Classified) => isMuted(m) && !m.leadId && !data.categories[m.fromAddress.toLowerCase()];
 
   // File a sender (partnership lead, story…), mark them not business, or clear it.
   const fileSender = async (m: Classified, choice: FileChoice) => {
     const address = m.fromAddress.toLowerCase();
     if (choice === 'notbusiness') return muteAddress(address, true, m.id);
+    if (choice === 'notbusiness-domain') {
+      const company = companyDomainOf(address);
+      return company ? muteAddress(`@${company}`, true, m.id) : muteAddress(address, true, m.id);
+    }
     if (filing) return;
-    const wasMuted = data.muted.includes(address);
-    // Clearing an unfiled, not-business sender just brings them back.
-    if (choice === '' && wasMuted && !data.categories[address]) return muteAddress(address, false, m.id);
+    const entry = muteEntryFor(address, data.muted);
+    // Clearing an unfiled, not-business sender brings them back — or their whole company.
+    if (choice === '' && entry && !data.categories[address]) return muteAddress(entry, false, m.id);
     setFiling(address);
     setProblem('');
     try {
@@ -816,7 +822,7 @@ export default function InboxView({ initial }: { initial: InboxData }) {
 
       {checked && data.muted.length > 0 && (
         <details className="card guide" style={{ marginBottom: 12 }}>
-          <summary>Not business — {data.muted.length} {data.muted.length === 1 ? 'sender' : 'senders'} kept off this page</summary>
+          <summary>Not business — {data.muted.length} kept off this page</summary>
           <p className="cnote" style={{ margin: '8px 0' }}>
             Newsletters, personal mail, product updates. Their mail is still in your mailbox; it just never
             shows up here as something to do. Bring one back if it turns out to matter.
@@ -824,7 +830,7 @@ export default function InboxView({ initial }: { initial: InboxData }) {
           <ul className="srows">
             {data.muted.map((address) => (
               <li key={address}>
-                <span>{address}</span>
+                <span>{address.startsWith('@') ? <b>Everything from {address.slice(1)}</b> : address}</span>
                 <button type="button" onClick={() => muteAddress(address, false, address)} disabled={muting !== null}>
                   {muting === address ? 'Saving…' : 'Bring back'}
                 </button>
