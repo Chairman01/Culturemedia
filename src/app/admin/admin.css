@@ -1926,6 +1926,77 @@
   font-weight: 700;
 }
 
+/* ── valuation ─────────────────────────────────────────────────────────────── */
+
+.adm a.vcard {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin-bottom: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.adm a.vcard:hover,
+.adm a.vcard:focus-visible {
+  border-color: var(--ink);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+}
+
+.adm .vcard .l {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.adm .vcard b {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.adm .vcard .sub {
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.adm .vcard .go {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.adm .explain-plain {
+  margin: 0 0 8px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+.adm tr.hl td {
+  background: var(--sunken);
+}
+
+.adm tr.dim td {
+  color: var(--muted);
+}
+
+@media (max-width: 800px) {
+  .adm a.vcard {
+    grid-template-columns: 1fr auto;
+  }
+
+  .adm .vcard .sub,
+  .adm .vcard .go {
+    grid-column: 1 / -1;
+  }
+}
+
 /* ── content: pages, story types, search, site health ─────────────────────── */
 
 .adm .through {
@@ -2707,6 +2778,10 @@
 
 .adm .prose b {
   color: var(--ink);
+}
+
+.adm .prose.spaced > * + * {
+  margin-top: 8px;
 }
 
 .adm .sources {
