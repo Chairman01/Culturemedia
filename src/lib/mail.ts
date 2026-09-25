@@ -124,6 +124,9 @@ export function indexLeads(leads: LeadRef[]) {
   return { byEmail, byDomain };
 }
 
+// A no-reply address with other words around it: direct_contactus_do_not_reply@.
+const NO_REPLY_ANYWHERE = /(^|[._-])(no[._-]?reply|do[._-]?not[._-]?reply|donotreply)([._-]|$)/i;
+
 export function classify(m: MailMessage, index: ReturnType<typeof indexLeads>): Classified {
   const from = m.fromAddress.toLowerCase();
   const text = `${m.subject}\n${m.summary}`;
@@ -163,12 +166,13 @@ export function classify(m: MailMessage, index: ReturnType<typeof indexLeads>): 
   // bulk-mail headers still win.
   const namedAgent = /^[A-Z][\p{L}'’.-]+(?: [A-Z][\p{L}'’.-]+)+ from \S/u.test(m.fromName.trim());
   const threadReply = /^\s*(re|fw|fwd)\s*:/i.test(m.subject) && !m.bulk && !BULK_TEXT.test(text);
-  const person = (namedAgent || threadReply) && !AUTOMATED_LOCAL.test(local);
+  const machineLocal = AUTOMATED_LOCAL.test(local) || NO_REPLY_ANYWHERE.test(local);
+  const person = (namedAgent || threadReply) && !machineLocal;
   // support@, admin@, team@ are how small organisations write too, so a shared
   // address alone no longer makes an email automated.
   const automated =
     !person &&
-    (AUTOMATED_LOCAL.test(local) ||
+    (machineLocal ||
       AUTOMATED_DOMAIN.test(domain) ||
       BULK_SUBDOMAIN.test(domain) ||
       Boolean(m.bulk) ||

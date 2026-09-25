@@ -16,6 +16,25 @@
 import 'server-only';
 
 import { classify, indexLeads, PERSONAL_DOMAINS, type Classified, type MailMessage } from './mail';
+
+/**
+ * Is this address you? Your mailbox addresses, plus anything at your own
+ * business domain — hello@ or news@culturemedia.ca writing is you, so it counts
+ * as mail you sent, never as someone waiting on you. A free-mail domain like
+ * gmail.com is never "yours" as a whole.
+ */
+export function ownTest(addresses: (string | null | undefined)[]): (address: string) => boolean {
+  const exact = new Set(
+    addresses.map((a) => String(a || '').toLowerCase().trim()).filter((a) => a.includes('@')),
+  );
+  const domains = new Set(
+    [...exact].map((a) => a.split('@')[1]).filter((d): d is string => Boolean(d) && !PERSONAL_DOMAINS.has(d)),
+  );
+  return (address: string) => {
+    const a = address.toLowerCase();
+    return exact.has(a) || domains.has(a.split('@')[1] || '');
+  };
+}
 import type { LeadRow } from './crm';
 import { listLeads } from './crm-admin';
 import { readGmail, searchGmail } from './gmail-imap';
@@ -64,19 +83,16 @@ export async function readMail(): Promise<MailSnapshot & { sent: MailMessage[]; 
   const all = [...zoho.messages, ...gmail.messages].filter((m) => m.at);
 
   // Our own addresses: mail "from" these in the inbox is a copy of something we sent.
-  const own = new Set(
-    [zoho.label, gmail.label, process.env.CRM_SENDER_EMAIL, process.env.GMAIL_USER]
-      .map((a) => String(a || '').toLowerCase())
-      .filter((a) => a.includes('@')),
-  );
+  const ownAddresses = [zoho.label, gmail.label, process.env.CRM_SENDER_EMAIL, process.env.GMAIL_USER];
+  const isOwn = ownTest(ownAddresses);
 
   const index = indexLeads(leads.data ?? []);
   const incoming = all
-    .filter((m) => m.folder !== 'sent' && !own.has(m.fromAddress))
+    .filter((m) => m.folder !== 'sent' && !isOwn(m.fromAddress))
     .map((m) => classify(m, index))
     .sort((a, b) => b.at.localeCompare(a.at));
 
-  const sent = all.filter((m) => m.folder === 'sent' || own.has(m.fromAddress));
+  const sent = all.filter((m) => m.folder === 'sent' || isOwn(m.fromAddress));
   const repliedTo: Record<string, string> = {};
   for (const m of sent) {
     // An auto-responder answers every sender, newsletters included. That is not
@@ -100,7 +116,7 @@ export async function readMail(): Promise<MailSnapshot & { sent: MailMessage[]; 
     incoming,
     repliedTo,
     sent,
-    own: [...own],
+    own: ownAddresses.map((a) => String(a || '')).filter((a) => a.includes('@')),
     leads: leads.data ?? [],
     leadsError: leads.error,
   };
@@ -109,7 +125,7 @@ export async function readMail(): Promise<MailSnapshot & { sent: MailMessage[]; 
 /** Apply what the mailboxes prove to the CRM. Idempotent. */
 export async function syncMail(): Promise<{ snapshot: MailSnapshot; report: SyncReport }> {
   const { sent, own: ownList, ...snapshot } = await readMail();
-  const own = new Set(ownList);
+  const isOwn = ownTest(ownList);
   const index = indexLeads(snapshot.leads);
   let lookups = 0;
   const report: SyncReport = { replies: [], contacted: [], errors: [] };
@@ -140,7 +156,7 @@ export async function syncMail(): Promise<{ snapshot: MailSnapshot; report: Sync
       lookups += 1;
       const [z, g] = await Promise.all([searchZoho(email, 15), searchGmail(email, 15)]);
       const everything = [...z.messages, ...g.messages].filter((m) => m.at);
-      outgoing = everything.filter((m) => (m.folder === 'sent' || own.has(m.fromAddress)) && toThem(m));
+      outgoing = everything.filter((m) => (m.folder === 'sent' || isOwn(m.fromAddress)) && toThem(m));
       const theirs = everything
         .filter((m) => m.fromAddress === email)
         .sort((a, b) => b.at.localeCompare(a.at))[0];

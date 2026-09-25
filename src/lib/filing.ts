@@ -33,6 +33,8 @@ const MONTHLY = /monthly|per month|every month|ongoing|retainer|long[- ]term|ann
 // Something to write about.
 const STORY =
   /press release|media release|news release|for immediate release|media advisory|story (idea|tip|pitch)|follow[- ]up story|press preview|media pass|embargo|announce|is pleased to|launch(es|ing)?\b|forthcoming|showcase|award|nominees?|grand opening|opening (day|soon)|festival|you previously covered|would love (for you )?to (cover|feature|share)/i;
+// Money coming in, as opposed to a receipt or an invoice you paid.
+const MONEY_IN = /sent you|you('ve| have) (received|been paid)|payment (received|from)|paid you|deposited|claim your deposit|funds await/i;
 // Accounts the business runs on.
 const PLATFORM =
   /(^|\.)(raptive|comscore|zoho|zohomail|zohoaccounts|zohostore|google|bidsandtenders|resend|vercel|supabase|godaddy|stripe|paypal|interac|payments\.interac)\.(com|ca|net|io)$|(^|\.)gov\.ab\.ca$|(^|\.)canada\.ca$/i;
@@ -91,7 +93,8 @@ export function muteEntryFor(address: string, muted: readonly string[]): string 
 export function suggestFiling(m: Classified): FileAs | null {
   if (m.kind === 'noise' || m.kind === 'bounce') return null;
   const text = `${m.subject}\n${m.summary}`;
-  if (m.kind === 'money') return 'client';
+  // A client paying you, or a receipt for something you bought.
+  if (m.kind === 'money') return MONEY_IN.test(text) ? 'client' : 'platform';
   if (PLATFORM.test(domainOf(m.fromAddress))) return 'platform';
   if (ADS.test(text)) return MONTHLY.test(text) ? 'retainer' : 'partnership';
   if (STORY.test(text)) return 'story';
