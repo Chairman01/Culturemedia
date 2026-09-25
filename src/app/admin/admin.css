@@ -1926,6 +1926,353 @@
   font-weight: 700;
 }
 
+/* ── valuation ─────────────────────────────────────────────────────────────── */
+
+.adm a.vcard {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin-bottom: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.adm a.vcard:hover,
+.adm a.vcard:focus-visible {
+  border-color: var(--ink);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
+}
+
+.adm .vcard .l {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.adm .vcard b {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.adm .vcard .sub {
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.adm .vcard .go {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.adm .explain-plain {
+  margin: 0 0 8px;
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+.adm tr.hl td {
+  background: var(--sunken);
+}
+
+.adm tr.dim td {
+  color: var(--muted);
+}
+
+.adm td.cell-wrap {
+  white-space: normal;
+  min-width: 150px;
+  line-height: 1.45;
+}
+
+.adm th.cell-l {
+  text-align: left;
+}
+
+.adm td.cell-wrap.how {
+  min-width: 240px;
+  color: var(--ink-2);
+}
+
+.adm td .range {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.adm td .muted {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+@media (max-width: 800px) {
+  .adm a.vcard {
+    grid-template-columns: 1fr auto;
+  }
+
+  .adm .vcard .sub,
+  .adm .vcard .go {
+    grid-column: 1 / -1;
+  }
+}
+
+.adm ul.short {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  list-style: disc;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.adm ul.short b {
+  color: var(--ink);
+}
+
+/* road to a million */
+
+.adm .road-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.adm .road-progress {
+  height: 10px;
+  margin: 12px 0 6px;
+  border-radius: 999px;
+  background: var(--sunken);
+  overflow: hidden;
+}
+
+.adm .road-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--ink);
+}
+
+.adm .road-now {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.adm .road-routes,
+.adm .road-result {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.adm .road-routes > div,
+.adm .road-result > div {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+}
+
+.adm .road-routes .l,
+.adm .road-result .l {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.adm .road-routes b,
+.adm .road-result b {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+
+.adm .road-routes span:not(.l),
+.adm .road-result span:not(.l) {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.adm .road-result .hit {
+  border-color: var(--ink);
+}
+
+.adm ol.rungs {
+  display: grid;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--rule-hard);
+}
+
+.adm ol.rungs li {
+  display: grid;
+  grid-template-columns: 110px 120px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.adm ol.rungs li.got {
+  opacity: 0.55;
+}
+
+.adm .rung-price,
+.adm .rung-need {
+  display: grid;
+}
+
+.adm .rung-price b,
+.adm .rung-need b {
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-size: 14px;
+}
+
+.adm .rung-price span,
+.adm .rung-need span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.adm ol.rungs p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+@media (max-width: 640px) {
+  .adm ol.rungs li {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .adm ol.rungs p {
+    grid-column: 1 / -1;
+  }
+
+  .adm ol.rungs li .btn {
+    justify-self: start;
+  }
+}
+
+.adm .planner {
+  display: grid;
+  margin: 8px 0 12px;
+  border-top: 1px solid var(--rule-hard);
+}
+
+.adm .prow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 90px 130px 110px;
+  align-items: center;
+  gap: 4px 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+}
+
+.adm .prow label {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.adm .prow .sub-line {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.adm .prow .today,
+.adm .prow .amt {
+  text-align: right;
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.adm .prow .today {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.adm .prow input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--rule-hard);
+  border-radius: 8px;
+  background: var(--paper, #fff);
+  font: inherit;
+  font-family: var(--font-admin-mono), ui-monospace, monospace;
+  text-align: right;
+}
+
+.adm .prow.phead {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.adm .prow.phead span:not(:first-child) {
+  text-align: right;
+}
+
+.adm .prow.ptotal {
+  font-weight: 700;
+}
+
+.adm .road-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .adm .prow {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr);
+  }
+
+  .adm .prow label {
+    grid-column: 1 / -1;
+  }
+
+  .adm .prow.ptotal {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .adm .prow.ptotal span:empty {
+    display: none;
+  }
+
+  .adm .prow .today::before {
+    content: 'Today ';
+    font-family: inherit;
+  }
+
+  .adm .prow.phead {
+    display: none;
+  }
+}
+
 /* ── content: pages, story types, search, site health ─────────────────────── */
 
 .adm .through {
@@ -2707,6 +3054,10 @@
 
 .adm .prose b {
   color: var(--ink);
+}
+
+.adm .prose.spaced > * + * {
+  margin-top: 8px;
 }
 
 .adm .sources {

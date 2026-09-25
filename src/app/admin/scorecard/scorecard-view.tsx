@@ -13,6 +13,9 @@ import { Chart, Sparkline, type ChartItem, type ChartKind } from '../_components
 import { Detail, DetailTable, Explain } from '../_components/detail';
 import { KpiDetail } from '../_components/kpi-detail';
 import { RevenueBand } from '../_components/revenue-band';
+import { ValuationCard } from '../_components/valuation-card';
+import { buildValuation } from '@/lib/valuation';
+import { valuationInput } from '@/lib/valuation-input';
 import { useRefreshOnFocus } from '../_components/use-refresh';
 import {
   convert,
@@ -97,12 +100,15 @@ export default function ScorecardView({
   initialError,
   invoices,
   expenses,
+  sources,
   today,
 }: {
   initial: Scorecard | null;
   initialError: string | null;
   invoices: Invoice[];
   expenses: Expense[];
+  /** Sessions by traffic source, for the valuation's risk adjustment. */
+  sources: { source: string; sessions: number }[];
   today: string;
 }) {
   const [sc, setSc] = useState<Scorecard | null>(initial);
@@ -370,6 +376,7 @@ export default function ScorecardView({
 
       {/* Follows the USD / CAD switch above, like every other money figure here. */}
       <RevenueBand sc={sc} invoices={invoices} expenses={expenses} currency={currency} today={today} />
+      <ValuationCard v={buildValuation(valuationInput({ sc, invoices, expenses, sources, today }))} />
 
       <div className="tiles">{tiles}</div>
       {openKpi && openKpi !== 'mrr' && (

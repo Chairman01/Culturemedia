@@ -173,3 +173,34 @@ export async function loadContent(): Promise<ContentData> {
 
   return data;
 }
+
+/**
+ * Just the traffic-source split from the newest Mediavine load, for the
+ * valuation (which prices in how much rides on one social source). Sessions,
+ * not revenue: it is the readers a buyer counts. Empty on any error.
+ */
+export async function loadSources(): Promise<{ source: string; sessions: number; revenue: number; pageviews: number }[]> {
+  const supabase = getClient();
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('mediavine_snapshot')
+    .select('loaded_on, period_start, dimension, label, sessions, revenue, pageviews')
+    .eq('dimension', 'source')
+    .order('loaded_on', { ascending: false })
+    .limit(400);
+  if (error || !data?.length) return [];
+  const load = latestLoad(data as Row[]);
+  const from = load.map((r) => str(r.period_start)).sort()[0];
+  return load
+    .filter((r) => str(r.period_start) === from && !/not available/i.test(str(r.label)))
+    .map((r) => ({ source: str(r.label), sessions: num(r.sessions) ?? 0, revenue: num(r.revenue) ?? 0, pageviews: num(r.pageviews) ?? 0 }))
+    .filter((r) => r.source && r.sessions > 0);
+}
+
+/** How many articles are published on Culture Alberta, or null on any error. */
+export async function loadArticleCount(): Promise<number | null> {
+  const supabase = getClient();
+  if (!supabase) return null;
+  const { count, error } = await supabase.from('articles').select('id', { count: 'exact', head: true }).eq('status', 'published');
+  return error ? null : count;
+}

@@ -14,6 +14,7 @@ import {
   Package,
   Users,
   Newspaper,
+  Scale,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -24,6 +25,7 @@ const NAV = [
   { href: '/admin/inbox', label: 'Inbox', icon: Inbox, badge: 'waiting' },
   { href: '/admin/leads', label: 'Leads', icon: Users },
   { href: '/admin/revenue', label: 'Revenue', icon: CircleDollarSign },
+  { href: '/admin/valuation', label: 'Valuation', icon: Scale },
   { href: '/admin/scorecard', label: 'Scorecard & KPIs', icon: ChartColumn },
   { href: '/admin/content', label: 'Content', icon: Newspaper },
   { href: '/admin/bids', label: 'Bids', icon: Gavel, also: ['/admin/setup'] },
