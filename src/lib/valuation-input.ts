@@ -23,7 +23,7 @@ export function valuationInput(args: {
   sc: Scorecard | null;
   invoices: Invoice[];
   expenses: Expense[];
-  sources: { source: string; sessions: number }[];
+  sources: { source: string; sessions: number; revenue?: number; pageviews?: number }[];
   /** Published articles, or null when unknown. */
   articles?: number | null;
   today: string;
@@ -81,7 +81,13 @@ export function valuationInput(args: {
     pageviews: lastMv ? Number(lastMv.pageviews) || 0 : 0,
     sessions: lastMv ? Number(lastMv.sessions) || 0 : 0,
     pageviewsMonth: lastMv ? lastMv.month.slice(0, 7) : null,
-    sources: sessions ? sources.map((x) => ({ source: x.source, share: x.sessions / sessions })) : [],
+    sources: sessions
+      ? sources.map((x) => ({
+          source: x.source,
+          share: x.sessions / sessions,
+          rpm: x.revenue && x.pageviews ? (x.revenue / x.pageviews) * 1000 : null,
+        }))
+      : [],
     articlesPerWeek: articles.length ? articles.reduce((a, n) => a + n, 0) / articles.length : null,
     mrrCad: Number(sc?.current?.mrr) || 0,
     social: SOCIAL_ACCOUNTS,

@@ -10,6 +10,8 @@ import type { Freshness } from '@/lib/admin-types';
 import { SOURCES, type Range, type Valuation, type ValuationInput } from '@/lib/valuation';
 import { day, group, monthLabel } from '../_components/format';
 import { AdminShell, PageHead } from '../_components/shell';
+import { netNeeded } from '@/lib/valuation-plan';
+import { RoadToMillion } from './road-to-million';
 import { Banner, Tile } from '../_components/ui';
 
 const usd = (v: number) => `${v < -0.5 ? '−' : ''}US$${group(Math.abs(Math.round(v)))}`;
@@ -98,6 +100,47 @@ export default function ValuationView({
         </div>
       </section>
 
+      <section className="card" aria-labelledby="k-h" style={{ marginBottom: 12 }}>
+        <h2 id="k-h">
+          In short <small>the whole page in five lines</small>
+        </h2>
+        <ul className="short">
+          <li>
+            <b>Worth about {usd(v.total.mid)} ({cad(v.total.mid, fx)}) today.</b> A buyer would land between{' '}
+            {usd(v.total.low)} and {usd(v.total.high)}. That is what a website buyer pays for what the business earns
+            now, after what they take off for risk.
+          </li>
+          <li>
+            <b>Every asset is counted, none twice.</b> Readers
+            {input.articles ? ` and the ${input.articles.toLocaleString('en-CA')} articles` : ' and the archive'} count through the money
+            they make. The list, {v.followers.toLocaleString('en-CA')} social followers
+            {input.members ? `, ${input.members.toLocaleString('en-CA')} members` : ''} and the name are added on top.
+          </li>
+          {v.strategic && (
+            <li>
+              <b>A media company could pay more.</b> ZoomerMedia bought Daily Hive, blogTO and Curiocity; on Daily
+              Hive&apos;s terms Culture Alberta could reach about {usd(v.strategic.low)}–{usd(v.strategic.high)}.
+            </li>
+          )}
+          {v.drivers.filter((d) => d.lift).length > 0 && (
+            <li>
+              <b>Fastest ways up:</b>{' '}
+              {v.drivers
+                .filter((d) => d.lift)
+                .slice(0, 3)
+                .map((d) => `${d.title.charAt(0).toLowerCase()}${d.title.slice(1)} (+${usd(d.lift as number)})`)
+                .join('; ')}
+              .
+            </li>
+          )}
+          <li>
+            <b>US$1 million</b> needs about {usd(netNeeded(1_000_000))} a month in profit
+            {headline.net > 0 ? `, roughly ${Math.round(netNeeded(1_000_000) / (v.bases.find((b) => b.key === 'three')?.net || headline.net))}× the last three months` : ''}.
+            The road is below.
+          </li>
+        </ul>
+      </section>
+
       <div className="tiles">
         <Tile label="Monthly net, headline basis" value={usd(headline.net)} foot={<span>{headline.title.toLowerCase()} · after expenses</span>} />
         <Tile
@@ -171,11 +214,16 @@ export default function ValuationView({
           </table>
         </div>
         <p className="cnote">
-          Follower counts were read from each public profile on {day(input.social[0]?.countedOn ?? v.today)} and are
-          refreshed with the Wednesday data drop. Readers and the archive have no line of their own because a buyer
+          Social accounts are priced on the sponsored posts they could carry: brands pay $100–500 a post for accounts
+          with 10,000–100,000 followers, and the Spotlight package includes a story for C$350, so about{' '}
+          {Math.round(v.assumptions.perPost.low * 100 * 10) / 10}–{v.assumptions.perPost.high * 100}¢ a follower. A buyer pays for
+          6–12 months of one a month while you are not selling them yet. Follower counts were read from each public
+          profile on {day(input.social[0]?.countedOn ?? v.today)} and are refreshed with the Wednesday data drop. Readers and the archive have no line of their own because a buyer
           pays for them through the money they make; adding them again would count them twice.
         </p>
       </section>
+
+      <RoadToMillion v={v} input={input} />
 
       <section className="card" aria-labelledby="b-h" style={{ marginBottom: 12 }}>
         <h2 id="b-h">

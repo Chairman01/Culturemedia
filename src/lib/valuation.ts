@@ -32,8 +32,8 @@ export interface ValuationInput {
   sessions: number;
   /** The month those pageviews are from, YYYY-MM. */
   pageviewsMonth: string | null;
-  /** Share of sessions by traffic source, 0–1, from Mediavine. */
-  sources: { source: string; share: number }[];
+  /** Share of sessions by traffic source, 0–1, and ad earnings per 1,000 pageviews (US$), from Mediavine. */
+  sources: { source: string; share: number; rpm?: number | null }[];
   /** Recent average, or null when unknown. */
   articlesPerWeek: number | null;
   /** Retainer MRR, CAD. */
@@ -235,6 +235,21 @@ export const SOURCES: { title: string; url: string; note: string }[] = [
     title: 'Flippa – newsletter multiples',
     url: 'https://flippa.com/blog/newsletter-channel-multiples-how-to-evaluate-a-newsletters-worth/',
     note: '$1–10 per subscriber depending on niche and engagement; 30–45× monthly net for a newsletter business.',
+  },
+  {
+    title: 'beehiiv – what newsletter sponsorships cost',
+    url: 'https://www.beehiiv.com/blog/newsletter-sponsorship-cost',
+    note: 'Consumer and news newsletters sell sponsored sends at about $8–30 per 1,000 subscribers; the planner uses $20.',
+  },
+  {
+    title: 'ZoomerMedia – acquisition of Daily Hive',
+    url: 'https://www.newsfilecorp.com/release/136910/ZoomerMedia-Announces-Acquisition-of-Daily-Hive',
+    note: 'C$16.4M; C$7.5M revenue, C$7.3M expenses, C$625K EBITDA; 24M pageviews a month; 3.2M followers; Hive Labs studio and sales team.',
+  },
+  {
+    title: 'Usersell – Instagram account pricing',
+    url: 'https://user-sell.com/how-to-calculate-the-real-value-of-your-instagram-account-2025-guide/',
+    note: 'Bare Instagram pages trade for far less than a brand account with a business behind it; price per follower falls as accounts grow.',
   },
   {
     title: 'Influencer Marketing Hub – Instagram rates, 2026',
