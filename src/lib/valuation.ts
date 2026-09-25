@@ -7,6 +7,8 @@
 // values are market assumptions, named and sourced below so they can be argued
 // with. Pure: no server imports.
 
+import { PLATFORM_NAME, type SocialAccount, type SocialPlatform } from './social-accounts';
+
 export interface ValuationMonth {
   /** YYYY-MM. */
   month: string;
@@ -25,8 +27,9 @@ export interface ValuationInput {
   fxUsdCad: number;
   subscribers: number;
   members: number;
-  /** Pageviews in the last complete month (Mediavine). */
+  /** Pageviews and sessions in the last complete month (Mediavine). */
   pageviews: number;
+  sessions: number;
   /** The month those pageviews are from, YYYY-MM. */
   pageviewsMonth: string | null;
   /** Share of sessions by traffic source, 0–1, from Mediavine. */
@@ -35,7 +38,22 @@ export interface ValuationInput {
   articlesPerWeek: number | null;
   /** Retainer MRR, CAD. */
   mrrCad: number;
+  /** Social accounts and their follower counts. */
+  social: SocialAccount[];
+  /** Published articles on the site, or null when unknown. */
+  articles: number | null;
   today: string;
+}
+
+/** One thing the business owns, and how a buyer counts it. */
+export interface Asset {
+  name: string;
+  /** What there is: "20,800 followers", "837 articles". */
+  have: string;
+  how: string;
+  /** Its own value, USD; null when it is counted inside another line. */
+  value: Range | null;
+  url?: string;
 }
 
 export interface Range {
@@ -80,6 +98,8 @@ export interface Comparable {
   date: string;
   priceCad: number;
   monthlyPageviews: number | null;
+  /** Social followers across platforms, as announced. */
+  followers: number | null;
   revenueCad: number | null;
   profitCad: number | null;
   note: string;
@@ -93,9 +113,10 @@ export const COMPARABLES: Comparable[] = [
     date: '2022-09',
     priceCad: 16_400_000,
     monthlyPageviews: 24_000_000,
+    followers: 3_200_000,
     revenueCad: 7_500_000,
     profitCad: 625_000,
-    note: 'Vancouver, Calgary, Edmonton, Toronto and Montreal; 3.2 million social followers. $6M cash, $5M note, $3M shares and $2.4M of debt taken on.',
+    note: 'Vancouver, Calgary, Edmonton, Toronto and Montreal; 3.2 million followers on Instagram, TikTok, Facebook and X; founded 2008. $6M cash, $5M note, $3M shares and $2.4M of debt taken on.',
     url: 'https://finance.yahoo.com/news/zoomermedia-announces-acquisition-daily-hive-013300406.html',
   },
   {
@@ -104,6 +125,7 @@ export const COMPARABLES: Comparable[] = [
     date: '2022-01',
     priceCad: 15_072_400,
     monthlyPageviews: 29_000_000,
+    followers: null,
     revenueCad: null,
     profitCad: null,
     note: 'Toronto; 350 million pageviews in 2021 and 6 million readers a month; founded 2004. Price from ZoomerMedia\'s filing; revenue not disclosed.',
@@ -115,6 +137,7 @@ export const COMPARABLES: Comparable[] = [
     date: '2024-02',
     priceCad: 5_000_000,
     monthlyPageviews: null,
+    followers: null,
     revenueCad: null,
     profitCad: null,
     note: 'City guides in several Canadian markets; all cash. Audience and revenue not disclosed in a comparable form.',
@@ -123,7 +146,7 @@ export const COMPARABLES: Comparable[] = [
 ];
 
 export interface ComparableRead {
-  name: string;
+  sale: Comparable;
   /** How the deal was priced, in words: "2.2× revenue", "C$0.52 per monthly pageview". */
   measure: string;
   /** The same measure applied to this business, USD; null when the deal published too little. */
@@ -148,18 +171,24 @@ export interface Valuation {
   /** Product of the adjustment factors. */
   factor: number;
   pieces: { key: string; title: string; detail: string; value: Range }[];
+  /** Everything the business owns, and how each is counted. */
+  assets: Asset[];
   total: Range;
   /** The current month, at its pace so far, for context. */
   pace: { month: string; netSoFar: number; projected: number; daysIn: number } | null;
   drivers: Driver[];
   /** The multiples and unit values used. */
-  assumptions: { multiple: Range; perSubscriber: Range; brand: Range };
+  assumptions: { multiple: Range; perSubscriber: Range; brand: Range; perPost: Range; perMember: Range };
   /** Big Canadian city-media sales, read against this business. */
   comparables: ComparableRead[];
   /** What a strategic buyer might pay on the Daily Hive terms, site only, USD. */
   strategic: Range | null;
   /** Revenue earned per 1,000 pageviews, this site and Daily Hive, CAD. */
   revenuePerThousand: { ours: number | null; dailyHive: number };
+  /** Revenue a year per social follower, CAD. */
+  revenuePerFollower: { ours: number | null; dailyHive: number };
+  /** Followers across every account. */
+  followers: number;
 }
 
 // Content sites monetised by display ads sell for 25–40× monthly net profit on
@@ -170,7 +199,20 @@ export const MULTIPLE: Range = { low: 25, mid: 30, high: 36 };
 // A free consumer newsletter list, when sold with the site: $1–3 a subscriber
 // (Flippa's guide gives $1–10 across niches; local news sits at the low end).
 export const PER_SUBSCRIBER: Range = { low: 1, mid: 2, high: 3 };
-// Domain, name and social accounts: nominal alongside the site, not a business.
+// A member account (a reader who signed up on the site). Nearly all are on the
+// list already and counted there; a logged-in, commenting reader is worth a
+// little more than an address, so each adds this on top.
+export const PER_MEMBER: Range = { low: 0.5, mid: 1, high: 2 };
+// One sponsored post, per follower, USD. Brands pay $100–500 a post for
+// 10K–100K Instagram accounts (Influencer Marketing Hub, 2026), and the Spotlight
+// package sells a story inside C$350 — so about half a cent to two cents a follower.
+export const PER_POST: Range = { low: 0.005, mid: 0.01, high: 0.02 };
+// A buyer pays for this many months of one sponsored post a month per account,
+// because it is income the accounts could carry, not income they carry yet.
+const MONTHS_PAID: Range = { low: 6, mid: 9, high: 12 };
+// Text-first platforms rarely sell sponsored posts: a third of the rate.
+const TEXT_PLATFORMS: SocialPlatform[] = ['threads', 'bluesky', 'x', 'linkedin', 'pinterest'];
+// The name and the domain: worth something to the buyer who takes the site, little on their own.
 export const BRAND: Range = { low: 500, mid: 1500, high: 2500 };
 
 export const SOURCES: { title: string; url: string; note: string }[] = [
@@ -193,6 +235,11 @@ export const SOURCES: { title: string; url: string; note: string }[] = [
     title: 'Flippa – newsletter multiples',
     url: 'https://flippa.com/blog/newsletter-channel-multiples-how-to-evaluate-a-newsletters-worth/',
     note: '$1–10 per subscriber depending on niche and engagement; 30–45× monthly net for a newsletter business.',
+  },
+  {
+    title: 'Influencer Marketing Hub – Instagram rates, 2026',
+    url: 'https://influencermarketinghub.com/influencer-rates/instagram-influencer-rates/',
+    note: 'Brands pay $100–500 a feed post for accounts with 10K–100K followers; engagement and niche move it.',
   },
 ];
 
@@ -289,6 +336,19 @@ export function buildValuation(input: ValuationInput): Valuation {
   const headline: Basis['key'] = completeMonths >= 3 ? 'six' : 'twelve';
   const site = bases.find((b) => b.key === headline)!.value;
   const list = round(scale(PER_SUBSCRIBER, input.subscribers));
+  const members = round(scale(PER_MEMBER, input.members));
+  // Each account: one sponsored post a month at its rate, for the months a buyer pays for.
+  const accountValue = (a: SocialAccount): Range => {
+    const k = TEXT_PLATFORMS.includes(a.platform) ? 1 / 3 : 1;
+    return round({
+      low: a.followers * PER_POST.low * k * MONTHS_PAID.low,
+      mid: a.followers * PER_POST.mid * k * MONTHS_PAID.mid,
+      high: a.followers * PER_POST.high * k * MONTHS_PAID.high,
+    });
+  };
+  const accounts = input.social.map((a) => ({ account: a, value: accountValue(a) }));
+  const socialTotal = round(accounts.reduce((a, s) => add(a, s.value), { low: 0, mid: 0, high: 0 }));
+  const followers = input.social.reduce((a, s) => a + s.followers, 0);
   const pieces = [
     {
       key: 'site',
@@ -299,13 +359,33 @@ export function buildValuation(input: ValuationInput): Valuation {
     {
       key: 'list',
       title: `Newsletter list · ${input.subscribers.toLocaleString('en-CA')} subscribers`,
-      detail: `$${PER_SUBSCRIBER.low}–${PER_SUBSCRIBER.high} each for a free local list sold with the site.${input.members ? ` The ${input.members.toLocaleString('en-CA')} member accounts ride along; they are not a separate line.` : ''}`,
+      detail: `$${PER_SUBSCRIBER.low}–${PER_SUBSCRIBER.high} each for a free local list sold with the site.`,
       value: list,
     },
+    ...(followers
+      ? [
+          {
+            key: 'social',
+            title: `Social accounts · ${followers.toLocaleString('en-CA')} followers`,
+            detail: `${input.social.length} accounts. One sponsored post a month on each at ${PER_POST.low * 100}–${PER_POST.high * 100}¢ a follower, for the ${MONTHS_PAID.low}–${MONTHS_PAID.high} months a buyer pays for.`,
+            value: socialTotal,
+          },
+        ]
+      : []),
+    ...(input.members
+      ? [
+          {
+            key: 'members',
+            title: `Member accounts · ${input.members.toLocaleString('en-CA')}`,
+            detail: `Readers who signed up on the site. Most are on the list already; each adds $${PER_MEMBER.low}–${PER_MEMBER.high} on top.`,
+            value: members,
+          },
+        ]
+      : []),
     {
       key: 'brand',
-      title: 'Name, domain and social accounts',
-      detail: 'Worth something to the buyer who takes the site, and little on their own.',
+      title: 'Name and domain',
+      detail: 'Culture Alberta and culturealberta.com: worth something to the buyer who takes the site, little on their own.',
       value: BRAND,
     },
   ];
@@ -350,6 +430,17 @@ export function buildValuation(input: ValuationInput): Valuation {
       detail: `That removes the ${Math.round((1 - (adjustments.find((a) => a.id === 'traffic')?.factor ?? 1)) * 100)}% traffic discount. The Content page lists the searches within reach and the titles to fix; the newsletter is the audience you own.`,
     });
   }
+  const visual = accounts.filter((s) => !TEXT_PLATFORMS.includes(s.account.platform));
+  if (visual.length) {
+    const perPost = visual.reduce((a, s) => a + s.account.followers, 0) / visual.length * PER_POST.mid;
+    const monthly = perPost * visual.length;
+    const already = visual.reduce((a, s) => a + s.value.mid, 0);
+    drivers.push({
+      title: 'Sell one sponsored post a month on each Instagram',
+      detail: `At about $${Math.round(perPost).toLocaleString('en-CA')} a post, that is $${Math.round(monthly).toLocaleString('en-CA')} a month. Kept up for a year, it stops being reach a buyer guesses at and becomes income they pay the full ${MULTIPLE.mid}× for — about $${Math.round(monthly * MULTIPLE.mid).toLocaleString('en-CA')}, against the $${Math.round(already).toLocaleString('en-CA')} the accounts are counted at today. This is how Daily Hive earned its money (below).`,
+      lift: Math.max(0, monthly * MULTIPLE.mid - already),
+    });
+  }
   drivers.push({
     title: 'Grow the list',
     detail: `Every 1,000 subscribers adds about $${(PER_SUBSCRIBER.low * 1000).toLocaleString('en-CA')}–${(PER_SUBSCRIBER.high * 1000).toLocaleString('en-CA')} directly, and a buyer reads a growing list as a business that can live without Google.`,
@@ -360,6 +451,9 @@ export function buildValuation(input: ValuationInput): Valuation {
       detail: 'Write down how a week works and hand some of it to a freelancer. A buyer who can see ten owner-hours a week pays the full multiple; one who sees forty takes a tenth off and wonders how to replace you.',
     });
   }
+
+  // Biggest first; the ones that cannot be priced keep their order at the end.
+  drivers.sort((a, b) => (b.lift ?? -1) - (a.lift ?? -1));
 
   // ── Canadian comparables ──
   // Revenue earned per 1,000 pageviews: Daily Hive's direct sales earned far more
@@ -372,27 +466,95 @@ export function buildValuation(input: ValuationInput): Valuation {
   const quality = oursPerThousand ? Math.min(1, oursPerThousand / dhPerThousand) : null;
   const runRate = (rows: ValuationMonth[]) => (rows.length ? (rows.reduce((a, m) => a + m.total, 0) / rows.length) * 12 : 0);
   const revenueMultiple = (dh.priceCad as number) / (dh.revenueCad as number);
-  const comparables: ComparableRead[] = COMPARABLES.map((c) => {
+  const ourRevenueCad = runRate(last(3)) * input.fxUsdCad;
+  const dhPerFollower = (dh.revenueCad as number) / (dh.followers as number);
+  const oursPerFollower = followers && ourRevenueCad ? ourRevenueCad / followers : null;
+  const comparables: ComparableRead[] = COMPARABLES.flatMap((c): ComparableRead[] => {
     if (c.revenueCad) {
       const implied = runRate(last(3)) * revenueMultiple;
-      return { name: c.name, measure: `${revenueMultiple.toFixed(1)}× a year's revenue (${Math.round(c.priceCad / (c.profitCad || 1))}× its profit)`, implied, adjusted: implied };
+      const rows: ComparableRead[] = [
+        { sale: c, measure: `${revenueMultiple.toFixed(1)}× a year's revenue (${Math.round(c.priceCad / (c.profitCad || 1))}× its profit)`, implied, adjusted: implied },
+      ];
+      if (c.followers && followers) {
+        const perFollower = c.priceCad / c.followers;
+        const byFollowers = (followers * perFollower) / input.fxUsdCad;
+        rows.push({
+          sale: c,
+          measure: `C$${perFollower.toFixed(2)} per social follower`,
+          implied: byFollowers,
+          adjusted: oursPerFollower !== null ? byFollowers * Math.min(1, oursPerFollower / dhPerFollower) : null,
+        });
+      }
+      return rows;
     }
     if (c.monthlyPageviews) {
       const perView = c.priceCad / c.monthlyPageviews;
       const implied = (input.pageviews * perView) / input.fxUsdCad;
-      return {
-        name: c.name,
+      return [{
+        sale: c,
         measure: `C$${perView.toFixed(2)} per monthly pageview`,
         implied: input.pageviews ? implied : null,
         adjusted: input.pageviews && quality !== null ? implied * quality : null,
-      };
+      }];
     }
-    return { name: c.name, measure: 'Too little published to compare', implied: null, adjusted: null };
+    return [{ sale: c, measure: 'Too little published to compare', implied: null, adjusted: null }];
   });
   const strategic =
     runRate(last(6)) > 0
       ? round({ low: runRate(last(6)) * revenueMultiple, mid: runRate(last(3)) * revenueMultiple, high: Math.max(runRate(last(3)), runRate(last(6))) * revenueMultiple * 1.15 })
       : null;
+
+  const headlineBasis = bases.find((b) => b.key === headline)!;
+  const reddit = input.sources.filter((s) => /reddit/i.test(s.source)).reduce((a, s) => a + s.share, 0);
+  const assets: Asset[] = [
+    {
+      name: 'Readers',
+      have: input.pageviews
+        ? `${input.pageviews.toLocaleString('en-CA')} pageviews and ${input.sessions.toLocaleString('en-CA')} sessions a month`
+        : 'Not loaded yet',
+      how: 'Counted through the money they bring in (the site line) and, directly, in the Canadian sales below. A buyer pays for readers once, through what they earn.',
+      value: null,
+    },
+    {
+      name: 'The article archive',
+      have: input.articles !== null ? `${input.articles.toLocaleString('en-CA')} published articles` : 'Published articles',
+      how: 'The pages that earn the ad income, so they are counted in the site line.',
+      value: null,
+    },
+    {
+      name: 'The site and its ad income',
+      have: `US$${Math.round(headlineBasis.net).toLocaleString('en-CA')} a month net, ${headlineBasis.title.toLowerCase()}`,
+      how: `Monthly net × ${MULTIPLE.low}–${MULTIPLE.high}, less what a buyer takes off.`,
+      value: site,
+    },
+    {
+      name: 'Newsletter list',
+      have: `${input.subscribers.toLocaleString('en-CA')} subscribers`,
+      how: `$${PER_SUBSCRIBER.low}–${PER_SUBSCRIBER.high} a subscriber.`,
+      value: list,
+    },
+    ...(input.members
+      ? [{ name: 'Member accounts', have: `${input.members.toLocaleString('en-CA')} members`, how: `Mostly on the list already; $${PER_MEMBER.low}–${PER_MEMBER.high} each on top.`, value: members }]
+      : []),
+    ...accounts.map((s) => ({
+      name: `${PLATFORM_NAME[s.account.platform]} ${s.account.handle}`,
+      have: `${s.account.followers.toLocaleString('en-CA')} followers`,
+      how: TEXT_PLATFORMS.includes(s.account.platform)
+        ? 'Few brands pay for posts here yet: a third of the Instagram rate.'
+        : `About $${Math.round(s.account.followers * PER_POST.low)}–${Math.round(s.account.followers * PER_POST.high)} a sponsored post.`,
+      value: s.value,
+      url: s.account.url,
+    })),
+    { name: 'Name and domain', have: 'Culture Alberta · culturealberta.com', how: 'Nominal beside the site.', value: BRAND },
+    ...(reddit >= 0.1
+      ? [{
+          name: 'Reddit traffic',
+          have: `${Math.round(reddit * 100)}% of sessions`,
+          how: 'Not something you own or can hand over: it arrives when posts are shared. It earns inside the site line, and is why a buyer takes some off.',
+          value: null,
+        }]
+      : []),
+  ];
 
   return {
     today: input.today,
@@ -403,12 +565,15 @@ export function buildValuation(input: ValuationInput): Valuation {
     adjustments,
     factor,
     pieces,
+    assets,
     total,
     pace,
     drivers,
-    assumptions: { multiple: MULTIPLE, perSubscriber: PER_SUBSCRIBER, brand: BRAND },
+    assumptions: { multiple: MULTIPLE, perSubscriber: PER_SUBSCRIBER, brand: BRAND, perPost: PER_POST, perMember: PER_MEMBER },
     comparables,
     strategic,
     revenuePerThousand: { ours: oursPerThousand, dailyHive: dhPerThousand },
+    revenuePerFollower: { ours: oursPerFollower, dailyHive: dhPerFollower },
+    followers,
   };
 }

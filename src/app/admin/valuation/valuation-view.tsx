@@ -7,7 +7,7 @@
 import Link from 'next/link';
 
 import type { Freshness } from '@/lib/admin-types';
-import { COMPARABLES, SOURCES, type Range, type Valuation, type ValuationInput } from '@/lib/valuation';
+import { SOURCES, type Range, type Valuation, type ValuationInput } from '@/lib/valuation';
 import { day, group, monthLabel } from '../_components/format';
 import { AdminShell, PageHead } from '../_components/shell';
 import { Banner, Tile } from '../_components/ui';
@@ -86,7 +86,8 @@ export default function ValuationView({
             <b>{headline.title.toLowerCase()}</b> — about <b>{usd(headline.net)} a month</b> after costs —
             and multiply by {v.assumptions.multiple.low}–{v.assumptions.multiple.high}, the range content sites
             fetch on the main marketplaces. That gives {span(headline.raw)}. Then take off what a buyer would
-            take off ({pct(v.factor)} in total, itemised below), and add the newsletter list and the name.
+            take off ({pct(v.factor)} in total, itemised below), and add what else a buyer gets: the newsletter
+            list, the social accounts, the member accounts and the name. Every asset is listed below.
           </p>
           {v.pace && (
             <p className="cnote">
@@ -111,6 +112,70 @@ export default function ValuationView({
           foot={<span>{v.adjustments.length ? `${v.adjustments.length} ${v.adjustments.length === 1 ? 'adjustment' : 'adjustments'}, below` : 'nothing to take off'}</span>}
         />
       </div>
+
+      <section className="card" aria-labelledby="e-h" style={{ marginBottom: 12 }}>
+        <h2 id="e-h">
+          Everything you own, and how a buyer counts it <small>nothing left out, nothing counted twice</small>
+        </h2>
+        <div className="tw" style={{ marginTop: 6 }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th className="cell-l">What you have</th>
+                <th className="cell-l">How it is counted</th>
+                <th>Worth</th>
+              </tr>
+            </thead>
+            <tbody>
+              {v.assets.map((a) => (
+                <tr key={a.name} className={a.value ? undefined : 'dim'}>
+                  <td className="co">
+                    <b>
+                      {a.url ? (
+                        <a href={a.url} target="_blank" rel="noopener noreferrer">
+                          {a.name}
+                        </a>
+                      ) : (
+                        a.name
+                      )}
+                    </b>
+                  </td>
+                  <td className="l cell-wrap">{a.have}</td>
+                  <td className="l cell-wrap how">{a.how}</td>
+                  <td>
+                    {a.value ? (
+                      <>
+                        <b>{usd(a.value.mid)}</b>
+                        <span className="range">{span(a.value)}</span>
+                      </>
+                    ) : (
+                      <span className="muted">in the site line</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+              <tr className="hl">
+                <td className="co">
+                  <b>Total</b>
+                </td>
+                <td className="l" colSpan={2}>
+                  What a buyer would realistically pay today
+                </td>
+                <td>
+                  <b>{usd(v.total.mid)}</b>
+                  <span className="range">{span(v.total)}</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="cnote">
+          Follower counts were read from each public profile on {day(input.social[0]?.countedOn ?? v.today)} and are
+          refreshed with the Wednesday data drop. Readers and the archive have no line of their own because a buyer
+          pays for them through the money they make; adding them again would count them twice.
+        </p>
+      </section>
 
       <section className="card" aria-labelledby="b-h" style={{ marginBottom: 12 }}>
         <h2 id="b-h">
@@ -239,10 +304,10 @@ export default function ValuationView({
               </tr>
             </thead>
             <tbody>
-              {COMPARABLES.map((c, i) => {
-                const r = v.comparables[i];
+              {v.comparables.map((r) => {
+                const c = r.sale;
                 return (
-                  <tr key={c.name}>
+                  <tr key={`${c.name}-${r.measure}`}>
                     <td className="co">
                       <a href={c.url} target="_blank" rel="noopener noreferrer">
                         <b>
@@ -253,6 +318,7 @@ export default function ValuationView({
                         {monthLabel(c.date)} {c.date.slice(0, 4)}
                         {c.monthlyPageviews ? ` · ${group(c.monthlyPageviews / 1_000_000)}M pageviews a month` : ''}
                         {c.revenueCad ? ` · C$${(c.revenueCad / 1_000_000).toFixed(1)}M revenue` : ''}
+                        {c.followers ? ` · ${(c.followers / 1_000_000).toFixed(1)}M followers` : ''}
                       </span>
                     </td>
                     <td>C${(c.priceCad / 1_000_000).toFixed(1)}M</td>
@@ -277,7 +343,10 @@ export default function ValuationView({
             <b>C${v.revenuePerThousand.dailyHive.toFixed(0)} per 1,000 pageviews</b>, mostly from branded content
             it sold itself; Culture Alberta takes in about{' '}
             <b>{v.revenuePerThousand.ours !== null ? `C$${v.revenuePerThousand.ours.toFixed(0)}` : '—'}</b> through
-            Mediavine. The last column scales for that.
+            Mediavine. Per follower it is the same story: Daily Hive earned about{' '}
+            <b>C${v.revenuePerFollower.dailyHive.toFixed(2)} a year per follower</b>, Culture Alberta about{' '}
+            <b>{v.revenuePerFollower.ours !== null ? `C$${v.revenuePerFollower.ours.toFixed(2)}` : '—'}</b> across its{' '}
+            {v.followers.toLocaleString('en-CA')}. The last column scales for that.
           </p>
           <p>
             Read them as the ceiling a strategic buyer might reach, not the price a website marketplace would
@@ -292,13 +361,90 @@ export default function ValuationView({
         </div>
       </section>
 
+      <section className="card" aria-labelledby="dh-h" style={{ marginBottom: 12 }}>
+        <h2 id="dh-h">
+          How Daily Hive made C$7.5 million a year <small>and what it means for Culture Alberta</small>
+        </h2>
+        <ul className="ins">
+          <li>
+            <span className="chip ok">1</span>
+            <b>It sold branded content itself</b>
+            <span>
+              Hive Labs, its in-house studio, had writers and creators separate from the newsroom. They made sponsored
+              articles, videos and social posts for brands, and its own sales team sold them. ZoomerMedia&apos;s
+              announcement singled out the studio and its established sales team.
+            </span>
+          </li>
+          <li>
+            <span className="chip ok">2</span>
+            <b>Every campaign came with social reach</b>
+            <span>
+              3.2 million followers on Instagram, TikTok, Facebook and X, so a brand bought the article and
+              the posts together. Its revenue works out to about C${v.revenuePerFollower.dailyHive.toFixed(2)} a year per follower.
+              Culture Alberta&apos;s works out to about{' '}
+              {v.revenuePerFollower.ours !== null ? `C$${v.revenuePerFollower.ours.toFixed(2)}` : '—'} across its{' '}
+              {v.followers.toLocaleString('en-CA')} followers, and nearly all of it is ads on the site, not paid posts.
+            </span>
+          </li>
+          <li>
+            <span className="chip ok">3</span>
+            <b>Scale that national advertisers buy</b>
+            <span>
+              24 million pageviews a month across Vancouver, Calgary, Edmonton, Toronto and Montreal, built over 14
+              years, is big enough for agencies and national brands. Display ads ran on top. All in, it earned about
+              C${v.revenuePerThousand.dailyHive.toFixed(0)} per 1,000 pageviews; Culture Alberta earns about{' '}
+              {v.revenuePerThousand.ours !== null ? `C$${v.revenuePerThousand.ours.toFixed(0)}` : '—'}.
+            </span>
+          </li>
+          <li>
+            <span className="chip warn">!</span>
+            <b>But it barely made a profit</b>
+            <span>
+              About C$7.5M came in and C$7.3M went out on a newsroom, a studio and a sales team. ZoomerMedia paid for
+              the revenue, the audience and the team, not the profit. That is why a strategic buyer can pay so far
+              above a marketplace price, and why the marketplace price is the realistic one for a site run by one
+              person.
+            </span>
+          </li>
+        </ul>
+        <p className="explain-plain" style={{ marginTop: 10 }}>
+          Your packages (Spotlight, Feature Story, Always-On, Category Sponsor) are the Hive Labs model at Alberta
+          scale. Each sponsored feature or post you sell moves your earnings per reader and per follower toward Daily
+          Hive&apos;s, and the price moves with them. Narcity, the other big Canadian city brand, works the same way:
+          most of its referral traffic comes from its social channels, and its in-house studio makes the branded
+          content.
+        </p>
+        <p className="cnote">
+          Sources:{' '}
+          <a href="https://www.newsfilecorp.com/release/136910/ZoomerMedia-Announces-Acquisition-of-Daily-Hive" target="_blank" rel="noopener noreferrer">
+            ZoomerMedia&apos;s release
+          </a>{' '}
+          (revenue, costs, pageviews, followers, Hive Labs),{' '}
+          <a href="https://dailyhive.com/vancouver/daily-hive-acquisition-zoomer" target="_blank" rel="noopener noreferrer">
+            Daily Hive on the sale
+          </a>{' '}
+          (founded 2008),{' '}
+          <a href="https://dailyhive.com/page/content-funding" target="_blank" rel="noopener noreferrer">
+            Daily Hive on branded content
+          </a>
+          ,{' '}
+          <a href="https://en.wikipedia.org/wiki/Narcity_Media" target="_blank" rel="noopener noreferrer">
+            Narcity Media
+          </a>
+          .
+        </p>
+      </section>
+
       <section className="card" aria-labelledby="s-h">
         <h2 id="s-h">How sure is this</h2>
         <div className="prose spaced">
           <p>
             This is a market estimate, not an appraisal or an offer. The multiples come from what content sites
             actually sold for on the main marketplaces in 2025–26; the per-subscriber figure is the low end of
-            what newsletter lists fetch, because this is a free local list. A real buyer will also look at
+            what newsletter lists fetch, because this is a free local list; the social accounts are priced on the
+            sponsored posts they could carry, which a buyer pays for only in part until you are selling them. Bare
+            Instagram pages sell for far less on their own, and the platforms do not allow selling accounts apart from
+            a business, so that value holds only when they go with the site. A real buyer will also look at
             things no spreadsheet holds: how the site ranks after Google&apos;s next update, whether the Reddit
             traffic repeats, and how much of the work is you.
           </p>

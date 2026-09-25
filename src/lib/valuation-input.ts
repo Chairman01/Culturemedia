@@ -9,6 +9,7 @@
 import type { Scorecard } from './admin-types';
 import { monthRate } from './fx-history';
 import type { Expense, Invoice } from './revenue';
+import { SOCIAL_ACCOUNTS } from './social-accounts';
 import type { ValuationInput, ValuationMonth } from './valuation';
 
 /** YYYY-MM, `offset` months from `month`. */
@@ -23,6 +24,8 @@ export function valuationInput(args: {
   invoices: Invoice[];
   expenses: Expense[];
   sources: { source: string; sessions: number }[];
+  /** Published articles, or null when unknown. */
+  articles?: number | null;
   today: string;
 }): ValuationInput {
   const { sc, invoices, expenses, sources, today } = args;
@@ -76,10 +79,13 @@ export function valuationInput(args: {
     subscribers: Number(sc?.current?.active_subscribers) || 0,
     members: Number(sc?.current?.total_members) || 0,
     pageviews: lastMv ? Number(lastMv.pageviews) || 0 : 0,
+    sessions: lastMv ? Number(lastMv.sessions) || 0 : 0,
     pageviewsMonth: lastMv ? lastMv.month.slice(0, 7) : null,
     sources: sessions ? sources.map((x) => ({ source: x.source, share: x.sessions / sessions })) : [],
     articlesPerWeek: articles.length ? articles.reduce((a, n) => a + n, 0) / articles.length : null,
     mrrCad: Number(sc?.current?.mrr) || 0,
+    social: SOCIAL_ACCOUNTS,
+    articles: args.articles ?? null,
     today,
   };
 }

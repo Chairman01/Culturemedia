@@ -1,5 +1,5 @@
 import { requireAdminPage } from '@/lib/admin-auth';
-import { loadSources } from '@/lib/content-admin';
+import { loadArticleCount, loadSources } from '@/lib/content-admin';
 import { listExpenses, listInvoices } from '@/lib/revenue-admin';
 import { edmontonToday, fetchScorecard } from '@/lib/supabase-admin';
 import { buildValuation } from '@/lib/valuation';
@@ -14,8 +14,14 @@ export const dynamic = 'force-dynamic';
 export default async function ValuationPage() {
   await requireAdminPage();
   const today = edmontonToday();
-  const [scorecard, invoices, expenses, sources] = await Promise.all([fetchScorecard(), listInvoices(), listExpenses(), loadSources()]);
-  const input = valuationInput({ sc: scorecard.data, invoices: invoices.data ?? [], expenses: expenses.data ?? [], sources, today });
+  const [scorecard, invoices, expenses, sources, articles] = await Promise.all([
+    fetchScorecard(),
+    listInvoices(),
+    listExpenses(),
+    loadSources(),
+    loadArticleCount(),
+  ]);
+  const input = valuationInput({ sc: scorecard.data, invoices: invoices.data ?? [], expenses: expenses.data ?? [], sources, articles, today });
   return (
     <ValuationView
       valuation={buildValuation(input)}

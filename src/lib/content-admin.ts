@@ -196,3 +196,11 @@ export async function loadSources(): Promise<{ source: string; sessions: number 
     .map((r) => ({ source: str(r.label), sessions: num(r.sessions) ?? 0 }))
     .filter((r) => r.source && r.sessions > 0);
 }
+
+/** How many articles are published on Culture Alberta, or null on any error. */
+export async function loadArticleCount(): Promise<number | null> {
+  const supabase = getClient();
+  if (!supabase) return null;
+  const { count, error } = await supabase.from('articles').select('id', { count: 'exact', head: true }).eq('status', 'published');
+  return error ? null : count;
+}
