@@ -38,6 +38,8 @@ export default function ContentView({ data }: { data: ContentData }) {
   const shown = showAll ? pages : pages.slice(0, 15);
   const totalRevenue = data.total?.revenue || data.pages.reduce((a, p) => a + p.revenue, 0);
   const totalViews = data.total?.pageviews || data.types.reduce((a, t) => a + t.pageviews, 0);
+  // Story types from an older load are shares of their own total.
+  const typeViews = data.typesPeriod ? data.types.reduce((a, t) => a + t.pageviews, 0) : totalViews;
 
   const stories = data.types.filter((t) => t.rpm !== null && !/home|section/i.test(t.type));
   const bestType = [...stories].sort((a, b) => (b.rpm ?? 0) - (a.rpm ?? 0))[0];
@@ -219,7 +221,7 @@ export default function ContentView({ data }: { data: ContentData }) {
                     </span>
                     <b>{rpm(t.rpm)}</b>
                     <span className="sub">
-                      {usd(t.revenue)} · {group(t.pageviews)} views{totalViews ? ` · ${pct(t.pageviews / totalViews, 0)} of traffic` : ''}
+                      {usd(t.revenue)} · {group(t.pageviews)} views{typeViews ? ` · ${pct(t.pageviews / typeViews, 0)} of traffic` : ''}
                     </span>
                   </li>
                 ))}
@@ -230,6 +232,7 @@ export default function ContentView({ data }: { data: ContentData }) {
           <p className="cnote">
             Story types are Mediavine&apos;s grouping of your URLs. The bar is earnings per reader; the small line is
             the total and how much of your traffic it is.
+            {data.typesPeriod ? ` These cover ${day(data.typesPeriod.from)} to ${day(data.typesPeriod.to)}: story types are grouped in the Wednesday job, so they can trail the pages above.` : ''}
           </p>
         </section>
 

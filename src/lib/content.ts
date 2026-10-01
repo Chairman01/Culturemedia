@@ -66,8 +66,13 @@ export interface Period {
 }
 
 export interface ContentData {
-  /** The Mediavine window every page, type and source figure covers. */
+  /** The Mediavine window every page and source figure covers. */
   period: Period | null;
+  /**
+   * The window the story types cover. They are grouped by hand, so they can be
+   * from an older load than the pages; null when it is the same window.
+   */
+  typesPeriod: Period | null;
   total: { revenue: number; pageviews: number; sessions: number; rpm: number | null } | null;
   pages: PageStat[];
   types: TypeStat[];
@@ -135,7 +140,9 @@ export function buildRecommendations(d: ContentData): Recommendation[] {
     const best = [...stories].sort((a, b) => (b.rpm ?? 0) - (a.rpm ?? 0))[0];
     const worst = [...stories].sort((a, b) => (a.rpm ?? 0) - (b.rpm ?? 0))[0];
     const ratio = (best.rpm ?? 0) / Math.max(0.01, worst.rpm ?? 0);
-    const allViews = d.total?.pageviews || d.types.reduce((a, t) => a + t.pageviews, 0);
+    // Types from an older load are shares of their own total, not today's.
+    const typeViews = d.types.reduce((a, t) => a + t.pageviews, 0);
+    const allViews = (d.typesPeriod ? 0 : d.total?.pageviews) || typeViews;
     const worstShare = allViews ? worst.pageviews / allViews : 0;
     if (ratio >= 1.5) {
       out.push({

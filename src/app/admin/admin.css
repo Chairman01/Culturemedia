@@ -274,6 +274,27 @@
   font-weight: 700;
 }
 
+.adm .fresh.mv-line {
+  margin-top: 3px;
+  max-width: none;
+}
+
+.adm .fresh .linkish {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--ink);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.adm .fresh .linkish:disabled {
+  color: var(--muted);
+  text-decoration: none;
+  cursor: default;
+}
+
 .adm button {
   font-family: inherit;
   font-size: 12.5px;

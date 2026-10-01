@@ -37,6 +37,7 @@ function toQuery(r: Row): SearchQuery | null {
 export async function loadContent(): Promise<ContentData> {
   const data: ContentData = {
     period: null,
+    typesPeriod: null,
     total: null,
     pages: [],
     types: [],
@@ -79,7 +80,8 @@ export async function loadContent(): Promise<ContentData> {
 
   // ── Mediavine: newest load, longest window ──
   if (!failed('the Mediavine figures', mv.error)) {
-    const load = latestLoad((mv.data ?? []) as Row[]);
+    const all = (mv.data ?? []) as Row[];
+    const load = latestLoad(all);
     const from = load.map((r) => str(r.period_start)).sort()[0];
     const rows = load.filter((r) => str(r.period_start) === from);
     if (rows.length) {
@@ -98,7 +100,16 @@ export async function loadContent(): Promise<ContentData> {
         .map<PageStat>((r) => ({ path: str(r.label), revenue: num(r.revenue) ?? 0, pageviews: num(r.pageviews) ?? 0, rpm: num(r.pageview_rpm) }))
         .filter((p) => p.path)
         .sort((a, b) => b.revenue - a.revenue);
-      data.types = of('content_type')
+      // Story types are grouped by hand and are not in every load (the automatic
+      // Mediavine pull has none): take the newest load that has them.
+      let types = of('content_type');
+      if (!types.length) {
+        const older = latestLoad(all.filter((r) => r.dimension === 'content_type'));
+        const start = older.map((r) => str(r.period_start)).sort()[0];
+        types = older.filter((r) => str(r.period_start) === start);
+        if (types.length) data.typesPeriod = { from: start, to: types.map((r) => str(r.period_end)).sort().pop() as string };
+      }
+      data.types = types
         .map<TypeStat>((r) => ({ type: str(r.label), revenue: num(r.revenue) ?? 0, pageviews: num(r.pageviews) ?? 0, rpm: num(r.pageview_rpm) }))
         .filter((t) => t.type)
         .sort((a, b) => b.revenue - a.revenue);

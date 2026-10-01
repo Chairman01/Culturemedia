@@ -16,6 +16,7 @@ import { RevenueBand } from '../_components/revenue-band';
 import { ValuationCard } from '../_components/valuation-card';
 import { buildValuation } from '@/lib/valuation';
 import { valuationInput } from '@/lib/valuation-input';
+import { MediavineStatus } from '../_components/mediavine-status';
 import { useRefreshOnFocus } from '../_components/use-refresh';
 import {
   convert,
@@ -372,6 +373,7 @@ export default function ScorecardView({
       </PageHead>
 
       <Freshness sc={sc} today={today} />
+      <MediavineStatus onSynced={load} />
       <Banner tone={banner.tone}>{banner.text}</Banner>
 
       {/* Follows the USD / CAD switch above, like every other money figure here. */}
