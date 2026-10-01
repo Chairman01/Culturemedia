@@ -17,7 +17,7 @@ import {
   Scale,
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 
 const NAV = [
@@ -65,6 +65,29 @@ export function AdminShell({ children, bare = false }: { children: ReactNode; ba
       alive = false;
     };
   }, [bare, pathname]);
+
+  // Keep Mediavine's figures current without anyone asking: at most every half
+  // hour per browser, and the server skips it unless the last pull is hours old.
+  const router = useRouter();
+  useEffect(() => {
+    if (bare) return;
+    try {
+      const last = Number(sessionStorage.getItem('cm-mv-check') || 0);
+      if (Date.now() - last < 30 * 60_000) return;
+      sessionStorage.setItem('cm-mv-check', String(Date.now()));
+    } catch {
+      // No session storage: check anyway; the server decides whether to pull.
+    }
+    fetch('/api/admin/mediavine', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ auto: true }) })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.data?.ok && !d.data.skipped) {
+          window.dispatchEvent(new Event('cm:mediavine-synced'));
+          router.refresh();
+        }
+      })
+      .catch(() => {});
+  }, [bare, router]);
 
   if (bare) {
     return (
