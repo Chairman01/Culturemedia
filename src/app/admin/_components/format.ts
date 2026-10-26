@@ -40,6 +40,7 @@ export function fmt(v: unknown, unit: Unit, compact = false, currency: Currency 
   if (unit === 'ms') return `${Math.round(n)} ms`;
   if (unit === 'score') return n.toFixed(3);
   if (unit === 'pages') return n.toFixed(2);
+  if (compact && Math.abs(n) >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
   if (compact && Math.abs(n) >= 10000) return `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}k`;
   return n % 1 && Math.abs(n) < 100 ? n.toFixed(1) : group(Math.round(n));
 }
@@ -100,18 +101,45 @@ export interface StatusChip {
   l: string;
 }
 
-export function statusOf(t: Target | undefined, v: number | null): StatusChip | null {
+/** How the weekly tiles decide their chip. Shown on hover. */
+export const CHIP_HELP =
+  'On target: the 4-week average meets the target. Improving: below target but better than your 90-day average. Behind: below both.';
+
+/**
+ * Where a value stands against its target.
+ *
+ * `trend`, when given, replaces the fixed baseline in kpi_targets: pass the
+ * trailing 90-day average so "Improving" means better than the last quarter
+ * rather than better than the day the target was set.
+ */
+export function statusOf(t: Target | undefined, v: number | null, trend?: number | null): StatusChip | null {
   if (!t) return null;
   if (v === null) return { k: 'none', l: 'No data' };
   const higher = t.direction === 'higher';
   const target = num(t.target);
-  const base = num(t.baseline);
+  const rolling = typeof trend === 'number';
+  const base = rolling ? trend : num(t.baseline);
   if (target !== null && (higher ? v >= target : v <= target)) return { k: 'ok', l: 'On target' };
   if (base !== null && v === base) {
-    return base === 0 ? { k: 'crit', l: 'Not started' } : { k: 'warn', l: 'At start' };
+    if (base === 0) return { k: 'crit', l: 'Not started' };
+    return { k: 'warn', l: rolling ? 'Holding' : 'At start' };
   }
   if (base !== null && (higher ? v > base : v < base)) return { k: 'warn', l: 'Improving' };
   return { k: 'crit', l: 'Behind' };
+}
+
+// ─── rolling averages ─────────────────────────────────────────────────────────
+
+/**
+ * Mean of the loaded values among the last `n` entries ending at index `end`
+ * (inclusive). Null unless at least `min` of them are loaded, so one week
+ * never passes for an average.
+ */
+export function trailingAvg(values: (number | null)[], end: number, n: number, min = 2): number | null {
+  if (end < 0) return null;
+  const slice = values.slice(Math.max(0, end - n + 1), end + 1).filter((x): x is number => x !== null);
+  if (slice.length < min) return null;
+  return slice.reduce((a, b) => a + b, 0) / slice.length;
 }
 
 // ─── currency ─────────────────────────────────────────────────────────────────

@@ -19,6 +19,7 @@ import { valuationInput } from '@/lib/valuation-input';
 import { MediavineStatus } from '../_components/mediavine-status';
 import { useRefreshOnFocus } from '../_components/use-refresh';
 import {
+  CHIP_HELP,
   convert,
   currencyNote,
   daysBetween,
@@ -27,6 +28,7 @@ import {
   monthLabel,
   num,
   statusOf,
+  trailingAvg,
   unitFor,
   type Currency,
   type Unit,
@@ -258,6 +260,7 @@ export default function ScorecardView({
               <span>
                 {open} open leads · target {fmt(t?.target, 'dollars')}
               </span>
+              {v !== null && <span>≈ {fmt(v * 12, 'dollars', true)} a year</span>}
               <Chip s={statusOf(t, v)} />
             </>
           }
@@ -276,6 +279,20 @@ export default function ScorecardView({
     const v = cur ? conv(m, cur[m], 'week', cur.week_start) : null;
     const p = before ? conv(m, before[m], 'week', before.week_start) : null;
     const u = unitFor(m, unit);
+
+    // The chip is judged on the 4-week average, not the single week, so one
+    // Discover burst or one quiet week doesn't flip it. "Improving" means
+    // better than the trailing 90 days (13 full weeks). Targets are in USD, so
+    // the averages the chip sees are unconverted; the one shown follows the
+    // currency switch.
+    const rawSeries = weeks.map((w) => num(w[m]));
+    const avg4raw = trailingAvg(rawSeries, at, 4);
+    const avg13raw = trailingAvg(rawSeries, at, 13);
+    const avg4 = trailingAvg(
+      weeks.map((w) => conv(m, w[m], 'week', w.week_start)),
+      at,
+      4,
+    );
 
     let delta: ReactNode = null;
     if (v !== null && p !== null && p !== 0) {
@@ -302,8 +319,10 @@ export default function ScorecardView({
           <>
             {delta}
             {stale && cur && <span>week of {day(cur.week_start)}</span>}
+            {avg4 !== null && <span>4-wk avg {fmt(avg4, u, true, currency)}</span>}
+            {avg4 !== null && <span>≈ {fmt(avg4 * 52, u, true, currency)} a year</span>}
             {t && <span>target {fmt(conv(m, t.target, 'latest'), u, true, currency)}</span>}
-            <Chip s={statusOf(t, raw)} />
+            <Chip s={statusOf(t, avg4raw ?? raw, avg13raw)} title={CHIP_HELP} />
           </>
         }
       />
@@ -796,14 +815,27 @@ function AllKpiRows({
       t.cadence === 'weekly' && last
         ? conv(t.metric, v, 'week', last.week_start)
         : conv(t.metric, v, 'window');
-    const recent =
-      t.cadence === 'weekly'
-        ? weeks
-            .slice(-4)
-            .map((w) => conv(t.metric, w[t.metric], 'week', w.week_start))
-            .filter((x): x is number => x !== null)
-        : [];
-    const avg = recent.length ? recent.reduce((a, b) => a + b, 0) / recent.length : null;
+
+    // Weekly rows are judged like the tiles: 4-week average against the
+    // target, with the trailing 90 days as the bar for "Improving". The
+    // averages end at the newest week that has this number, so a source that
+    // loads late isn't averaged with blanks. Monthly and current figures have
+    // no weekly history and keep the fixed baseline.
+    let avg: number | null = null;
+    let chip = statusOf(t, raw);
+    if (t.cadence === 'weekly') {
+      let at = weeks.length - 1;
+      while (at >= 0 && num(weeks[at][t.metric]) === null) at -= 1;
+      const rawSeries = weeks.map((w) => num(w[t.metric]));
+      const avg4raw = trailingAvg(rawSeries, at, 4);
+      const avg13raw = trailingAvg(rawSeries, at, 13);
+      avg = trailingAvg(
+        weeks.map((w) => conv(t.metric, w[t.metric], 'week', w.week_start)),
+        at,
+        4,
+      );
+      chip = statusOf(t, avg4raw ?? raw, avg13raw);
+    }
     const u = unitFor(t.metric, t.unit);
 
     if (t.pillar !== pillar) {
@@ -823,7 +855,7 @@ function AllKpiRows({
         <td>{fmt(avg, u, false, currency)}</td>
         <td>{fmt(conv(t.metric, t.target, 'latest'), u, false, currency)}</td>
         <td>
-          <Chip s={statusOf(t, raw)} />
+          <Chip s={chip} title={t.cadence === 'weekly' ? CHIP_HELP : undefined} />
         </td>
       </tr>,
     );

@@ -5,7 +5,7 @@
 
 import type { Target } from '@/lib/admin-types';
 import { Detail, DetailTable, Explain } from './detail';
-import { day, fmt, num, statusOf, type Currency, type Unit } from './format';
+import { CHIP_HELP, day, fmt, num, statusOf, trailingAvg, type Currency, type Unit } from './format';
 import { Chip } from './ui';
 
 export interface KpiWeek {
@@ -60,11 +60,24 @@ export function KpiDetail({
   const show = (v: number | null) => fmt(v, unit, false, currency);
   const loaded = weeks.filter((w) => w.value !== null);
   const latest = loaded[loaded.length - 1];
-  const recent = loaded.slice(-4);
-  const average = recent.length ? recent.reduce((a, w) => a + (w.value ?? 0), 0) / recent.length : null;
+  // Averages end at the newest loaded week, in the display currency for the
+  // figures and unconverted for the chip, which compares against a USD target.
+  let at = weeks.length - 1;
+  while (at >= 0 && weeks[at].value === null) at -= 1;
+  const values = weeks.map((w) => w.value);
+  const average = trailingAvg(values, at, 4);
+  const quarter = trailingAvg(values, at, 13);
+  // The same 4-week average three months (12 weeks) earlier, for the trend.
+  const earlier = trailingAvg(values, at - 12, 4);
+  const trendPct =
+    average !== null && earlier !== null && earlier !== 0 ? ((average - earlier) / Math.abs(earlier)) * 100 : null;
+  const rawSeries = weeks.map((w) => w.raw);
+  const avg4raw = trailingAvg(rawSeries, at, 4);
+  const avg13raw = trailingAvg(rawSeries, at, 13);
+  const standing = statusOf(target, avg4raw ?? latest?.raw ?? null, avg13raw);
   const best = loaded.reduce<KpiWeek | null>((b, w) => (!b || (w.value ?? 0) > (b.value ?? 0) ? w : b), null);
   const last12 = weeks.slice(-12);
-  const hits = last12.filter((w) => statusOf(target, w.raw)?.k === 'ok').length;
+  const hits = last12.filter((w) => statusOf(target, w.raw, avg13raw)?.k === 'ok').length;
   const missing = weeks.length > 0 && weeks[weeks.length - 1].value === null;
 
   return (
@@ -73,6 +86,13 @@ export function KpiDetail({
         {MEANING[metric] || target?.why || 'A weekly count.'}
         {target?.why && MEANING[metric] ? ` ${target.why}` : ''}
       </Explain>
+
+      {standing && (
+        <p className="cnote">
+          <Chip s={standing} title={CHIP_HELP} /> Judged on the 4-week average against the target. Improving means better
+          than your 90-day average.
+        </p>
+      )}
 
       <dl className="facts">
         <div>
@@ -93,7 +113,21 @@ export function KpiDetail({
           <dt>4-week average</dt>
           <dd>
             {show(average)}
-            <small>smooths out one-off weeks</small>
+            <small>what the chip is judged on</small>
+          </dd>
+        </div>
+        <div>
+          <dt>90-day average</dt>
+          <dd>
+            {show(quarter)}
+            <small>last 13 weeks · the bar for Improving</small>
+          </dd>
+        </div>
+        <div>
+          <dt>A year at this pace</dt>
+          <dd>
+            {show(average !== null ? average * 52 : null)}
+            <small>4-week average × 52</small>
           </dd>
         </div>
         <div>
@@ -119,9 +153,16 @@ export function KpiDetail({
       )}
 
       <h3>Week by week</h3>
+      {trendPct !== null && (
+        <p className="cnote">
+          The 4-week average is {Math.abs(trendPct) < 0.5 ? 'flat' : trendPct > 0 ? 'up' : 'down'}
+          {Math.abs(trendPct) < 0.5 ? '' : ` ${Math.abs(trendPct).toFixed(0)}%`} on three months ago
+          {earlier !== null ? ` (${show(earlier)} then, ${show(average)} now)` : ''}.
+        </p>
+      )}
       <DetailTable
-        head={['Week of', label, 'Change', 'Against target']}
-        right={[1, 2]}
+        head={['Week of', label, '4-wk avg', 'Change', 'Against target']}
+        right={[1, 2, 3]}
         rows={[...last12].reverse().map((w) => {
           const i = weeks.indexOf(w);
           const before = i > 0 ? weeks[i - 1].value : null;
@@ -129,7 +170,13 @@ export function KpiDetail({
             w.value !== null && before !== null && before !== 0
               ? `${w.value >= before ? '▲' : '▼'} ${Math.abs(((w.value - before) / Math.abs(before)) * 100).toFixed(0)}%`
               : '—';
-          return [day(w.week_start), w.value === null ? 'not loaded' : show(w.value), change, <Chip key="c" s={statusOf(target, w.raw)} />];
+          return [
+            day(w.week_start),
+            w.value === null ? 'not loaded' : show(w.value),
+            show(trailingAvg(values, i, 4)),
+            change,
+            <Chip key="c" s={statusOf(target, w.raw, avg13raw)} />,
+          ];
         })}
       />
       {source && <p className="cnote">Loaded from {source}{through ? `, through ${day(through)}` : ''}. Weeks start Monday, Edmonton time.</p>}
