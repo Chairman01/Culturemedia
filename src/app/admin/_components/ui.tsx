@@ -7,9 +7,13 @@ import { repeatLabel } from '@/lib/alerts';
 import { day } from './format';
 import type { StatusChip } from './format';
 
-export function Chip({ s }: { s: StatusChip | null | undefined }) {
+export function Chip({ s, title }: { s: StatusChip | null | undefined; title?: string }) {
   if (!s) return null;
-  return <span className={`chip ${s.k}`}>{s.l}</span>;
+  return (
+    <span className={`chip ${s.k}`} title={title}>
+      {s.l}
+    </span>
+  );
 }
 
 export function Tile({
