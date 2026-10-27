@@ -22,8 +22,7 @@
 -- Service-role only, like the other admin_* functions. Nothing here writes.
 --
 -- Applied to project itdmwpbsnviassgqfhxk on 2026-10-27 (migration newsletter_dashboard_functions).
--- The accounts block (site logins vs the newsletter list) was added afterwards and
--- still has to be re-applied: run the admin_newsletter_dashboard() definition below again.
+-- Accounts block (site logins vs the newsletter list) applied 2026-10-27 (migration newsletter_dashboard_accounts_split).
 
 create or replace function public.newsletter_email_kind(subject text)
 returns text
