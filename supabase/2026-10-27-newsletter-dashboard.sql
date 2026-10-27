@@ -22,6 +22,7 @@
 -- Service-role only, like the other admin_* functions. Nothing here writes.
 --
 -- Applied to project itdmwpbsnviassgqfhxk on 2026-10-27 (migration newsletter_dashboard_functions).
+-- Accounts block (site logins vs the newsletter list) applied 2026-10-27 (migration newsletter_dashboard_accounts_split).
 
 create or replace function public.newsletter_email_kind(subject text)
 returns text
@@ -66,6 +67,15 @@ ok as (
 subs as (
   select id, lower(email) as email, status, city, signup_source, created_at
   from public.newsletter_subscriptions
+),
+accounts as (
+  -- People with a login on culturealberta.com (comments, saved stories,
+  -- polls). A separate thing from the newsletter list: most newsletter
+  -- members never make an account. Matched to the list by email.
+  select lower(u.email) as email, u.created_at, u.last_sign_in_at,
+         nullif(u.raw_user_meta_data ->> 'city', '') as city
+  from auth.users u
+  where u.deleted_at is null and coalesce(u.is_anonymous, false) = false and u.email is not null
 ),
 sev as (
   select lower(email) as email, event, signup_source, city, occurred_at,
@@ -262,6 +272,17 @@ select jsonb_build_object(
                  'at', to_char(r.occurred_at at time zone 'America/Edmonton', 'YYYY-MM-DD HH24:MI')) order by r.occurred_at desc), '[]'::jsonb)
                from (select * from sev order by occurred_at desc limit 80) r)
   ),
+  'accounts', jsonb_build_object(
+    'total', (select count(*) from accounts),
+    'with_city', (select count(*) from accounts where city is not null),
+    'signed_in_30d', (select count(*) from accounts where last_sign_in_at >= now() - interval '30 days'),
+    'new_30d', (select count(*) from accounts where created_at >= now() - interval '30 days'),
+    'on_list', (select count(*) from accounts a where exists (select 1 from subs s where s.email = a.email and s.status = 'active')),
+    'left_list', (select count(*) from accounts a where exists (select 1 from subs s where s.email = a.email)
+                                                   and not exists (select 1 from subs s where s.email = a.email and s.status = 'active')),
+    'never_subscribed', (select count(*) from accounts a where not exists (select 1 from subs s where s.email = a.email)),
+    'members_without_account', (select count(*) from subs s where s.status = 'active' and not exists (select 1 from accounts a where a.email = s.email))
+  ),
   'kinds', (select coalesce(jsonb_agg(to_jsonb(k) order by k.delivered desc), '[]'::jsonb) from kinds k),
   'monthly', (select coalesce(jsonb_agg(to_jsonb(m) order by m.month, m.kind), '[]'::jsonb) from monthly m),
   'issues', (select coalesce(jsonb_agg(to_jsonb(i) order by i.sent_on desc, i.subject desc), '[]'::jsonb) from issues i),
@@ -376,8 +397,10 @@ grant execute on function public.admin_newsletter_dashboard() to service_role;
 revoke all on function public.admin_newsletter_issue(text) from public;
 grant execute on function public.admin_newsletter_issue(text) to service_role;
 
--- Check: the newest issue and the member count.
+-- Check: the newest issue, the member count and the accounts split.
 select d -> 'members' ->> 'active' as active_members,
+       d -> 'accounts' ->> 'total' as accounts,
+       d -> 'accounts' ->> 'on_list' as accounts_on_list,
        d -> 'issues' -> 0 ->> 'subject' as newest_issue,
        jsonb_array_length(d -> 'issues') as issues
 from (select public.admin_newsletter_dashboard() as d) x;

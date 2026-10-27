@@ -203,6 +203,26 @@ function TargetLine({
   );
 }
 
+/**
+ * Which points get a value label. With room for every label (about 34px per
+ * point) all of them; otherwise every nth, the last one, and the highest, so a
+ * 26-week line reads as a handful of numbers instead of a smear.
+ */
+function labelStride(items: ChartItem[], px: number): (i: number) => boolean {
+  if (px >= 34 || items.length <= 8) return () => true;
+  const n = Math.ceil(items.length / 7);
+  const last = items.length - 1;
+  let hi = -1;
+  let hiV = -Infinity;
+  items.forEach((it, i) => {
+    if (it.value !== null && it.value > hiV) {
+      hiV = it.value;
+      hi = i;
+    }
+  });
+  return (i) => i === last || i === hi || (i % n === 0 && last - i >= n / 2 && Math.abs(hi - i) >= n / 2);
+}
+
 export function Chart({
   kind,
   items,
@@ -242,6 +262,9 @@ function BarChart({ items, unit, target, currency, values }: InnerProps) {
   const bw = Math.max(6, band * 0.62);
   const every = band >= 40 ? 1 : Math.ceil(items.length / 6);
   const labelSize = band < 44 ? 9 : 10.5;
+  // Packed bars would overlap their value labels: keep every nth, the last
+  // and the tallest. Every bar still has its tooltip.
+  const showValue = labelStride(items, band);
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} role="img">
@@ -288,7 +311,7 @@ function BarChart({ items, unit, target, currency, values }: InnerProps) {
       )}
 
       {items.map((it, i) => {
-        if (it.value === null) return null;
+        if (it.value === null || !showValue(i)) return null;
         const cx = L + band * i + band / 2;
         const h = Math.max(1.5, H - B - y(Math.max(0, it.value)));
         return (
@@ -337,6 +360,7 @@ function LineChart({ items, unit, target, currency, values }: InnerProps) {
     .join(' ');
   const every = (W - L - R) / Math.max(1, items.length) >= 40 ? 1 : Math.ceil(items.length / 6);
   const labelSize = items.length > 8 ? 9 : 10.5;
+  const showValue = labelStride(items, (W - L - R - 2 * PAD) / Math.max(1, items.length - 1));
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} role="img">
@@ -376,7 +400,7 @@ function LineChart({ items, unit, target, currency, values }: InnerProps) {
 
       {items.map((it, i) => {
         const p = points[i];
-        if (!p) return null;
+        if (!p || !showValue(i)) return null;
         return (
           <ValueLabel
             key={i}

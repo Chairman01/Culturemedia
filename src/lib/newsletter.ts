@@ -170,6 +170,17 @@ export interface NewsletterData {
     weekly: WeekRow[];
     recent: SubEvent[];
   };
+  /** People with a login on culturealberta.com, matched to the list by email. Absent until the SQL is updated. */
+  accounts?: {
+    total: number;
+    with_city: number;
+    signed_in_30d: number;
+    new_30d: number;
+    on_list: number;
+    left_list: number;
+    never_subscribed: number;
+    members_without_account: number;
+  };
   kinds: KindRow[];
   monthly: MonthRow[];
   issues: Issue[];
