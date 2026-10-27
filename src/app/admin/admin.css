@@ -3458,3 +3458,80 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ── newsletter & members ─────────────────────────────────────────────────── */
+
+/* Rows that open something: the issues list and the editions table. */
+.adm .clickrows tbody tr {
+  cursor: pointer;
+}
+
+.adm .clickrows tbody tr:hover td {
+  background: var(--sunken);
+}
+
+.adm .clickrows tbody tr[aria-selected='true'] td {
+  background: var(--s2-soft);
+}
+
+/* A words column in a numbers table: the subject, a story title, an address. */
+.adm th.txt,
+.adm td.txt {
+  text-align: left;
+  font-family: inherit;
+  white-space: normal;
+  max-width: 440px;
+}
+
+.adm td.txt a {
+  color: var(--s2);
+  text-decoration: none;
+}
+
+.adm td.txt a:hover {
+  text-decoration: underline;
+}
+
+.adm .scroll-x {
+  overflow-x: auto;
+}
+
+/* Half-width cards hold short tables that must not force a scrollbar. */
+.adm table.compact {
+  min-width: 0;
+}
+
+/* A line or two of plain words under a table or chart. */
+.adm .how {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.adm .how ol {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+.adm .how li + li {
+  margin-top: 3px;
+}
+
+.adm .linkbtn {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--s2);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.adm .linkbtn:hover {
+  text-decoration: underline;
+}
+
+.adm .statpanel-in h3.sub-h {
+  margin-top: 18px;
+}
