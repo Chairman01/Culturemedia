@@ -35,7 +35,7 @@ export const NOT_CONFIGURED =
  * Calls one of the admin_* functions. Execute is granted to service_role only,
  * so these only work from server code.
  */
-async function callRpc<T>(
+export async function callRpc<T>(
   fn: string,
   args: Record<string, unknown> = {},
 ): Promise<AdminResult<T>> {

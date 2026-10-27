@@ -11,6 +11,7 @@ import {
   House,
   Inbox,
   LogOut,
+  Mail,
   Package,
   Users,
   Newspaper,
@@ -28,6 +29,7 @@ const NAV = [
   { href: '/admin/valuation', label: 'Valuation', icon: Scale },
   { href: '/admin/scorecard', label: 'Scorecard & KPIs', icon: ChartColumn },
   { href: '/admin/content', label: 'Content', icon: Newspaper },
+  { href: '/admin/newsletter', label: 'Newsletter', icon: Mail },
   { href: '/admin/bids', label: 'Bids', icon: Gavel, also: ['/admin/setup'] },
   { href: '/admin/packages', label: 'Packages', icon: Package },
 ] as const;
