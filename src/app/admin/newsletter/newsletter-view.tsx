@@ -86,6 +86,111 @@ function Delta({
 
 type Panel = 'active' | 'new' | 'unsub' | 'net' | 'issues' | 'open' | 'click' | 'delivery' | null;
 
+/**
+ * The two different "members" the owner meets: the newsletter list (this page)
+ * and site accounts (the Culture Alberta admin). Side by side, in plain words,
+ * with the overlap, so the two counts stop looking like a mistake.
+ */
+function WhoIsCounted({ data }: { data: NewsletterData }) {
+  const m = data.members;
+  const a = data.accounts;
+  return (
+    <section className="card" aria-labelledby="who-h" style={{ marginBottom: 12 }}>
+      <h2 id="who-h">
+        Two kinds of members <small>why this page and the Culture Alberta admin show different counts</small>
+      </h2>
+      <div className="who-grid">
+        <div className="who-col">
+          <div className="who-head">
+            <span className="who-k">Newsletter members</span>
+            <span className="who-n">{group(m.active)}</span>
+          </div>
+          <p>
+            People who typed their email into the newsletter box on culturealberta.com. Each gets their city’s edition every
+            week. <b>Every number on this page is about them.</b>
+          </p>
+          {a && (
+            <ul className="who-split">
+              <li>
+                <b>{group(a.members_without_account)}</b> only gave an email address
+              </li>
+              <li>
+                <b>{group(a.on_list)}</b> also have a site account
+              </li>
+            </ul>
+          )}
+        </div>
+        <div className="who-col">
+          <div className="who-head">
+            <span className="who-k">Site accounts</span>
+            <span className="who-n">{a ? group(a.total) : '—'}</span>
+          </div>
+          <p>
+            People who created a login on culturealberta.com so they can comment, save stories and vote in polls. This is
+            the “Members” count in the Culture Alberta admin. It measures how many readers take part in the site, not how
+            many get the newsletter.
+          </p>
+          {a ? (
+            <ul className="who-split">
+              <li>
+                <b>{group(a.on_list)}</b> are on the newsletter too
+              </li>
+              <li>
+                <b>{group(a.left_list)}</b> were on it and unsubscribed
+              </li>
+              <li>
+                <b>{group(a.never_subscribed)}</b> never joined it
+              </li>
+              <li>
+                <b>{group(a.signed_in_30d)}</b> signed in during the last 30 days · <b>{group(a.new_30d)}</b> accounts created
+              </li>
+            </ul>
+          ) : (
+            <p className="muted">Account counts appear once the database function is updated.</p>
+          )}
+        </div>
+      </div>
+      <p className="who-use">
+        <b>How to use them.</b> Quote <em>newsletter members</em> to sponsors: that is the reach of each weekly edition, and
+        the joins and leaves below say whether the list is growing. Read <em>site accounts</em> as loyalty: how many readers
+        come back and take part. The two will never match, because most people join the newsletter without ever making an
+        account. An account holder who is not on the list is the easiest sign-up there is; one who unsubscribed chose to, so
+        leave them be.
+      </p>
+      <details className="defs">
+        <summary>What each number on this page means</summary>
+        <dl>
+          <dt>Active members</dt>
+          <dd>On the list right now; they get the next issue. “Ever signed up” also counts everyone who later left.</dd>
+          <dt>Joined · Left · Net growth</dt>
+          <dd>
+            Sign-ups and unsubscribes in the last 30 days, compared with the 30 days before. Net growth is joined minus left.
+          </dd>
+          <dt>Issues sent</dt>
+          <dd>
+            Newsletter editions only. The welcome email people get when they sign up, one-off alerts and comment
+            notifications are counted separately further down the page.
+          </dd>
+          <dt>Open rate</dt>
+          <dd>
+            Members who opened an issue at least once, out of everyone it reached. Opens rely on a hidden tracking image that
+            some mail apps block, so the true figure is a little higher.
+          </dd>
+          <dt>Click rate</dt>
+          <dd>Members who clicked a story, out of everyone the issue reached. The number to trust: each click is a reader on the site.</dd>
+          <dt>Bounced · complaints</dt>
+          <dd>Addresses the email could not be delivered to, and people who marked it as spam. Both should stay near zero.</dd>
+          <dt>Readers vs clicks</dt>
+          <dd>
+            Readers counts people; clicks counts taps. Some company mail systems click every link to scan it, so readers is
+            the honest measure of a story.
+          </dd>
+        </dl>
+      </details>
+    </section>
+  );
+}
+
 function Head() {
   return (
     <PageHead
@@ -224,6 +329,8 @@ function Loaded({ data, today }: { data: NewsletterData; today: string }) {
           <p className="empty-note">Nothing stands out right now.</p>
         )}
       </section>
+
+      <WhoIsCounted data={data} />
 
       {/* ── members ─────────────────────────────────────────────────────── */}
       <h2 className="sub-h">Members</h2>
